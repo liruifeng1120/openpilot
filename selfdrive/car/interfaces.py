@@ -581,8 +581,11 @@ class CarInterfaceBase(ABC):
       else:
         self.no_steer_warning = False
 
+        # new 如果踩刹车并且速度低于0.5m/s时，不提示转身暂停的提示
+        if cs_out.vEgo < 0.5: # and cs_out.brakePressed:
+          pass  # 不提示，跳过添加事件
         # if the user overrode recently, show a less harsh alert
-        if self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
+        elif self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
           self.silent_steer_warning = True
           events.add(EventName.steerTempUnavailableSilent)
         else:
