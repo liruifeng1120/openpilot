@@ -32,6 +32,9 @@ def register(show_spinner=False) -> str | None:
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
+  #取消注册
+  return UNREGISTERED_DONGLE_ID
+
   if not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning(f"missing public key: {pubkey}")
