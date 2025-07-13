@@ -728,7 +728,7 @@ class CarrotMan:
       import openpilot.selfdrive.frogpilot.fleetmanager.helpers as fleet
 
       toggle_values = fleet.get_all_toggle_values()
-      file_path = os.path.join('/data', 'toggle_values.json')
+      file_path = os.path.join('/home/liruifeng/.comma', 'toggle_values.json')
       with open(file_path, 'w') as file:
         json.dump(toggle_values, file, indent=2)
     except Exception as e:
@@ -1563,7 +1563,7 @@ class CarrotServ:
       if xSpdType >= 0:
         offset = 5 if self.is_metric else 5 * CV.MPH_TO_KPH
         self.xSpdLimit = self.nRoadLimitSpeed + offset
-        
+
         self.xSpdDist = distance
         self.xSpdType =xSpdType
 
