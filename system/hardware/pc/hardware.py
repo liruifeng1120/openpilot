@@ -5,6 +5,7 @@ import subprocess
 import glob
 from cereal import log
 from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
+# from openpilot.system.hardware.lpa.base import LPABase  # 注释掉这一行
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -73,8 +74,9 @@ class Pc(HardwareBase):
       'data_connected': False
     }
 
-  def get_sim_lpa(self) -> LPABase:
-    raise NotImplementedError("SIM LPA not implemented for PC")
+  def get_sim_lpa(self):
+    # PC环境不支持SIM LPA，直接返回None或抛异常
+    return None
 
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
