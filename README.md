@@ -10,17 +10,26 @@ In accordance with the amended **Korean Motor Vehicle Management Act** (effectiv
 This software is provided **for research and educational use only**.
 The developer does **not take any responsibility** for real-world installation or usage.
 ## ⚠️ 安装libicu66，注意安装完成删掉deb http://security.ubuntu.com/ubuntu focal-security main。
-1、    sudo apt-get update
-                sudo apt-get install gedit
-                sudo gedit /etc/apt/sources.list
+**libicu66安装步骤1**
+``` bash
+sudo apt-get update
+sudo apt-get install gedit
+sudo gedit /etc/apt/sources.list
+```
+**libicu66安装步骤2 粘贴下段内容到第2行并保存**
+``` bash
+deb http://security.ubuntu.com/ubuntu focal-security main
+```
+**libicu66安装步骤3**
+``` bash
+sudo apt-get update
+sudo apt-get install libicu66
+```
 
-    2、deb http://security.ubuntu.com/ubuntu focal-security main
-
-    3、新并安装所需的包
-    sudo apt-get update
-    sudo apt-get install libicu66
-## ⚠️ 需在虚拟环境下手动执行该命令安装xattr 否则启动会报错。    
+## ⚠️ 需在虚拟环境下手动执行该命令安装xattr 否则启动会报错。
+``` bash
 uv pip install xattr
+```
 
 <div align="center" style="text-align: center;">
 
