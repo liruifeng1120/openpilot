@@ -48,8 +48,9 @@ int main(int argc, char *argv[]) {
 
   printf("##########main2\n");
   setenv("QT_QPA_PLATFORM", "xcb", 1);
-  setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
-  setenv("QT_LOGGING_RULES", "qt.qpa.*=true;qt.opengl.*=true", 1);
+  //setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
+  //setenv("QT_LOGGING_RULES", "qt.qpa.*=true;qt.opengl.*=true", 1);
+  setenv("QT_LOGGING_RULES", "qt.qpa.xcb*=false;qt.opengl.*=true", 1);
 
   QApplication app(argc, argv);
   printf("##########main3\n");
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
 
   printf("##########main4\n");
   MapRenderer * m = new MapRenderer(get_mapbox_settings());
-  printf("##########main5\n");
+  //printf("##########main5\n");
   assert(m);
 
   return app.exec();

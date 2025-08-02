@@ -141,7 +141,7 @@ void MapRenderer::msgUpdate() {
       for (int i = 0; i < 5 && !rendered(); i++) {
         QApplication::processEvents(QEventLoop::AllEvents, 100);
         update();
-        printf("###### rendered\n");
+        //printf("###### rendered\n");
         if (rendered()) {
           LOGW("rendered after %d retries", i+1);
           break;
@@ -151,7 +151,7 @@ void MapRenderer::msgUpdate() {
       // fallback to sending a blank frame
       if (!rendered()) {
         publish(0, false);
-        printf("blank frame\n");
+        //printf("blank frame\n");
       }
   }
 

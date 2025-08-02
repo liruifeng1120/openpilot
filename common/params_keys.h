@@ -6,6 +6,10 @@
 inline static std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
     {"AdbEnabled", PERSISTENT},
+    {"RecordAudio", PERSISTENT},
+    {"CommaLongAcc", PERSISTENT},
+    {"NNFF", PERSISTENT},
+    {"NNFFLite", PERSISTENT},
     {"AlwaysOnDM", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
     {"ApiCache_FirehoseStats", PERSISTENT},
@@ -98,7 +102,6 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"PandaSomResetTriggered", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
     {"PrimeType", PERSISTENT},
-    {"RecordAudio", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"SecOCKey", PERSISTENT | DONT_LOG},
@@ -120,6 +123,14 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
     {"UpdaterLastFetchTime", PERSISTENT},
     {"Version", PERSISTENT},
+
+    {"ForceOffroad", CLEAR_ON_MANAGER_START},
+    {"BydModifiedStockLong", PERSISTENT},
+    {"AlwaysOnLKAS", PERSISTENT},
+    {"BydAutoTuning", PERSISTENT},
+    {"BydLatUseSiglin", PERSISTENT},
+    {"CameraOffset", PERSISTENT},
+    {"UseRedPanda", PERSISTENT},
 
     // carrot
     {"LongitudinalPersonalityMax", PERSISTENT},
@@ -163,7 +174,6 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"CruiseEcoControl", PERSISTENT},
     {"CarrotCruiseDecel", PERSISTENT},
     {"CarrotCruiseAtcDecel", PERSISTENT},
-    {"CommaLongAcc", PERSISTENT},
     {"AutoGasTokSpeed", PERSISTENT},
     {"AutoGasSyncSpeed", PERSISTENT},
     {"AutoEngage", PERSISTENT},
@@ -284,7 +294,4 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"SoftRestartTriggered", CLEAR_ON_MANAGER_START},
 
     {"DevicePosition", CLEAR_ON_MANAGER_START},
-    {"NNFF", PERSISTENT},
-    {"NNFFLite", PERSISTENT},
-    {"NNFFModelName", CLEAR_ON_OFFROAD_TRANSITION},
 };

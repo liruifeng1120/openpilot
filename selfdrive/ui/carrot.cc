@@ -224,8 +224,8 @@ static inline void fill_rect(NVGcontext* vg, const Rect1& r, const NVGcolor* col
     if (stroke_width > 0) {
         nvgStrokeWidth(vg, stroke_width);
         if (stroke_color) nvgStrokeColor(vg, *stroke_color);
-		else nvgStrokeColor(vg, nvgRGB(0, 0, 0));   
-        nvgStroke(vg);                         
+		else nvgStrokeColor(vg, nvgRGB(0, 0, 0));
+        nvgStroke(vg);
     }
 }
 
@@ -342,56 +342,56 @@ protected:
         auto lead_radar = sm["radarState"].getRadarState().getLeadOne();
         auto live_params = sm["liveParameters"].getLiveParameters();
 
-        // 0: yellow, 1: green, 2: orange
+        // 0: red, 1: green, 2: orange
         switch (show_plot_mode) {
         case 0:
         case 1:
             data[0] = a_ego;
             data[1] = accel;
             data[2] = accel_out;
-            sprintf(title, "1.Accel (Y:a_ego, G:a_target, O:a_out)");
+            sprintf(title, "1.Accel (R:a_ego, G:a_target, O:a_out)");
             break;
         case 2:
             data[0] = speeds_0;
             data[1] = v_ego;
             data[2] = a_ego;
-            sprintf(title, "2.Speed/Accel(Y:speed_0, G:v_ego, O:a_ego)");
+            sprintf(title, "2.Speed/Accel(R:speed_0, G:v_ego, O:a_ego)");
             break;
         case 3:
             data[0] = position.getX()[32];
             data[1] = velocity.getX()[32];
             data[2] = velocity.getX()[0];
-            sprintf(title, "3.Model(Y:pos_32, G:vel_32, O:vel_0)");
+            sprintf(title, "3.Model(R:pos_32, G:vel_32, O:vel_0)");
 			      break;
         case 4:
             data[0] = accel;
             data[1] = lead_radar.getALeadK();
             data[2] = lead_radar.getVRel();
-            sprintf(title, "4.Lead(Y:accel, G:a_lead, O:v_rel)");
+            sprintf(title, "4.Lead(R:accel, G:a_lead, O:v_rel)");
             break;
         case 5:
             data[0] = a_ego;
             data[1] = lead_radar.getALead();
             data[2] = lead_radar.getJLead();
-            sprintf(title, "5.Lead(Y:a_ego, G:a_lead, O:j_lead)");
+            sprintf(title, "5.Lead(R:a_ego, G:a_lead, O:j_lead)");
             break;
         case 6:
             data[0] = torque_state.getActualLateralAccel() * 10.0;
             data[1] = torque_state.getDesiredLateralAccel() * 10.0;
             data[2] = torque_state.getOutput() * 10.0;
-            sprintf(title, "6.Steer(Y:actual, G:desire, O:output)");
+            sprintf(title, "6.Steer(R:actual, G:desire, O:output)");
             break;
         case 7:
             data[0] = car_state.getSteeringAngleDeg();
             data[1] = car_control.getActuators().getSteeringAngleDeg();
             data[2] = live_params.getAngleOffsetDeg() * 10.0;
-            sprintf(title, "7.SteerA (Y:Actual, G:Target, O:Offset*10)");
+            sprintf(title, "7.SteerA (R:Actual, G:Target, O:Offset*10)");
             break;
         case 8:
             data[0] = car_control.getActuators().getCurvature()*10000;
             data[1] = car_control.getActuators().getCurvature()*10000;
             data[2] = car_control.getActuators().getCurvature()*10000;
-            sprintf(title, "8.SteerA (Y:Actual, G:Target, O:Offset*10)");
+            sprintf(title, "8.SteerA (R:Actual, G:Target, O:Offset*10)");
             break;
         default:
             data[0] = data[1] = data[2] = 0;
@@ -491,7 +491,7 @@ public:
         */
         if (s->fb_w < 1200) return;
 
-        NVGcolor color[3] = { COLOR_YELLOW, COLOR_GREEN, COLOR_ORANGE };
+        NVGcolor color[3] = { COLOR_RED, COLOR_GREEN, COLOR_ORANGE };
         for (int i = 0; i < 3; i++) {
             drawPlotting(s, i, plotIndex, plotX, plotQueue[i], plotSize, &color[i], 3.0f);
         }
@@ -1045,10 +1045,10 @@ protected:
         active_carrot = 2;
         nGoPosDist = 500000;
         nGoPosTime = 4 * 60 * 60;
-        szSdiDescr = "어린이 보호구역(스쿨존 시작 구간)";
+        szSdiDescr = "儿童保护区域（学校区域开始）";
         xTurnInfo = 1;
         xDistToTurn = 1000;
-        szPosRoadName = "구문천 1길 17";
+        szPosRoadName = "九门川1街17号";
 #endif
 
         //if (active_carrot <= 1) return;
@@ -1090,9 +1090,9 @@ protected:
             case 4: ui_draw_image(s, { bx - icon_size / 2, by - icon_size / 2, icon_size, icon_size }, "ic_lane_change_r", 1.0f); break;
             case 7: ui_draw_image(s, { bx - icon_size / 2, by - icon_size / 2, icon_size, icon_size }, "ic_turn_u", 1.0f); break;
             case 6: ui_draw_text(s, bx, by + 20, "TG", 35, COLOR_WHITE, BOLD); break;
-            case 8: ui_draw_text(s, bx, by + 20, "목적지", 35, COLOR_WHITE, BOLD); break;
+            case 8: ui_draw_text(s, bx, by + 20, "目的地", 35, COLOR_WHITE, BOLD); break;
             default:
-                sprintf(str, "감속:%d", xTurnInfo);
+                sprintf(str, "减速:%d", xTurnInfo);
                 ui_draw_text(s, bx, by + 20, str, 35, COLOR_WHITE, BOLD);
                 break;
             }
@@ -1121,7 +1121,7 @@ protected:
             int remaining_minutes = (int)nGoPosTime / 60;
             local->tm_min += remaining_minutes;
             mktime(local);
-            sprintf(str, "도착: %.1f분(%02d:%02d)", (float)nGoPosTime / 60., local->tm_hour, local->tm_min);
+            sprintf(str, "到达: %.1f分钟(%02d:%02d)", (float)nGoPosTime / 60., local->tm_hour, local->tm_min);
             ui_draw_text(s, tbt_x + 190, tbt_y + 80, str, 50, COLOR_WHITE, BOLD);
             sprintf(str, "%.1fkm", nGoPosDist / 1000.);
             ui_draw_text(s, tbt_x + 190 + 120, tbt_y + 130, str, 50, COLOR_WHITE, BOLD);
@@ -1137,7 +1137,7 @@ public:
             return -1;
         }
         const auto carrot_man = sm["carrotMan"].getCarrotMan();
-          
+
         active_carrot = carrot_man.getActiveCarrot();
 
         if (active_carrot > 1) {
@@ -1161,7 +1161,7 @@ public:
           szSdiDescr = QString::fromStdString(carrot_man.getSzSdiDescr());
           szPosRoadName = QString::fromStdString(carrot_man.getSzPosRoadName());
           szTBTMainText = QString::fromStdString(carrot_man.getSzTBTMainText());
-          
+
         }
         else {
           //xTurnInfo = -1;
@@ -1935,7 +1935,7 @@ public:
               int max_z = lane_lines[2].getZ().size();
               float z_offset = 0.0;
               foreach(const QString & pair, pairs) {
-                QStringList xy = pair.split(",");  // ","로 x와 y 구분                
+                QStringList xy = pair.split(",");  // ","로 x와 y 구분
                 if (xy.size() == 3) {
                   //printf("coords = x: %.1f, y: %.1f, d:%.1f\n", xy[0].toFloat(), xy[1].toFloat(), xy[2].toFloat());
                   float x = xy[0].toFloat();
@@ -2006,6 +2006,7 @@ public:
                 }
             }
         }
+	makeDeviceInfo(s);
 	  }
     void drawRadarInfo(UIState* s) {
         char str[128];
@@ -2119,7 +2120,7 @@ public:
     void drawHud(UIState* s) {
         int show_device_state = params.getInt("ShowDeviceState");
         blink_timer = (blink_timer + 1) % 16;
-        disp_timer = (disp_timer + 1) % 64; 
+        disp_timer = (disp_timer + 1) % 64;
         nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
 
         int x = 140;// 120;
@@ -2132,9 +2133,18 @@ public:
         xSignType = 1;
 #endif
         bool cam_detected = false;
-        if (xSpdLimit > 0 && xSignType != 22 && xSignType != 4) cam_detected = true;
+        bool actually_speeding = false;
+        if (xSpdLimit > 0 && xSignType != 22 && xSignType != 4) {
+            cam_detected = true;
+            // 只有在实际超速时才显示警告
+            actually_speeding = (v_ego * 3.6 > xSpdLimit);
+        }
         NVGcolor stroke_color = COLOR_WHITE;
-        NVGcolor bg_color = (cam_detected && blink_timer > 8)?COLOR_RED_ALPHA(180):COLOR_BLACK_ALPHA(90);
+        NVGcolor bg_color = COLOR_BLACK_ALPHA(90);
+        if (cam_detected && actually_speeding && blink_timer > 8) {
+            bg_color = COLOR_RED_ALPHA(180);
+        }
+
         if (show_device_state > 0) {
           ui_fill_rect(s->vg, { bx - 120, by - 270, 475, 495 }, bg_color, 30, 2, &stroke_color);
         }
@@ -2305,7 +2315,13 @@ public:
             NVGcolor limit_color = COLOR_GREEN_ALPHA(210);
             if (xSpdLimit > 0 && xSignType != 22) {
                 disp_speed = (int)(xSpdLimit * ((s->scene.is_metric)?1:KM_TO_MILE) + 0.5);
-                limit_color = (blink_timer <= 8) ? COLOR_RED_ALPHA(210) : COLOR_YELLOW_ALPHA(210);
+
+                // 只有在实际超速时才闪烁红色/黄色
+                bool is_over_limit = (v_ego * 3.6 > xSpdLimit);
+                if (is_over_limit) {
+                    limit_color = (blink_timer <= 8) ? COLOR_RED_ALPHA(210) : COLOR_YELLOW_ALPHA(210);
+                }
+
                 ui_draw_text(s, dx, dy-45, "CAM", 30, COLOR_WHITE, BOLD);
             }
             else {
@@ -2325,9 +2341,15 @@ public:
             dy = by - 200;
             mode_color = COLOR_GREEN_ALPHA(190);
             ui_fill_rect(s->vg, { dx - 65, dy - 38, 130, 90 }, (cpuTemp>80 && blink_timer<=8)?COLOR_RED : mode_color, 15, 2);
-            ui_draw_text(s, dx, dy-5, "CPU", 25, COLOR_WHITE, BOLD);
-            sprintf(str, "%.0f\u00B0C", cpuTemp);
-            ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
+            if (disp_timer < 32) {
+                ui_draw_text(s, dx, dy-5, "CPU", 25, COLOR_WHITE, BOLD);
+                sprintf(str, "%.0f\u00B0C", cpuTemp);
+                ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
+            } else {
+                ui_draw_text(s, dx, dy-5, "CPU", 25, COLOR_WHITE, BOLD);
+                sprintf(str, "%.0f%%", cpuUsage);
+                ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
+            }
 
             dx += 150;
             ui_fill_rect(s->vg, { dx - 65, dy - 38, 130, 90 }, (memoryUsage > 85 && blink_timer <= 8) ? COLOR_RED : mode_color, 15, 2);
@@ -2492,17 +2514,17 @@ public:
         memoryUsage = deviceState.getMemoryUsagePercent();
         const auto cpuTempC = deviceState.getCpuTempC();
         const auto cpuUsagePercent = deviceState.getCpuUsagePercent();
-        int   size = sizeof(cpuTempC) / sizeof(cpuTempC[0]);
-        if (size > 0) {
-            for (int i = 0; i < size; i++) {
+        cpuTemp = 0.0f;
+        if (cpuTempC.size() > 0) {
+            for (int i = 0; i < cpuTempC.size(); i++) {
                 cpuTemp += cpuTempC[i];
             }
-            cpuTemp /= static_cast<float>(size);
+            cpuTemp /= static_cast<float>(cpuTempC.size());
         }
-        size = sizeof(cpuUsagePercent) / sizeof(cpuUsagePercent[0]);
-        if (size > 0) {
+        cpuUsage = 0.0f;
+        if (cpuUsagePercent.size() > 0) {
             int cpu_size = 0;
-            for (cpu_size = 0; cpu_size < size; cpu_size++) {
+            for (cpu_size = 0; cpu_size < cpuUsagePercent.size(); cpu_size++) {
                 if (cpuUsagePercent[cpu_size] <= 0) break;
                 cpuUsage += cpuUsagePercent[cpu_size];
             }
@@ -2668,7 +2690,7 @@ void ui_draw(UIState *s, ModelRenderer* model_renderer, int w, int h) {
   int path_x = drawPathEnd.getPathX();
   int path_y = drawPathEnd.getPathY();
   drawDesire.draw(s, path_x, path_y - 135);
-  
+
 
   drawPlot.draw(s);
 

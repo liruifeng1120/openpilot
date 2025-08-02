@@ -462,12 +462,12 @@ class RadarD:
 
     v_ego = self.v_ego
     ready = self.ready
-    ## SCC레이더는 일단 보관하고 리스트에서 삭제... (SCC Track은 0,1번으로 들어옴)
+    ## SSCC雷达先保存，从列表中删除... (SCC Track以0,1号进入)
     track_scc = tracks.get(0)
     if track_scc is None:
       track_scc = tracks.get(1)
     #if track_scc is not None:
-    #  del tracks[0]            ## tracks에서 삭제하면안됨... ㅠㅠ
+    #  del tracks[0]            ## 不能从tracks中删除... ㅠㅠ
 
     # Determine leads, this is where the essential logic happens
     if len(tracks) > 0 and ready and lead_msg.prob > .5:
@@ -475,17 +475,17 @@ class RadarD:
     else:
       track = None
 
-    # vision match후 발견된 track이 없으면
-    #  track_scc 가 있는 지 확인하고
-    #    비전과의 차이가 35%(5M)이상 차이나면 scc가 발견못한것이기 때문에 비전것으로 처리함.
+    # 视觉匹配后没有发现track时
+    #  确认是否有track_scc
+    #    如果与视觉的差异超过35%(5M)以上，说明scc没有发现，因此使用视觉数据处理
+    ### 240807, SCC雷达经常获取相邻车道的数据... 不应该使用...
+    # 250415: 有scc radar信息但vision未检测时，出现错误
 
-    ### 240807, SCC레이더가 옆차선의것을 많이 가져옴... 사용하지 말아야겠다...
-    # 250415: scc radar정보가 있지만.. vision 미검출시, 오류
     if self.enable_radar_tracks in [-1, 2]:  
       if track_scc is not None and track is None:
         track = track_scc
     #  if self.vision_tracks[index].prob > .5:
-    #    if self.vision_tracks[index].dRel < track.dRel - 10.0: #끼어드는 차량이 있는 경우 처리..  5-> 10M바꿔보자... 240427
+    #    if self.vision_tracks[index].dRel < track.dRel - 10.0: #有插入车辆的情况处理..  5-> 改为10M试试... 240427
     #      track = None
 
     lead_dict = {'status': False}

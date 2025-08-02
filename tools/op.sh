@@ -204,7 +204,17 @@ function op_setup() {
 
   op_check_openpilot_dir
   op_check_os
-
+  echo "Setting sudo no-pass..."
+  if ! sudo grep -qE "^[^#]*\b${LOGNAME}\b.*NOPASSWD" /etc/sudoers /etc/sudoers.d/* 2>/dev/null; then
+    echo "${LOGNAME} ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/"${LOGNAME}" >/dev/null
+    if sudo visudo -cf /etc/sudoers >/dev/null; then
+      echo "✔️ NOPASSWD added for ${LOGNAME}"
+    else
+      sudo rm -f /etc/sudoers.d/"${LOGNAME}"
+      echo "❌ Failed to add NOPASSWD for ${LOGNAME}"
+      exit 1
+    fi
+  fi
   echo "Installing dependencies..."
   st="$(date +%s)"
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -239,6 +249,10 @@ function op_setup() {
   fi
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds."
+  sudo cp -f $OPENPILOT_ROOT/tools/carrot2-v8.desktop /usr/share/applications/
+  cp -f $OPENPILOT_ROOT/tools/autostart_lauch.desktop /home/$LOGNAME/.config/autostart/
+  mkdir -p /home/$LOGNAME/.config/autostart/
+  sudo sh -c "sed -i 's|OPENPILOT_ROOT|$OPENPILOT_ROOT|g' /usr/share/applications/carrot2-v8.desktop /home/$LOGNAME/.config/autostart/autostart_lauch.desktop"
 
   op_check
 }

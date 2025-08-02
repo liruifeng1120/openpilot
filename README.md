@@ -1,13 +1,44 @@
+
+# ⚠️ 说明
+<p>
+  <br>
+  基于开源项目carrot2-v8整合yysnet的byd opendbc适配的PC版本
+</p>
+
+<p>
+  <h3>
+  <a>免责声明</a>
+  </h3>
+  <br>
+  本代码未经充分测试，仅限封闭环境研究用途，禁止公开道路使用，由此引发的任何后果均由使用者自行承担。
+</p>
+
+<p>
+<h3><a>Changelog</a></h3>
+<h4><a>20250731</a></h4>
+<ol> <!-- 使用有序列表包裹父级条目 -->
+  <li>整合yysnet BYD车型适配代码</li>
+  <li>修改配置、日志数据存储路径，避免不同版本数据覆盖问题</li>
+  <li>适配PC设备运行和各传感器状态数据获取</li>
+  <li>简化安装、配置易用优化</li>
+  <li>增加yawRate适配</li>
+  <li>修改导航超速时才闪烁提醒</li>
+  <li>将调试曲线的色值调整为更易区分且更突出的颜色</li>
+  <li>驾驶监控DisableDM默认是打开</li>
+</ol>
+</p>
+
+
 ## ⚠️ 법적 안내 / Legal Notice
 
-🚫 대한민국 자동차관리법 개정안에 따라, 본 소프트웨어를 실제 차량에 장착하거나 주행에 사용하는 것은 법률에 위배될 수 있습니다.  
-이 저장소에 있는 모든 소프트웨어는 **연구, 실험, 시뮬레이션 목적**으로만 제공됩니다.  
+🚫 대한민국 자동차관리법 개정안에 따라, 본 소프트웨어를 실제 차량에 장착하거나 주행에 사용하는 것은 법률에 위배될 수 있습니다.
+이 저장소에 있는 모든 소프트웨어는 **연구, 실험, 시뮬레이션 목적**으로만 제공됩니다.
 개발자는 본 소프트웨어의 실제 사용으로 인해 발생하는 **모든 법적 책임을 지지 않습니다.**
 
-In accordance with the amended **Korean Motor Vehicle Management Act** (effective August 14, 2025),  
+In accordance with the amended **Korean Motor Vehicle Management Act** (effective August 14, 2025),
 **modifying or installing software that affects the safe operation of a vehicle** is prohibited.
 
-This software is provided **for research and educational use only**.  
+This software is provided **for research and educational use only**.
 The developer does **not take any responsibility** for real-world installation or usage.
 
 <div align="center" style="text-align: center;">

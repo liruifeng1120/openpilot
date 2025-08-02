@@ -57,7 +57,10 @@ class PIDController:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
       if not freeze_integrator:
-        self.i = self.i + error * self.k_i * self.i_rate
+        if(self.k_i != 0):
+          self.i = self.i + error * self.k_i * self.i_rate
+        else:
+          self.i = 0
 
         # Clip i to prevent exceeding control limits
         control_no_i = self.p + self.d + self.f

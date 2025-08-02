@@ -281,11 +281,44 @@ class CarrotMan:
 
     self.is_metric = self.params.get_bool("IsMetric")
 
+  def get_active_interface(self):  
+      """动态获取有IP地址的活跃网络接口"""  
+      import subprocess  
+      try:  
+          # 使用ip命令获取默认路由的接口  
+          result = subprocess.run(['ip', 'route', 'show', 'default'],   
+                                capture_output=True, text=True)  
+          if result.returncode == 0:  
+              for line in result.stdout.split('\\n'):  
+                  if 'dev' in line:  
+                      parts = line.split()  
+                      dev_index = parts.index('dev')  
+                      if dev_index + 1 < len(parts):  
+                          return parts[dev_index + 1].encode()  
+      except:  
+          pass  
+      
+      # 备用方案：检查常见的网络接口  
+      common_interfaces = ['wlo1', 'enp1s0', 'wlan0', 'eth0', 'br0']  
+      for iface_name in common_interfaces:  
+          try:  
+              with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
+                  # 尝试获取接口的IP地址  
+                  ip = fcntl.ioctl(  
+                      s.fileno(),  
+                      0x8915,  # SIOCGIFADDR  
+                      struct.pack('256s', iface_name.encode())  
+                  )[20:24]  
+                  if ip != b'\\x00\\x00\\x00\\x00':  # 有有效IP地址  
+                      return iface_name.encode()  
+          except:  
+              continue  
+      
+      return b'wlo1'  # 根据你的网卡情况，默认使用wlo1
+
   def get_broadcast_address(self):
-    if PC:
-      iface = b'br0'
-    else:
-      iface = b'wlan0'
+    # 动态获取活跃的网络接口  
+    iface = self.get_active_interface()
     try:
       with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         ip = fcntl.ioctl(
@@ -299,14 +332,14 @@ class CarrotMan:
 
   def get_local_ip(self):
       try:
-          # 외부 서버와의 연결을 통해 로컬 IP 확인
+          # 通过与外部服务器连接确认本地IP
           with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
               s.connect(("8.8.8.8", 80))  # Google DNS로 연결 시도
               return s.getsockname()[0]
       except Exception as e:
           return f"Error: {e}"
 
-  # 브로드캐스트 메시지 전송
+  # 广播消息发送
   def broadcast_version_info(self):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -352,7 +385,7 @@ class CarrotMan:
             #  sock.sendto(dat, address)
 
             if remote_addr is None:
-              print(f"Broadcasting: {self.broadcast_ip}:{msg}")
+              #print(f"Broadcasting: {self.broadcast_ip}:{msg}")
               if not self.navd_active:
                 #print("clear path_points: navd_active: ", self.navd_active)
                 self.navi_points = []
@@ -533,16 +566,16 @@ class CarrotMan:
     while True:
       try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-          sock.settimeout(10)  # 소켓 타임아웃 설정 (10초)
-          sock.bind(('0.0.0.0', self.carrot_man_port))  # UDP 포트 바인딩
+          sock.settimeout(10)  # 套接字超时设置（10秒）
+          sock.bind(('0.0.0.0', self.carrot_man_port))  # UDP端口绑定
           print("#########carrot_man_thread: UDP thread started...")
 
           while True:
             try:
               #self.remote_addr = None
-              # 데이터 수신 (UDP는 recvfrom 사용)
+              # 数据接收（UDP使用recvfrom）
               try:
-                data, remote_addr = sock.recvfrom(4096)  # 최대 4096 바이트 수신
+                data, remote_addr = sock.recvfrom(4096)  # 最大接收4096字节
                 #print(f"Received data from {self.remote_addr}")
 
                 if not data:
@@ -558,7 +591,7 @@ class CarrotMan:
                   print(f"carrot_man_thread: json error...: {e}")
                   print(data)
 
-                # 응답 메시지 생성 및 송신 (UDP는 sendto 사용)
+                # 响应消息生成及发送（UDP使用sendto）
                 #try:
                 #  msg = self.make_send_message()
                 #  sock.sendto(msg.encode('utf-8'), self.remote_addr)
@@ -566,7 +599,7 @@ class CarrotMan:
                 #  print(f"carrot_man_thread: send error...: {e}")
 
               except TimeoutError:
-                print("Waiting for data (timeout)...")
+                #print("Waiting for data (timeout)...")
                 self.remote_addr = None
                 time.sleep(1)
 
@@ -611,16 +644,16 @@ class CarrotMan:
       try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
           sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-          sock.settimeout(10)  # 소켓 타임아웃 설정 (10초)
-          sock.bind(('', 12345))  # UDP 포트 바인딩
+          sock.settimeout(10)  # 套接字超时设置（10秒）
+          sock.bind(('', 12345))  # UDP端口绑定
           print("#########kisa_app_thread: UDP thread started...")
 
           while True:
             try:
               #self.remote_addr = None
-              # 데이터 수신 (UDP는 recvfrom 사용)
+              # 数据接收（UDP使用recvfrom）
               try:
-                data, remote_addr = sock.recvfrom(4096)  # 최대 4096 바이트 수신
+                data, remote_addr = sock.recvfrom(4096)  # 最大接收4096字节
                 #print(f"Received data from {self.remote_addr}")
 
                 if not data:
@@ -641,7 +674,7 @@ class CarrotMan:
                   print(data)
 
               except TimeoutError:
-                print("Waiting for data (timeout)...")
+                #print("Waiting for data (timeout)...")
                 #self.remote_addr = None
                 time.sleep(1)
 
@@ -807,7 +840,7 @@ class CarrotMan:
         socket, poller = setup_socket()
 
   def recvall(self, sock, n):
-    """n바이트를 수신할 때까지 반복적으로 데이터를 받는 함수"""
+    """重复接收数据直到收到n字节的函数"""
     data = bytearray()
     while len(data) < n:
       packet = sock.recv(n - len(data))
@@ -817,11 +850,11 @@ class CarrotMan:
     return data
 
   def receive_double(self, sock):
-    double_data = self.recvall(sock, 8)  # Double은 8바이트
+    double_data = self.recvall(sock, 8)  # Double是8字节
     return struct.unpack('!d', double_data)[0]
 
   def receive_float(self, sock):
-    float_data = self.recvall(sock, 4)  # Float은 4바이트
+    float_data = self.recvall(sock, 4)  # Float是4字节
     return struct.unpack('!f', float_data)[0]
 
 
@@ -834,7 +867,7 @@ class CarrotMan:
         print("Received points from navd:", len(self.navi_points))
         self.navd_active = True
 
-        # 경로수신 -> carrotman active되고 약간의 시간지연이 발생함..
+        # 路径接收 -> carrotman激活并发生轻微时间延迟..
         self.carrot_serv.active_count = 80
         self.carrot_serv.active_sdi_count = self.carrot_serv.active_sdi_count_max
         self.carrot_serv.active_carrot = 2
@@ -850,8 +883,8 @@ class CarrotMan:
     self.pm.send('navRoute', msg)
 
   def carrot_route(self):
-    host = '0.0.0.0'  # 혹은 다른 호스트 주소
-    port = 7709  # 포트 번호
+    host = '0.0.0.0'  # 或其他主机地址
+    port = 7709  # 端口号
 
     try:
       with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -865,14 +898,14 @@ class CarrotMan:
             print(f"Connected by {addr}")
             #self.clear_route()
 
-            # 전체 데이터 크기 수신
+            # 接收总数据大小
             total_size_bytes = self.recvall(conn, 4)
             if not total_size_bytes:
               print("Connection closed or error occurred")
               continue
             try:
               total_size = struct.unpack('!I', total_size_bytes)[0]
-              # 전체 데이터를 한 번에 수신
+              # 一次性接收全部数据
               all_data = self.recvall(conn, total_size)
               if all_data is None:
                   print("Connection closed or incomplete data received")
@@ -1185,7 +1218,7 @@ class CarrotServ:
       return safe_speed_kph
 
     # v_i^2 = v_f^2 + 2ad
-    temp = safe_speed**2 + 2 * safe_decel_rate * decel_dist  # 공식에서 감속 적용
+    temp = safe_speed**2 + 2 * safe_decel_rate * decel_dist  # 公式中应用减速
 
     if temp < 0:
       speed_mps = safe_speed
@@ -1262,73 +1295,73 @@ class CarrotServ:
 
   def _get_sdi_descr(self, nSdiType):
     sdi_types = {
-        0: "신호과속",
-        1: "과속 (고정식)",
-        2: "구간단속 시작",
-        3: "구간단속 끝",
-        4: "구간단속중",
-        5: "꼬리물기단속카메라",
-        6: "신호 단속",
-        7: "과속 (이동식)",
-        8: "고정식 과속위험 구간(박스형)",
-        9: "버스전용차로구간",
-        10: "가변 차로 단속",
-        11: "갓길 감시 지점",
-        12: "끼어들기 금지",
-        13: "교통정보 수집지점",
-        14: "방범용cctv",
-        15: "과적차량 위험구간",
-        16: "적재 불량 단속",
-        17: "주차단속 지점",
-        18: "일방통행도로",
-        19: "철길 건널목",
-        20: "어린이 보호구역(스쿨존 시작 구간)",
-        21: "어린이 보호구역(스쿨존 끝 구간)",
-        22: "과속방지턱",
-        23: "lpg충전소",
-        24: "터널 구간",
-        25: "휴게소",
-        26: "톨게이트",
-        27: "안개주의 지역",
-        28: "유해물질 지역",
-        29: "사고다발",
-        30: "급커브지역",
-        31: "급커브구간1",
-        32: "급경사구간",
-        33: "야생동물 교통사고 잦은 구간",
-        34: "우측시야불량지점",
-        35: "시야불량지점",
-        36: "좌측시야불량지점",
-        37: "신호위반다발구간",
-        38: "과속운행다발구간",
-        39: "교통혼잡지역",
-        40: "방향별차로선택지점",
-        41: "무단횡단사고다발지점",
-        42: "갓길 사고 다발 지점",
-        43: "과속 사발 다발 지점",
-        44: "졸음 사고 다발 지점",
-        45: "사고다발지점",
-        46: "보행자 사고다발지점",
-        47: "차량도난사고 상습발생지점",
-        48: "낙석주의지역",
-        49: "결빙주의지역",
-        50: "병목지점",
-        51: "합류 도로",
-        52: "추락주의지역",
-        53: "지하차도 구간",
-        54: "주택밀집지역(교통진정지역)",
-        55: "인터체인지",
-        56: "분기점",
-        57: "휴게소(lpg충전가능)",
-        58: "교량",
-        59: "제동장치사고다발지점",
-        60: "중앙선침범사고다발지점",
-        61: "통행위반사고다발지점",
-        62: "목적지 건너편 안내",
-        63: "졸음 쉼터 안내",
-        64: "노후경유차단속",
-        65: "터널내 차로변경단속",
-        66: ""
+        0: "信号超速",                    # 신호과속  
+        1: "超速（固定式）",              # 과속 (고정식)  
+        2: "区间监控开始",                # 구간단속 시작  
+        3: "区间监控结束",                # 구간단속 끝  
+        4: "区间监控中",                  # 구간단속중  
+        5: "跟车监控摄像头",              # 꼬리물기단속카메라  
+        6: "信号监控",                    # 신호 단속  
+        7: "超速（移动式）",              # 과속 (이동식)  
+        8: "固定式超速危险区间（箱式）",  # 고정식 과속위험 구간(박스형)  
+        9: "公交专用车道区间",            # 버스전용차로구간  
+        10: "可变车道监控",               # 가변 차로 단속  
+        11: "路肩监视点",                 # 갓길 감시 지점  
+        12: "禁止插队",                   # 끼어들기 금지  
+        13: "交通信息收集点",             # 교통정보 수집지점  
+        14: "防犯用CCTV",                 # 방범용cctv  
+        15: "超载车辆危险区间",           # 과적차량 위험구간  
+        16: "装载不良监控",               # 적재 불량 단속  
+        17: "停车监控点",                 # 주차단속 지점  
+        18: "单行道",                     # 일방통행도로  
+        19: "铁路道口",                   # 철길 건널목  
+        20: "儿童保护区域（学校区域开始）", # 어린이 보호구역(스쿨존 시작 구간)  
+        21: "儿童保护区域（学校区域结束）", # 어린이 보호구역(스쿨존 끝 구간)  
+        22: "减速带",                     # 과속방지턱  
+        23: "LPG充电站",                  # lpg충전소  
+        24: "隧道区间",                   # 터널 구간  
+        25: "服务区",                     # 휴게소  
+        26: "收费站",                     # 톨게이트  
+        27: "雾天注意区域",               # 안개주의 지역  
+        28: "有害物质区域",               # 유해물질 지역  
+        29: "事故多发",                   # 사고다발  
+        30: "急弯区域",                   # 급커브지역  
+        31: "急弯区间1",                  # 급커브구간1  
+        32: "急坡区间",                   # 급경사구간  
+        33: "野生动物交通事故频发区间",   # 야생동물 교통사고 잦은 구간  
+        34: "右侧视野不良点",             # 우측시야불량지점  
+        35: "视野不良点",                 # 시야불량지점  
+        36: "左侧视野不良点",             # 좌측시야불량지점  
+        37: "信号违反多发区间",           # 신호위반다발구간  
+        38: "超速行驶多发区间",           # 과속운행다발구간  
+        39: "交通拥堵区域",               # 교통혼잡지역  
+        40: "方向别车道选择点",           # 방향별차로선택지점  
+        41: "无断横穿事故多发点",         # 무단횡단사고다발지점  
+        42: "路肩事故多发点",             # 갓길 사고 다발 지점  
+        43: "超速事故多发点",             # 과속 사발 다발 지점  
+        44: "疲劳驾驶事故多发点",         # 졸음 사고 다발 지점  
+        45: "事故多发点",                 # 사고다발지점  
+        46: "行人事故多发点",             # 보행자 사고다발지점  
+        47: "车辆盗窃事故惯犯发生点",     # 차량도난사고 상습발생지점  
+        48: "落石注意区域",               # 낙석주의지역  
+        49: "结冰注意区域",               # 결빙주의지역  
+        50: "瓶颈点",                     # 병목지점  
+        51: "汇流道路",                   # 합류 도로  
+        52: "坠落注意区域",               # 추락주의지역  
+        53: "地下车道区间",               # 지하차도 구간  
+        54: "住宅密集区域（交通宁静区域）", # 주택밀집지역(교통진정지역)  
+        55: "立交桥",                     # 인터체인지  
+        56: "分岔点",                     # 분기점  
+        57: "服务区（可充LPG）",          # 휴게소(lpg충전가능)  
+        58: "桥梁",                       # 교량  
+        59: "制动装置事故多发点",         # 제동장치사고다발지점  
+        60: "中央线侵犯事故多发点",       # 중앙선침범사고다발지점  
+        61: "通行违反事故多发点",         # 통행위반사고다발지점  
+        62: "目的地对面引导",             # 목적지 건너편 안내  
+        63: "疲劳驾驶休息处引导",         # 졸음 쉼터 안내  
+        64: "老旧柴油车监控",             # 노후경유차단속  
+        65: "隧道内车道变更监控",         # 터널내 차로변경단속  
+        66: "" 
     }
     return sdi_types.get(nSdiType, "")
 
@@ -1633,7 +1666,7 @@ class CarrotServ:
 
     sdi_speed = 250
     hda_active = False
-    ### 과속카메라, 사고방지턱
+    ### 超速摄像头、事故防护墩
     if (self.xSpdDist > 0 or self.xSpdType in [100, 101]) and self.active_carrot > 0:
       safe_sec = self.autoNaviSpeedBumpTime if self.xSpdType == 22 else self.autoNaviSpeedCtrlEnd
       decel = self.autoNaviSpeedDecelRate
@@ -1652,7 +1685,7 @@ class CarrotServ:
       hda_active = True
 
     #print(f"sdi_speed: {sdi_speed}, hda_active: {hda_active}, xSpdType: {self.xSpdType}, xSpdDist: {self.xSpdDist}, active_carrot: {self.active_carrot}, v_ego_kph: {v_ego_kph}, nRoadLimitSpeed: {self.nRoadLimitSpeed}")
-    ### TBT 속도제어
+    ### TBT速度控制
     atc_desired, self.atcType, self.atcSpeed, self.atcDist = self.update_auto_turn(v_ego*3.6, sm, self.xTurnInfo, self.xDistToTurn, True)
     atc_desired_next, _, _, _ = self.update_auto_turn(v_ego*3.6, sm, self.xTurnInfoNext, self.xDistToTurnNext, False)
 
@@ -1667,7 +1700,7 @@ class CarrotServ:
       # )
       #self.debugText = "" #f" {self.nSdiType}/{self.nSdiSpeedLimit}/{self.nSdiDist},BLOCK:{self.nSdiBlockType}/{self.nSdiBlockSpeed}/{self.nSdiBlockDist}, PLUS:{self.nSdiPlusType}/{self.nSdiPlusSpeedLimit}/{self.nSdiPlusDist}"
     #elif self.nGoPosDist > 0 and self.active_carrot > 1:
-    #  self.debugText = " 목적지:{:.1f}km/{:.1f}분 남음".format(self.nGoPosDist/1000., self.nGoPosTime / 60)
+    #  self.debugText = " 目的地：剩余{:.1f}km/{:.1f}分钟".format(self.nGoPosDist/1000., self.nGoPosTime / 60)
     else:
       #self.debugText = ""
       pass
@@ -1894,7 +1927,7 @@ class CarrotServ:
 
     #print(json)
     if self.carrotIndex % 60 == 0 and "epochTime" in json:
-      # op는 ntp를 사용하기때문에... 필요없는 루틴으로 보임.
+      # 因为op使用ntp...看起来是不必要的例程。
       timezone_remote = json.get("timezone", "Asia/Seoul")
 
       if not PC:
@@ -1990,7 +2023,7 @@ class CarrotServ:
       #print(json)
       pass
 
-    # 3초간 navi 데이터가 없으면, phone gps로 업데이트
+    # 如果3秒内没有导航数据，则用手机GPS更新
     if "latitude" in json:
       self.nPosAnglePhone = float(json.get("heading", self.nPosAngle))
       if (now - self.last_update_gps_time_navi) > 3.0:

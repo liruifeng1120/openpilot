@@ -28,15 +28,14 @@ def get_default_params():
     ("DisengageOnAccelerator", "0"),
     ("GsmMetered", "1"),
     ("HasAcceptedTerms", "0"),
-    ("LanguageSetting", "main_en"),
+    ("LanguageSetting", "main_zh-CHS"),
     ("OpenpilotEnabledToggle", "1"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
     ("IsMetric", "1"),
     ("RecordAudio", "1"),
-
     ("SearchInput", "0"),
     ("GMapKey", "0"),
-    ("MapboxStyle", "0"),    
+    ("MapboxStyle", "0"),
 
 
     ("LongitudinalPersonalityMax", "3"),
@@ -59,8 +58,8 @@ def get_default_params():
     ("AutoCruiseControl", "0"),
     ("CruiseEcoControl", "2"),
     ("CarrotCruiseDecel", "-1"),
-    ("CarrotCruiseAtcDecel", "-1"),
     ("CommaLongAcc", "0"),
+    ("CarrotCruiseAtcDecel", "-1"),
     ("AutoGasTokSpeed", "0"),
     ("AutoGasSyncSpeed", "1"),
     ("AutoEngage", "0"),
@@ -135,7 +134,7 @@ def get_default_params():
     ("DynamicTFollowLC", "100"),
     ("HapticFeedbackWhenSpeedCamera", "0"),
     ("UseLaneLineSpeed", "0"),
-    ("PathOffset", "0"),
+    ("PathOffset", "15"),
     ("UseLaneLineCurveSpeed", "0"),
     ("AdjustLaneOffset", "0"),
     ("LaneChangeNeedTorque", "0"),
@@ -143,17 +142,17 @@ def get_default_params():
     ("LaneChangeBsd", "0"),
     ("MaxAngleFrames", "89"),
     ("LateralTorqueCustom", "0"),
-    ("LateralTorqueAccelFactor", "2500"),
-    ("LateralTorqueFriction", "100"),
-    ("LateralTorqueKpV", "100"),
-    ("LateralTorqueKiV", "10"),
+    ("LateralTorqueAccelFactor", "1900"),
+    ("LateralTorqueFriction", "350"),
+    ("LateralTorqueKpV", "85"),
+    ("LateralTorqueKiV", "6"),
     ("LateralTorqueKf", "100"),
     ("LateralTorqueKd", "0"),
     ("LatMpcPathCost", "200"),
     ("LatMpcMotionCost", "7"),
     ("LatMpcAccelCost", "120"),
-    ("LatMpcJerkCost", "4"),
-    ("LatMpcSteeringRateCost", "7"),
+    ("LatMpcJerkCost", "11"),
+    ("LatMpcSteeringRateCost", "1300"),
     ("LatMpcInputOffset", "4"),
     ("LatMpcOutputOffset", "0"),
     ("CustomSteerMax", "0"),
@@ -161,10 +160,10 @@ def get_default_params():
     ("CustomSteerDeltaDown", "0"),
     ("CustomSteerDeltaUpLC", "0"),
     ("CustomSteerDeltaDownLC", "0"),
-    ("SpeedFromPCM", "2"),
+    ("SpeedFromPCM", "1"),
     ("SteerActuatorDelay", "0"),
     ("MaxTimeOffroadMin", "60"),
-    ("DisableDM", "0"),
+    ("DisableDM", "1"),
     ("EnableConnect", "0"),
     ("MuteDoor", "0"),
     ("MuteSeatbelt", "0"),
@@ -177,6 +176,13 @@ def get_default_params():
     ("SteerRatioRate", "100"),
     ("NNFF", "0"),
     ("NNFFLite", "0"),
+    ("ForceOffroad", "0"),
+    ("BydModifiedStockLong", "0"),
+    ("AlwaysOnLKAS", "0"),
+    ("BydAutoTuning", "0"),
+    ("BydLatUseSiglin", "0"),
+    ("CameraOffset", "0"),
+    ("UseRedPanda", "0"),
   ]
   return default_params
 
@@ -350,11 +356,12 @@ def manager_thread() -> None:
 
 def main() -> None:
   manager_init()
-  print(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
-  os.system(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
-  os.system(f"python ../../opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
-  os.system(f"python ../../opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
-  os.system(f"python ../../opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  print(f"python opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"python opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"python opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
+  os.system(f"python opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
+  os.system(f"python opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"python opendbc/car/byd/values.py > {Params().get_param_path()}/SupportedCars_byd")
 
   if os.getenv("PREPAREONLY") is not None:
     return

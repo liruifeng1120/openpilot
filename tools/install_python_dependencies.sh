@@ -21,6 +21,7 @@ uv self update || true
 
 echo "installing python packages..."
 uv sync --frozen --all-extras
+uv pip install xattr flask
 source .venv/bin/activate
 
 echo "PYTHONPATH=${PWD}" > "$ROOT"/.env

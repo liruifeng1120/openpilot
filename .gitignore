@@ -1,5 +1,6 @@
 venv/
 .venv/
+.comma
 .ci_cache
 .env
 .clang-format
@@ -13,6 +14,7 @@ venv/
 model2.png
 a.out
 .hypothesis
+params
 
 /docs_site/
 
