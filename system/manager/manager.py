@@ -401,19 +401,19 @@ def manager_thread() -> None:
 
 def main() -> None:
   manager_init()
-
-  # 获取 openpilot 根目录
-  OPENPILOT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-  supported_path = Params().get_param_path()
-
-  brands = ["hyundai", "gm", "toyota", "mazda", "tesla", "honda", "volkswagen"]
-  for brand in brands:
-    values_py = os.path.join(OPENPILOT_ROOT, "opendbc", "car", brand, "values.py")
-    output_file = os.path.join(supported_path, f"SupportedCars_{brand}" if brand != "hyundai" else "SupportedCars")
-    if os.path.isfile(values_py):
-      os.system(f"python {values_py} > {output_file}")
-    else:
-      print(f"WARNING: {values_py} not found, skipping.")
+  os.system(f"python ./opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"python ./opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
+  os.system(f"python ./opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
+  os.system(f"python ./opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"python ./opendbc/car/honda/values.py > {Params().get_param_path()}/SupportedCars_honda")
+  os.system(f"python ./opendbc/car/byd/values.py > {Params().get_param_path()}/SupportedCars_byd")
+  os.system(f"python ./opendbc/car/rivian/values.py > {Params().get_param_path()}/SupportedCars_rivian")
+  os.system(f"python ./opendbc/car/subaru/values.py > {Params().get_param_path()}/SupportedCars_subaru")
+  os.system(f"python ./opendbc/car/ford/values.py > {Params().get_param_path()}/SupportedCars_ford")
+  os.system(f"python ./opendbc/car/nissan/values.py > {Params().get_param_path()}/SupportedCars_nissan")
+  os.system(f"python ./opendbc/car/tesla/values.py > {Params().get_param_path()}/SupportedCars_tesla")
+  os.system(f"python ./opendbc/car/chrysler/values.py > {Params().get_param_path()}/SupportedCars_chrysler")
+  os.system(f"python ./opendbc/car/volkswagen/values.py > {Params().get_param_path()}/SupportedCars_volkswagen")
 
   if os.getenv("PREPAREONLY") is not None:
     return
