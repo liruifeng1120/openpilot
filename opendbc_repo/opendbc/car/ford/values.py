@@ -1,3 +1,4 @@
+
 import copy
 import re
 from dataclasses import dataclass, field, replace
@@ -135,7 +136,7 @@ class CAR(Platforms):
   )
   FORD_ESCAPE_MK4_5 = FordCANFDPlatformConfig(
     [
-      FordCarDocs("Ford Escape 2023-24", hybrid=True, plug_in_hybrid=True, setup_video_link="https://www.youtube.com/watch?v=M6uXf4b2SHM"),
+      FordCarDocs("Ford Escape 2023-24", hybrid=True, plug_in_hybrid=True),
       FordCarDocs("Ford Kuga Hybrid 2024", "All"),
       FordCarDocs("Ford Kuga Plug-in Hybrid 2024", "All"),
     ],
@@ -172,11 +173,11 @@ class CAR(Platforms):
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
   FORD_MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
-    [FordCarDocs("Ford Mustang Mach-E 2021-24", "All", setup_video_link="https://www.youtube.com/watch?v=AR4_eTF3b_A")],
+    [FordCarDocs("Ford Mustang Mach-E 2021-24", "All")],
     CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )
   FORD_RANGER_MK2 = FordCANFDPlatformConfig(
-    [FordCarDocs("Ford Ranger 2024", "Adaptive Cruise Control with Lane Centering", setup_video_link="https://www.youtube.com/watch?v=2oJlXCKYOy0")],
+    [FordCarDocs("Ford Ranger 2024", "Adaptive Cruise Control with Lane Centering")],
     CarSpecs(mass=2000, wheelbase=3.27, steerRatio=17.0),
   )
 
