@@ -71,11 +71,12 @@ class SelfdriveD:
     # TODO: de-couple selfdrived with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
-    ignore = self.sensor_packets + self.gps_packets + ['alertDebug']
+    ignore = self.sensor_packets + self.gps_packets + ["accelerometer", "gyroscope", "alertDebug", 'liveLocationKalman','liveParameters','liveTorqueParameters', 'livePose','driverAssistance']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     elif self.disable_dm > 0:
-      self.camera_packets.remove("driverCameraState")
+      if "driverCameraState" in self.camera_packets:
+        self.camera_packets.remove("driverCameraState")
     ignore += ['driverMonitoringState']
 
     if REPLAY:
@@ -122,7 +123,7 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
-    
+
     self.atc_type_last = ""
 
 
