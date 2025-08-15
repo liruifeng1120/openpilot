@@ -28,6 +28,7 @@ REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
+DRIVER_CAM = os.getenv("DRIVER_CAM") is not None
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -191,7 +192,7 @@ class SelfdriveD:
       car_events = self.car_events.update(CS, self.CS_prev, self.sm['carControl']).to_msg()
       self.events.add_from_msg(car_events)
 
-      if self.CP.notCar:
+      if self.CP.notCar and DRIVER_CAM:
         # wait for everything to init first
         if self.sm.frame > int(5. / DT_CTRL) and self.initialized:
           # body always wants to enable
