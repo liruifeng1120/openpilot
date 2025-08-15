@@ -93,7 +93,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
-    ret.yawRate = float(cp.vl["KINEMATICS"]["YAW_RATE"] * CV.DEG_TO_RAD) # fuck honda
+
     ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]

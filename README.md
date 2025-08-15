@@ -26,10 +26,6 @@ sudo apt-get update
 sudo apt-get install libicu66
 ```
 
-## ⚠️ 需在虚拟环境下手动执行该命令安装xattr 否则启动会报错。
-``` bash
-uv pip install xattr
-```
 
 <div align="center" style="text-align: center;">
 
