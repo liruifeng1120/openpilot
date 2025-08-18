@@ -22,6 +22,10 @@
 
 #define POSENET_STD_HIST_HALF 20
 
+// 针对本田雅阁混动车的特殊配置
+#define HONDA_ACCORD_HYBRID_GYRO_FACTOR 0.95
+#define HONDA_ACCORD_HYBRID_ACCEL_FACTOR 0.95
+
 enum LocalizerGnssSource {
   UBLOX, QCOM
 };
@@ -96,5 +100,9 @@ private:
   double gps_time_offset;
   Eigen::VectorXd camodo_yawrate_distribution = Eigen::Vector2d(0.0, 10.0); // mean, std
 
+  // 针对本田雅阁混动车的特殊处理标志
+  bool is_honda_accord_hybrid = false;
+
   void configure_gnss_source(const LocalizerGnssSource &source);
+  void configure_vehicle_parameters();
 };

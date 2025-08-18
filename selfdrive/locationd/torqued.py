@@ -32,7 +32,7 @@ MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
-ALLOWED_CARS = ['toyota', 'hyundai', 'rivian']
+ALLOWED_CARS = ['toyota', 'hyundai', 'rivian', 'honda']
 
 
 def slope2rot(slope):
@@ -72,6 +72,12 @@ class TorqueEstimator(ParameterEstimator):
     self.offline_latAccelFactor = 0.0
     self.resets = 0.0
     self.use_params = CP.brand in ALLOWED_CARS and CP.lateralTuning.which() == 'torque'
+
+    # 针对本田雅阁混动车的特殊优化
+    if CP.carFingerprint == "HONDA ACCORD" and "Hybrid" in [car_docs.car_name for car_docs in CP.carDocs]:
+      self.factor_sanity = 0.2  # 更严格的参数检查
+      self.friction_sanity = 0.3
+      self.min_bucket_points = np.array([150, 400, 600, 600, 600, 600, 400, 150])  # 更多数据点要求
 
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = CP.lateralTuning.torque.friction

@@ -89,6 +89,23 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
   this->configure_gnss_source(gnss_source);
+  this->configure_vehicle_parameters();
+}
+
+void Localizer::configure_vehicle_parameters() {
+  // 检查是否为本田雅阁混动车
+  char* dongleId = getenv("DONGLE_ID");
+  if (dongleId) {
+    // 在实际应用中，我们可以通过参数获取车辆型号
+    // 这里我们假设通过某种方式识别出是本田雅阁混动车
+    // 在实际实现中，应该通过更准确的方式判断车辆型号
+    Params params;
+    std::string car_model = params.get("CarModel");
+    if (car_model.find("HONDA ACCORD") != std::string::npos && 
+        car_model.find("Hybrid") != std::string::npos) {
+      this->is_honda_accord_hybrid = true;
+    }
+  }
 }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
@@ -259,6 +276,11 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     auto v = log.getGyroUncalibrated().getV();
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
 
+    // 针对本田雅阁混动车的特殊处理
+    if (this->is_honda_accord_hybrid) {
+      meas *= HONDA_ACCORD_HYBRID_GYRO_FACTOR;
+    }
+
     VectorXd gyro_bias = this->kf->get_x().segment<STATE_GYRO_BIAS_LEN>(STATE_GYRO_BIAS_START);
     float gyro_camodo_yawrate_err = std::abs((meas[2] - gyro_bias[2]) - this->camodo_yawrate_distribution[0]);
     float gyro_camodo_yawrate_err_threshold = YAWRATE_CROSS_ERR_CHECK_FACTOR * this->camodo_yawrate_distribution[1];
@@ -282,6 +304,12 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     // this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
+    
+    // 针对本田雅阁混动车的特殊处理
+    if (this->is_honda_accord_hybrid) {
+      meas *= HONDA_ACCORD_HYBRID_ACCEL_FACTOR;
+    }
+
     if (meas.norm() < ACCEL_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
       this->observation_values_invalid["accelerometer"] *= DECAY;
