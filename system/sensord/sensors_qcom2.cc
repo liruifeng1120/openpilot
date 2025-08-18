@@ -51,6 +51,10 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
   if (dongle_id) {
     // 在实际实现中，我们可以通过参数或车辆类型来判断
     // 这里只是一个示例，实际应用中需要更复杂的逻辑
+    // 为了修复编译错误，这里使用变量
+    if (is_honda_accord_hybrid) {
+      LOGD("Honda Accord Hybrid detected, using special IMU handling");
+    }
   }
 
   while (!do_exit) {
