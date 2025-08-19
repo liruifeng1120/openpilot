@@ -161,8 +161,6 @@ class LatControlTorque(LatControl):
         self.torque_params.latAccelOffset = self.latAccelOffset_default
       self.lateralTorqueCustom = lateralTorqueCustom
 
-    # 使用来自liveLocationKalman的IMU数据进行更精确的横向加速度计算
-    use_imu_data = self.params.get_bool("UseIMUDataForTorque")
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     nn_log = None
     if not active:
@@ -183,31 +181,15 @@ class LatControlTorque(LatControl):
           actual_curvature_rate = -VM.calc_curvature(math.radians(CS.steeringRateDeg), CS.vEgo, 0.0)
           actual_lateral_jerk = actual_curvature_rate * CS.vEgo ** 2
       else:
-        # 使用IMU数据进行更精确的曲率计算
-        if use_imu_data and llk.angularVelocityCalibrated.valid:
-          actual_curvature_llk = llk.angularVelocityCalibrated.value[2] / CS.vEgo
-          # 针对本田雅阁混动车的特殊处理
-          if hasattr(self.CP, 'carFingerprint') and self.CP.carFingerprint == "HONDA ACCORD" and "Hybrid" in [car_docs.car_name for car_docs in self.CP.carDocs]:
-            # 混动车的转向系统响应可能略有不同，使用不同的插值权重
-            actual_curvature = np.interp(CS.vEgo, [1.0, 3.0, 7.0], [actual_curvature_vm, actual_curvature_vm*0.8 + actual_curvature_llk*0.2, actual_curvature_llk])
-          else:
-            actual_curvature = np.interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
-        else:
-          actual_curvature = actual_curvature_vm
+        actual_curvature_llk = llk.angularVelocityCalibrated.value[2] / CS.vEgo
+        actual_curvature = np.interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
         curvature_deadzone = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
 
-      # 加速度死区补偿
-      if use_imu_data and llk.angularVelocityCalibrated.valid:
-        actual_lateral_accel = actual_curvature * CS.vEgo ** 2
-        # 针对本田雅阁混动车的特殊处理
-        if hasattr(self.CP, 'carFingerprint') and self.CP.carFingerprint == "HONDA ACCORD" and "Hybrid" in [car_docs.car_name for car_docs in self.CP.carDocs]:
-          lateral_accel_deadzone = 0.05  # 混动车使用较小的死区
-        else:
-          lateral_accel_deadzone = 0.2
-      else:
-        actual_lateral_accel = actual_curvature * CS.vEgo ** 2
-        lateral_accel_deadzone = 0.2
+      # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
+      # desired_lateral_jerk = desired_curvature_rate * CS.vEgo ** 2
+      actual_lateral_accel = actual_curvature * CS.vEgo ** 2
+      lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature

@@ -44,15 +44,6 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
 
-  // 为本田雅阁混动车优化传感器数据采集频率
-  // 检查是否为本田车辆
-  const char* dongle_id = getenv("DONGLE_ID");
-  bool is_honda_accord_hybrid = false;
-  if (dongle_id) {
-    // 在实际实现中，我们可以通过参数或车辆类型来判断
-    // 这里只是一个示例，实际应用中需要更复杂的逻辑
-  }
-
   while (!do_exit) {
     int err = poll(fd_list, 1, 100);
     if (err == -1) {

@@ -139,11 +139,6 @@ class Controls:
     if steer_actuator_delay == 0.0:
       steer_actuator_delay = self.sm['liveDelay'].lateralDelay 
 
-    # 针对本田雅阁混动车的特殊处理
-    if self.CP.carFingerprint == "HONDA ACCORD" and "Hybrid" in [car_docs.car_name for car_docs in self.CP.carDocs]:
-      # 使用更积极的延迟补偿
-      steer_actuator_delay *= 0.9
-
     if len(model_v2.position.yStd) > 0:
       yStd = np.interp(steer_actuator_delay + lat_smooth_seconds, ModelConstants.T_IDXS, model_v2.position.yStd)
       self.yStd = yStd * 0.02 + self.yStd * 0.98

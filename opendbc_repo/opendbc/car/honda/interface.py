@@ -220,13 +220,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.8
     ret.radarDelay = 0.1
 
-    # 针对本田雅阁混动车优化参数以支持更好的IMU数据利用
-    if candidate == CAR.HONDA_ACCORD:
-      # 为混动版本调整参数
-      if "Hybrid" in [car_docs.car_name for car_docs in ret.carDocs]:
-        ret.steerActuatorDelay = 0.08  # 略微减少转向延迟
-        ret.steerLimitTimer = 0.7      # 略微减少转向限制计时器
-
     return ret
 
   @staticmethod
