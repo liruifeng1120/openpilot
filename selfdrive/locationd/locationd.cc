@@ -1048,12 +1048,73 @@ void Localizer::publish_orientation(double pitch, double roll, double yaw) {
 std::vector<uint8_t> Localizer::read_jy60_packet() {
   if (this->jy60_fd_ < 0) return {};
 
-  uint8_t buffer[256];
-  int bytes_read = read(this->jy60_fd_, buffer, sizeof(buffer));
+  static std::vector<uint8_t> buffer;  // 静态缓冲区保存未处理的数据
+  uint8_t temp_buffer[256];
+  
+  // 先读取新数据到临时缓冲区
+  int bytes_read = read(this->jy60_fd_, temp_buffer, sizeof(temp_buffer));
   
   if (bytes_read > 0) {
-    LOGD("Read %d bytes from JY60 device", bytes_read);
-    return std::vector<uint8_t>(buffer, buffer + bytes_read);
+    // 将新数据添加到缓冲区
+    buffer.insert(buffer.end(), temp_buffer, temp_buffer + bytes_read);
+  }
+  
+  // 查找完整数据包 (以0x55开头)
+  while (buffer.size() >= 2) {
+    // 查找数据包起始标记
+    size_t start_pos = 0;
+    while (start_pos < buffer.size() && buffer[start_pos] != 0x55) {
+      start_pos++;
+    }
+    
+    // 如果没有找到起始标记，清空缓冲区
+    if (start_pos >= buffer.size()) {
+      buffer.clear();
+      break;
+    }
+    
+    // 如果起始标记不在开头，删除前面的无效数据
+    if (start_pos > 0) {
+      buffer.erase(buffer.begin(), buffer.begin() + start_pos);
+    }
+    
+    // 根据第二个字节确定数据包类型和长度
+    if (buffer.size() < 2) break;
+    
+    uint8_t packet_type = buffer[1];
+    size_t packet_length = 0;
+    
+    // 根据数据包类型确定长度
+    switch (packet_type) {
+      case 0x50:  // 时间戳包
+      case 0x51:  // 加速度包
+      case 0x52:  // 角速度包
+      case 0x53:  // 角度包
+      case 0x54:  // 磁场包
+      case 0x55:  // 端口状态包
+      case 0x56:  // 气压高度包
+      case 0x57:  // 经纬度包
+      case 0x58:  // 地速包
+      case 0x59:  // 四元数包
+        packet_length = 11;  // 标准数据包长度
+        break;
+      default:
+        // 未知类型，删除起始字节并继续查找
+        buffer.erase(buffer.begin());
+        continue;
+    }
+    
+    // 如果缓冲区中数据足够构成完整数据包
+    if (buffer.size() >= packet_length) {
+      std::vector<uint8_t> packet(buffer.begin(), buffer.begin() + packet_length);
+      // 删除已处理的数据
+      buffer.erase(buffer.begin(), buffer.begin() + packet_length);
+      LOGD("Successfully extracted packet of type 0x%02x with length %zu", packet_type, packet_length);
+      return packet;
+    }
+    
+    // 缓冲区中数据不足，等待更多数据
+    break;
   }
   
   return {};
@@ -1064,14 +1125,14 @@ bool Localizer::parse_jy60_packet(const std::vector<uint8_t>& packet,
                                   double& accel_x, double& accel_y, double& accel_z,
                                   double& gyro_x, double& gyro_y, double& gyro_z) {
   // 检查数据包长度是否足够
-  if (packet.size() < 14) {
-    LOGW("Packet too short to be valid");
+  if (packet.size() < 11) {  // JY60数据包最小长度为11字节
+    LOGW("Packet too short to be valid, size: %zu", packet.size());
     return false;
   }
 
   // 检查协议头
   if (packet[0] != 0x55) {
-    LOGW("Invalid protocol header");
+    LOGW("Invalid protocol header: 0x%02x", packet[0]);
     return false;
   }
 
@@ -1079,6 +1140,11 @@ bool Localizer::parse_jy60_packet(const std::vector<uint8_t>& packet,
   uint8_t type = packet[1];
   switch (type) {
     case 0x51: { // 加速度数据
+      if (packet.size() < 11) {
+        LOGW("Accelerometer packet too short");
+        return false;
+      }
+      
       // 解析加速度数据
       int16_t ax = (int16_t)((packet[3] << 8) | packet[2]); // AxH, AxL
       int16_t ay = (int16_t)((packet[5] << 8) | packet[4]); // AyH, AyL
@@ -1089,10 +1155,14 @@ bool Localizer::parse_jy60_packet(const std::vector<uint8_t>& packet,
       accel_y = ((double)ay / 32768.0) * 16.0 * 9.8;
       accel_z = ((double)az / 32768.0) * 16.0 * 9.8;
 
-      // 校验和计算
-      uint8_t sum_calc = 0x55 + 0x51 + packet[2] + packet[3] + packet[4] + packet[5] + packet[6] + packet[7] + packet[8] + packet[9] + packet[10] + packet[11] + packet[12] + packet[13];
-      if (sum_calc != packet[13]) {
-        LOGW("Checksum error in accelerometer packet");
+      // 校验和计算 (只计算前10个字节)
+      uint8_t sum_calc = 0;
+      for (int i = 0; i < 10; i++) {
+        sum_calc += packet[i];
+      }
+      
+      if (sum_calc != packet[10]) {
+        LOGW("Checksum error in accelerometer packet: calculated=0x%02x, expected=0x%02x", sum_calc, packet[10]);
         return false;
       }
 
@@ -1101,6 +1171,11 @@ bool Localizer::parse_jy60_packet(const std::vector<uint8_t>& packet,
     }
 
     case 0x52: { // 角速度数据
+      if (packet.size() < 11) {
+        LOGW("Gyroscope packet too short");
+        return false;
+      }
+      
       // 解析角速度数据
       int16_t wx = (int16_t)((packet[3] << 8) | packet[2]); // WxH, WxL
       int16_t wy = (int16_t)((packet[5] << 8) | packet[4]); // WyH, WyL
@@ -1111,14 +1186,36 @@ bool Localizer::parse_jy60_packet(const std::vector<uint8_t>& packet,
       gyro_y = ((double)wy / 32768.0) * 2000.0 * M_PI / 180.0;
       gyro_z = ((double)wz / 32768.0) * 2000.0 * M_PI / 180.0;
 
-      // 校验和计算
-      uint8_t sum_calc = 0x55 + 0x52 + packet[2] + packet[3] + packet[4] + packet[5] + packet[6] + packet[7] + packet[8] + packet[9] + packet[10] + packet[11] + packet[12] + packet[13];
-      if (sum_calc != packet[13]) {
-        LOGW("Checksum error in gyroscope packet");
+      // 校验和计算 (只计算前10个字节)
+      uint8_t sum_calc = 0;
+      for (int i = 0; i < 10; i++) {
+        sum_calc += packet[i];
+      }
+      
+      if (sum_calc != packet[10]) {
+        LOGW("Checksum error in gyroscope packet: calculated=0x%02x, expected=0x%02x", sum_calc, packet[10]);
         return false;
       }
 
       LOGD("Parsed gyroscope: %f, %f, %f", gyro_x, gyro_y, gyro_z);
+      return true;
+    }
+
+    case 0x53: { // 角度数据
+      // 这是一个有效的数据包类型，但当前实现不处理它
+      LOGD("Received angle packet (type 0x53), not processing");
+      
+      // 校验和计算 (只计算前10个字节)
+      uint8_t sum_calc = 0;
+      for (int i = 0; i < 10; i++) {
+        sum_calc += packet[i];
+      }
+      
+      if (sum_calc != packet[10]) {
+        LOGW("Checksum error in angle packet: calculated=0x%02x, expected=0x%02x", sum_calc, packet[10]);
+        return false;
+      }
+      
       return true;
     }
 
@@ -1143,14 +1240,27 @@ void Localizer::jy60_reader_thread() {
     std::vector<uint8_t> packet = this->read_jy60_packet();
     if (!packet.empty()) {
       read_count++;
-      LOGD("Received packet #%d, size: %zu", read_count, packet.size());
+      LOGD("Received packet #%d, type: 0x%02x, size: %zu", read_count, packet[1], packet.size());
       
       // 解析数据包
       if (this->parse_jy60_packet(packet, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z)) {
-        // 发布加速度数据
-        this->publish_accelerometer(accel_x, accel_y, accel_z);
-        // 发布角速度数据
-        this->publish_gyroscope(gyro_x, gyro_y, gyro_z);
+        // 根据数据包类型发布相应的数据
+        uint8_t packet_type = packet[1];
+        switch (packet_type) {
+          case 0x51: // 加速度数据
+            this->publish_accelerometer(accel_x, accel_y, accel_z);
+            break;
+          case 0x52: // 角速度数据
+            this->publish_gyroscope(gyro_x, gyro_y, gyro_z);
+            break;
+          case 0x53: // 角度数据
+            // 当前不处理角度数据
+            LOGD("Angle packet received and validated");
+            break;
+          default:
+            LOGD("Valid packet of type 0x%02x processed", packet_type);
+            break;
+        }
       } else {
         LOGD("Failed to parse packet #%d", read_count);
       }
