@@ -25,8 +25,52 @@ deb http://security.ubuntu.com/ubuntu focal-security main
 sudo apt-get update
 sudo apt-get install libicu66
 ```
+## ⚠️ 编译后执行根目录下setup_jy60_permissions.sh脚本，如果没有权限请执行下列代码
+``` bash
+chmod +x /home/你的用户名/ajouatom/setup_jy60_permissions.sh
+```
+**运行simple_jy60_test.py脚本检查JY60设备是否正常工作**
+``` bash
+cd ajouatom && python3 simple_jy60_test.py
+```
+**检查/dev/ttyUSB0设备是否存在以及权限设置**
+``` bash
+ls -l /dev/ttyUSB*
+```
+**检查当前用户是否属于dialout组**
+``` bash
+groups
+```
+**将当前用户添加到dialout组**
+``` bash
+sudo usermod -a -G dialout 你的用户名
+```
+**将当前用户添加到dialout组以获取访问JY60设备的权限**
+``` bash
+sudo usermod -a -G dialout $USER
+```
+**应用组权限更改**
+``` bash
+newgrp dialout
+```
+**检查当前用户所属的组**
+``` bash
+groups
+```
+**重新登录shell以应用组更改**
+``` bash
+exec su -l $USER
+```
+**重启**
 
-
+**运行JY60测试脚本检查设备是否正常工作**
+``` bash
+cd ajouatom && python3 simple_jy60_test.py
+```
+**使用更详细的测试脚本检查JY60设备**
+``` bash
+cd ajouatom && python3 test_jy60_device.py
+```
 <div align="center" style="text-align: center;">
 
 <h1>carrotpilot</h1>
