@@ -85,7 +85,7 @@ class SelfdriveD:
       # no vipc in replay will make them ignored anyways
       ignore += ['roadCameraState', 'wideRoadCameraState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman', # 'liveDelay',
+                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'carrotMan',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \

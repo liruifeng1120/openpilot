@@ -13,9 +13,6 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include <thread>
-#include <algorithm>
-#include <iterator>
 
 using namespace EKFS;
 using namespace Eigen;
@@ -99,7 +96,7 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
   this->configure_gnss_source(gnss_source);
-  
+
   // 初始化设备类型
   this->device_type_ = ImuDeviceType::NONE;
   this->is_jy60_device_ = false;
@@ -765,7 +762,7 @@ int Localizer::locationd_thread() {
       }
       printf("InputsOK: %d, SensorsOK: %d, GPSOK: %d, FilterInitialized: %d\n", inputsOK, sensorsOK, gpsOK, filterInitialized);
       */
-      
+
       // Log time to first fix
       if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_valid_log_time)) {
         this->ttff = std::max(1e-3, (sm[trigger_msg].getLogMonoTime() * 1e-9) - this->first_valid_log_time);
@@ -785,23 +782,23 @@ int Localizer::locationd_thread() {
       cnt++;
     }
   }
-  
+
   // 停止JY60设备读取
   if (this->is_jy60()) {
     this->stop_jy60_reader();
   }
-  
+
   return 0;
 }
 
 int main(int argc, char* argv[]) {
   util::set_realtime_priority(5);
-  
+
   // 解析命令行参数
   std::string device_path = "/dev/ttyUSB0";
   int baud_rate = 9600;
   std::string device_type = "none";
-  
+
   const char* optstring = "t:d:b:";
   struct option long_options[] = {
     {"type", required_argument, 0, 't'},
@@ -809,7 +806,7 @@ int main(int argc, char* argv[]) {
     {"baud", required_argument, 0, 'b'},
     {0, 0, 0, 0}
   };
-  
+
   int opt;
   while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
     switch (opt) {
@@ -826,18 +823,18 @@ int main(int argc, char* argv[]) {
         break;
     }
   }
-  
-  LOGW("Locationd started with device_type: %s, device_path: %s, baud_rate: %d", 
+
+  LOGW("Locationd started with device_type: %s, device_path: %s, baud_rate: %d",
        device_type.c_str(), device_path.c_str(), baud_rate);
 
   Localizer localizer;
-  
+
   // 如果指定了JY60设备类型，则设置相关参数
   if (device_type == "jy60") {
     localizer.set_device_type(ImuDeviceType::JY60);
     localizer.set_device_params(device_path, baud_rate);
   }
-  
+
   return localizer.locationd_thread();
 }
 
@@ -859,16 +856,14 @@ void Localizer::set_device_params(const std::string& device_path, int baud_rate)
 
 // 打开JY60串口设备
 int Localizer::open_jy60_device() {
-  LOGW("Attempting to open JY60 device at %s with baud rate %d", this->device_path_.c_str(), this->baud_rate_);
-  
-  // 打开串口设备
+  if (!this->is_jy60_device_) return -1;
+
   this->jy60_fd_ = open(this->device_path_.c_str(), O_RDONLY | O_NOCTTY);
   if (this->jy60_fd_ < 0) {
     LOGE("Failed to open JY60 device at %s", this->device_path_.c_str());
     return -1;
   }
 
-  // 配置串口参数
   struct termios tty;
   if (tcgetattr(this->jy60_fd_, &tty) != 0) {
     LOGE("Failed to get terminal attributes for JY60 device");
@@ -878,42 +873,32 @@ int Localizer::open_jy60_device() {
   }
 
   // 设置波特率
-  speed_t baud_rate;
-  switch (this->baud_rate_) {
-    case 9600:   baud_rate = B9600;   break;
-    case 115200: baud_rate = B115200; break;
-    default:     baud_rate = B9600;   break;
-  }
-  
-  cfsetispeed(&tty, baud_rate);
-  cfsetospeed(&tty, baud_rate);
+  cfsetispeed(&tty, B9600);
+  cfsetospeed(&tty, B9600);
 
-  // 设置数据位为8位
+  // 设置数据格式: 8N1
+  tty.c_cflag &= ~PARENB;  // 无奇偶校验
+  tty.c_cflag &= ~CSTOPB;  // 1个停止位
   tty.c_cflag &= ~CSIZE;
-  tty.c_cflag |= CS8;
+  tty.c_cflag |= CS8;      // 8个数据位
 
-  // 无奇偶校验
-  tty.c_cflag &= ~PARENB;
+  // 设置控制模式
+  tty.c_cflag &= ~CRTSCTS; // 无硬件流控制
+  tty.c_cflag |= CREAD | CLOCAL; // 使能接收，忽略控制线
 
-  // 1个停止位
-  tty.c_cflag &= ~CSTOPB;
+  // 设置输入模式
+  tty.c_iflag &= ~(IXON | IXOFF | IXANY); // 关闭软件流控制
+  tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL); // 关闭特殊处理
 
-  // 启用接收器
-  tty.c_cflag |= CREAD | CLOCAL;
+  // 设置输出模式
+  tty.c_oflag &= ~OPOST;   // 原始输出模式
+  tty.c_oflag &= ~ONLCR;   // 不要将换行符转换为回车换行符
 
-  // 禁用规范模式和回显
-  tty.c_lflag &= ~ICANON;
-  tty.c_lflag &= ~ECHO;
-  tty.c_lflag &= ~ECHOE;
-  tty.c_lflag &= ~ISIG;
-
-  // 禁用软件流控
-  tty.c_iflag &= ~(IXON | IXOFF | IXANY);
-  tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL);
-
-  // 禁用输出处理
-  tty.c_oflag &= ~OPOST;
-  tty.c_oflag &= ~ONLCR;
+  // 设置本地模式
+  tty.c_lflag &= ~ICANON;  // 非规范模式
+  tty.c_lflag &= ~ECHO;    // 关闭回显
+  tty.c_lflag &= ~ECHOE;   // 关闭擦除字符的回显
+  tty.c_lflag &= ~ISIG;    // 关闭信号字符处理
 
   // 设置超时
   tty.c_cc[VMIN] = 0;      // 最小字符数
@@ -942,7 +927,7 @@ std::string Localizer::read_jy60_line() {
   while ((bytes_read = read(this->jy60_fd_, buffer, sizeof(buffer) - 1)) > 0) {
     buffer[bytes_read] = '\0';
     line += buffer;
-    
+
     // 检查是否有换行符
     size_t newline_pos = line.find('\n');
     if (newline_pos != std::string::npos) {
@@ -992,291 +977,59 @@ std::tuple<double, double, double> Localizer::parse_angle(const std::string& lin
 
 // 发布加速度计数据到系统中
 void Localizer::publish_accelerometer(double x, double y, double z) {
-  // 创建并发送加速度计消息
-  MessageBuilder msg;
-  auto event = msg.initEvent();
-  event.setLogMonoTime(nanos_since_boot());
-  
-  auto accel = event.initAccelerometer();
-  accel.setSource(cereal::SensorEventData::SensorSource::BMX055);
-  accel.setSensor(SENSOR_ACCELEROMETER);
-  accel.setType(SENSOR_TYPE_ACCELEROMETER);
-  accel.setTimestamp(nanos_since_epoch());
-  
-  auto accelVec = accel.initAcceleration();
-  std::vector<float> accelVals = {(float)y, (float)x, (float)z};  // 调整坐标轴顺序以匹配系统约定
-  accelVec.setV(kj::ArrayPtr<float>(accelVals.data(), accelVals.size()));
-  
-  accel.setVersion(1);
-  
-  // 发布消息
-  PubMaster pm({"accelerometer"});
-  pm.send("accelerometer", msg);
+  // 在实际实现中，我们需要将数据发送到消息队列
+  // 这里暂时只记录日志，后续需要完善实现
+  LOGW("Publishing accelerometer data: x=%f, y=%f, z=%f", x, y, z);
 }
 
 // 发布陀螺仪数据到系统中
 void Localizer::publish_gyroscope(double x, double y, double z) {
-  // 创建并发送陀螺仪消息
-  MessageBuilder msg;
-  auto event = msg.initEvent();
-  event.setLogMonoTime(nanos_since_boot());
-  
-  auto gyro = event.initGyroscope();
-  gyro.setSource(cereal::SensorEventData::SensorSource::BMX055);
-  gyro.setSensor(SENSOR_GYRO_UNCALIBRATED);
-  gyro.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
-  gyro.setTimestamp(nanos_since_epoch());
-  
-  auto gyroVec = gyro.initGyroUncalibrated();
-  std::vector<float> gyroVals = {(float)y, (float)x, (float)z};  // 调整坐标轴顺序以匹配系统约定
-  gyroVec.setV(kj::ArrayPtr<float>(gyroVals.data(), gyroVals.size()));
-  
-  gyro.setVersion(1);
-  
-  // 发布消息
-  PubMaster pm({"gyroscope"});
-  pm.send("gyroscope", msg);
+  // 在实际实现中，我们需要将数据发送到消息队列
+  // 这里暂时只记录日志，后续需要完善实现
+  LOGW("Publishing gyroscope data: x=%f, y=%f, z=%f", x, y, z);
 }
 
 // 发布角度数据到系统中
 void Localizer::publish_orientation(double pitch, double roll, double yaw) {
-  // 暂时不需要直接发布角度数据，因为系统会通过加速度和陀螺仪数据计算姿态
-  LOGD("Orientation data: pitch=%f, roll=%f, yaw=%f", pitch, roll, yaw);
+  // 在实际实现中，我们需要将数据发送到消息队列
+  // 这里暂时只记录日志，后续需要完善实现
+  LOGW("Publishing orientation data: pitch=%f, roll=%f, yaw=%f", pitch, roll, yaw);
 }
 
-// 从JY60设备读取数据包
-std::vector<uint8_t> Localizer::read_jy60_packet() {
-  if (this->jy60_fd_ < 0) return {};
-
-  static std::vector<uint8_t> buffer;  // 静态缓冲区保存未处理的数据
-  uint8_t temp_buffer[256];
-  
-  // 先读取新数据到临时缓冲区
-  int bytes_read = read(this->jy60_fd_, temp_buffer, sizeof(temp_buffer));
-  
-  if (bytes_read > 0) {
-    // 将新数据添加到缓冲区
-    buffer.insert(buffer.end(), temp_buffer, temp_buffer + bytes_read);
-  }
-  
-  // 查找完整数据包 (以0x55开头)
-  while (buffer.size() >= 2) {
-    // 查找数据包起始标记
-    size_t start_pos = 0;
-    while (start_pos < buffer.size() && buffer[start_pos] != 0x55) {
-      start_pos++;
-    }
-    
-    // 如果没有找到起始标记，清空缓冲区
-    if (start_pos >= buffer.size()) {
-      buffer.clear();
-      break;
-    }
-    
-    // 如果起始标记不在开头，删除前面的无效数据
-    if (start_pos > 0) {
-      buffer.erase(buffer.begin(), buffer.begin() + start_pos);
-    }
-    
-    // 根据第二个字节确定数据包类型和长度
-    if (buffer.size() < 2) break;
-    
-    uint8_t packet_type = buffer[1];
-    size_t packet_length = 0;
-    
-    // 根据数据包类型确定长度
-    switch (packet_type) {
-      case 0x50:  // 时间戳包
-      case 0x51:  // 加速度包
-      case 0x52:  // 角速度包
-      case 0x53:  // 角度包
-      case 0x54:  // 磁场包
-      case 0x55:  // 端口状态包
-      case 0x56:  // 气压高度包
-      case 0x57:  // 经纬度包
-      case 0x58:  // 地速包
-      case 0x59:  // 四元数包
-        packet_length = 11;  // 标准数据包长度
-        break;
-      default:
-        // 未知类型，删除起始字节并继续查找
-        buffer.erase(buffer.begin());
-        continue;
-    }
-    
-    // 如果缓冲区中数据足够构成完整数据包
-    if (buffer.size() >= packet_length) {
-      std::vector<uint8_t> packet(buffer.begin(), buffer.begin() + packet_length);
-      // 删除已处理的数据
-      buffer.erase(buffer.begin(), buffer.begin() + packet_length);
-      LOGD("Successfully extracted packet of type 0x%02x with length %zu", packet_type, packet_length);
-      return packet;
-    }
-    
-    // 缓冲区中数据不足，等待更多数据
-    break;
-  }
-  
-  return {};
-}
-
-// 根据文档规范解析JY60数据包
-bool Localizer::parse_jy60_packet(const std::vector<uint8_t>& packet, 
-                                  double& accel_x, double& accel_y, double& accel_z,
-                                  double& gyro_x, double& gyro_y, double& gyro_z) {
-  // 检查数据包长度是否足够
-  if (packet.size() < 11) {  // JY60数据包最小长度为11字节
-    LOGW("Packet too short to be valid, size: %zu", packet.size());
-    return false;
-  }
-
-  // 检查协议头
-  if (packet[0] != 0x55) {
-    LOGW("Invalid protocol header: 0x%02x", packet[0]);
-    return false;
-  }
-
-  // 根据TYPE字段判断数据类型
-  uint8_t type = packet[1];
-  switch (type) {
-    case 0x51: { // 加速度数据
-      if (packet.size() < 11) {
-        LOGW("Accelerometer packet too short");
-        return false;
-      }
-      
-      // 解析加速度数据
-      int16_t ax = (int16_t)((packet[3] << 8) | packet[2]); // AxH, AxL
-      int16_t ay = (int16_t)((packet[5] << 8) | packet[4]); // AyH, AyL
-      int16_t az = (int16_t)((packet[7] << 8) | packet[6]); // AzH, AzL
-
-      // 计算加速度值 (单位: m/s²)
-      accel_x = ((double)ax / 32768.0) * 16.0 * 9.8;
-      accel_y = ((double)ay / 32768.0) * 16.0 * 9.8;
-      accel_z = ((double)az / 32768.0) * 16.0 * 9.8;
-
-      // 校验和计算 (只计算前10个字节)
-      uint8_t sum_calc = 0;
-      for (int i = 0; i < 10; i++) {
-        sum_calc += packet[i];
-      }
-      
-      if (sum_calc != packet[10]) {
-        LOGW("Checksum error in accelerometer packet: calculated=0x%02x, expected=0x%02x", sum_calc, packet[10]);
-        return false;
-      }
-
-      LOGD("Parsed accelerometer: %f, %f, %f", accel_x, accel_y, accel_z);
-      return true;
-    }
-
-    case 0x52: { // 角速度数据
-      if (packet.size() < 11) {
-        LOGW("Gyroscope packet too short");
-        return false;
-      }
-      
-      // 解析角速度数据
-      int16_t wx = (int16_t)((packet[3] << 8) | packet[2]); // WxH, WxL
-      int16_t wy = (int16_t)((packet[5] << 8) | packet[4]); // WyH, WyL
-      int16_t wz = (int16_t)((packet[7] << 8) | packet[6]); // WzH, WzL
-
-      // 计算角速度值 (单位: rad/s)
-      gyro_x = ((double)wx / 32768.0) * 2000.0 * M_PI / 180.0;
-      gyro_y = ((double)wy / 32768.0) * 2000.0 * M_PI / 180.0;
-      gyro_z = ((double)wz / 32768.0) * 2000.0 * M_PI / 180.0;
-
-      // 校验和计算 (只计算前10个字节)
-      uint8_t sum_calc = 0;
-      for (int i = 0; i < 10; i++) {
-        sum_calc += packet[i];
-      }
-      
-      if (sum_calc != packet[10]) {
-        LOGW("Checksum error in gyroscope packet: calculated=0x%02x, expected=0x%02x", sum_calc, packet[10]);
-        return false;
-      }
-
-      LOGD("Parsed gyroscope: %f, %f, %f", gyro_x, gyro_y, gyro_z);
-      return true;
-    }
-
-    case 0x53: { // 角度数据
-      // 这是一个有效的数据包类型，但当前实现不处理它
-      LOGD("Received angle packet (type 0x53), not processing");
-      
-      // 校验和计算 (只计算前10个字节)
-      uint8_t sum_calc = 0;
-      for (int i = 0; i < 10; i++) {
-        sum_calc += packet[i];
-      }
-      
-      if (sum_calc != packet[10]) {
-        LOGW("Checksum error in angle packet: calculated=0x%02x, expected=0x%02x", sum_calc, packet[10]);
-        return false;
-      }
-      
-      return true;
-    }
-
-    default:
-      LOGW("Unknown packet type: 0x%02x", type);
-      return false;
-  }
-}
-
-// 更新后的JY60设备数据读取线程
+// JY60设备数据读取线程
 void Localizer::jy60_reader_thread() {
   if (!this->is_jy60_device_ || this->jy60_fd_ < 0) return;
 
   LOGW("Starting JY60 reader thread");
-  
-  double accel_x = 0, accel_y = 0, accel_z = 0;
-  double gyro_x = 0, gyro_y = 0, gyro_z = 0;
-  
-  int read_count = 0;
-  
+
   while (this->jy60_running_) {
-    std::vector<uint8_t> packet = this->read_jy60_packet();
-    if (!packet.empty()) {
-      read_count++;
-      LOGD("Received packet #%d, type: 0x%02x, size: %zu", read_count, packet[1], packet.size());
-      
-      // 解析数据包
-      if (this->parse_jy60_packet(packet, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z)) {
-        // 根据数据包类型发布相应的数据
-        uint8_t packet_type = packet[1];
-        switch (packet_type) {
-          case 0x51: // 加速度数据
-            this->publish_accelerometer(accel_x, accel_y, accel_z);
-            break;
-          case 0x52: // 角速度数据
-            this->publish_gyroscope(gyro_x, gyro_y, gyro_z);
-            break;
-          case 0x53: // 角度数据
-            // 当前不处理角度数据
-            LOGD("Angle packet received and validated");
-            break;
-          default:
-            LOGD("Valid packet of type 0x%02x processed", packet_type);
-            break;
-        }
-      } else {
-        LOGD("Failed to parse packet #%d", read_count);
-      }
+    std::string line = this->read_jy60_line();
+    if (!line.empty()) {
+      // 移除空格和换行符
+      line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
+      // 解析数据
+      auto acc = this->parse_accelerometer(line);
+      auto gyro = this->parse_gyroscope(line);
+      auto angle = this->parse_angle(line);
+
+      // 发布数据
+      this->publish_accelerometer(std::get<0>(acc), std::get<1>(acc), std::get<2>(acc));
+      this->publish_gyroscope(std::get<0>(gyro), std::get<1>(gyro), std::get<2>(gyro));
+      this->publish_orientation(std::get<0>(angle), std::get<1>(angle), std::get<2>(angle));
     }
-    
+
     // 短暂休眠以避免过度占用CPU
-    usleep(5000); // 5ms
+    usleep(10000); // 10ms
   }
-  
+
   LOGW("JY60 reader thread stopped");
 }
 
 // 启动JY60设备读取
 void Localizer::start_jy60_reader() {
   if (!this->is_jy60_device_) return;
-  
+
   if (this->open_jy60_device() == 0) {
     this->jy60_running_ = true;
     this->jy60_thread_ = std::thread(&Localizer::jy60_reader_thread, this);
@@ -1289,7 +1042,7 @@ void Localizer::stop_jy60_reader() {
     this->jy60_running_ = false;
     this->jy60_thread_.join();
   }
-  
+
   if (this->jy60_fd_ >= 0) {
     close(this->jy60_fd_);
     this->jy60_fd_ = -1;

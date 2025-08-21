@@ -99,8 +99,8 @@ procs = [
   #PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", only_onroad),
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
-  # 更新locationd配置以支持JY60设备
-  NativeProcess("locationd", "selfdrive/locationd", ["./locationd", "--type=jy60", "--device=/dev/ttyUSB0", "--baud=9600"], only_onroad),
+  # 移除重复的locationd进程配置，保留一个
+  NativeProcess("locationd", "selfdrive/locationd", ["./locationd", "--type=jy60"], only_onroad),
   #PythonProcess("locationd", "selfdrive.locationd.locationd", only_onroad),
   NativeProcess("_pandad", "selfdrive/pandad", ["./pandad"], always_run, enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
