@@ -130,6 +130,10 @@ private:
   // JY60设备私有方法
   int open_jy60_device();
   std::string read_jy60_line();
+  std::vector<uint8_t> read_jy60_packet();
+  bool parse_jy60_packet(const std::vector<uint8_t>& packet, 
+                         double& accel_x, double& accel_y, double& accel_z,
+                         double& gyro_x, double& gyro_y, double& gyro_z);
 
   void configure_gnss_source(const LocalizerGnssSource &source);
 };

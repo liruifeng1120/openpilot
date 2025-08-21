@@ -1,0 +1,14 @@
+[Unit]
+Description=Location Daemon with JY60 IMU Support
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/home/liruifeng/ajouatom/selfdrive/locationd/locationd --type=jy60
+WorkingDirectory=/home/liruifeng/ajouatom
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target
