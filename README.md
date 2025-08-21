@@ -31,7 +31,7 @@ chmod +x /home/你的用户名/ajouatom/setup_jy60_permissions.sh
 ```
 **运行simple_jy60_test.py脚本检查JY60设备是否正常工作**
 ``` bash
-cd ajouatom && python3 simple_jy60_test.py
+cd /home/你的用户名/ajouatom && python3 simple_jy60_test.py
 ```
 **检查/dev/ttyUSB0设备是否存在以及权限设置**
 ``` bash
@@ -65,11 +65,11 @@ exec su -l $USER
 
 **运行JY60测试脚本检查设备是否正常工作**
 ``` bash
-cd ajouatom && python3 simple_jy60_test.py
+cd /home/你的用户名/ajouatom && python3 simple_jy60_test.py
 ```
 **使用更详细的测试脚本检查JY60设备**
 ``` bash
-cd ajouatom && python3 test_jy60_device.py
+cd /home/你的用户名/ajouatom && python3 test_jy60_device.py
 ```
 <div align="center" style="text-align: center;">
 
