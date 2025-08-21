@@ -2,10 +2,15 @@
 
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <string>
+#include <sstream>
 
 using namespace EKFS;
 using namespace Eigen;
@@ -89,6 +94,12 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
   this->configure_gnss_source(gnss_source);
+  
+  // 初始化设备类型
+  this->device_type_ = ImuDeviceType::NONE;
+  this->is_jy60_device_ = false;
+  this->jy60_fd_ = -1;
+  this->jy60_running_ = false;
 }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
@@ -694,6 +705,11 @@ int Localizer::locationd_thread() {
   SubMaster sm(service_list, {}, nullptr, {gps_location_socket});
   PubMaster pm({"liveLocationKalman"});
 
+  // 如果是JY60设备，启动读取线程
+  if (this->is_jy60()) {
+    this->start_jy60_reader();
+  }
+
   uint64_t cnt = 0;
   bool filterInitialized = false;
   const std::vector<std::string> critical_input_services = {"cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
@@ -763,6 +779,12 @@ int Localizer::locationd_thread() {
       cnt++;
     }
   }
+  
+  // 停止JY60设备读取
+  if (this->is_jy60()) {
+    this->stop_jy60_reader();
+  }
+  
   return 0;
 }
 
@@ -771,4 +793,215 @@ int main() {
 
   Localizer localizer;
   return localizer.locationd_thread();
+}
+
+// 添加JY60设备相关的方法实现
+void Localizer::set_device_type(ImuDeviceType type) {
+  this->device_type_ = type;
+  this->is_jy60_device_ = (type == ImuDeviceType::JY60);
+}
+
+bool Localizer::is_jy60() const {
+  return this->is_jy60_device_;
+}
+
+// 设置设备参数
+void Localizer::set_device_params(const std::string& device_path, int baud_rate) {
+  this->device_path_ = device_path;
+  this->baud_rate_ = baud_rate;
+}
+
+// 打开JY60串口设备
+int Localizer::open_jy60_device() {
+  if (!this->is_jy60_device_) return -1;
+
+  this->jy60_fd_ = open(this->device_path_.c_str(), O_RDONLY | O_NOCTTY);
+  if (this->jy60_fd_ < 0) {
+    LOGE("Failed to open JY60 device at %s", this->device_path_.c_str());
+    return -1;
+  }
+
+  struct termios tty;
+  if (tcgetattr(this->jy60_fd_, &tty) != 0) {
+    LOGE("Failed to get terminal attributes for JY60 device");
+    close(this->jy60_fd_);
+    this->jy60_fd_ = -1;
+    return -1;
+  }
+
+  // 设置波特率
+  cfsetispeed(&tty, B9600);
+  cfsetospeed(&tty, B9600);
+
+  // 设置数据格式: 8N1
+  tty.c_cflag &= ~PARENB;  // 无奇偶校验
+  tty.c_cflag &= ~CSTOPB;  // 1个停止位
+  tty.c_cflag &= ~CSIZE;
+  tty.c_cflag |= CS8;      // 8个数据位
+
+  // 设置控制模式
+  tty.c_cflag &= ~CRTSCTS; // 无硬件流控制
+  tty.c_cflag |= CREAD | CLOCAL; // 使能接收，忽略控制线
+
+  // 设置输入模式
+  tty.c_iflag &= ~(IXON | IXOFF | IXANY); // 关闭软件流控制
+  tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL); // 关闭特殊处理
+
+  // 设置输出模式
+  tty.c_oflag &= ~OPOST;   // 原始输出模式
+  tty.c_oflag &= ~ONLCR;   // 不要将换行符转换为回车换行符
+
+  // 设置本地模式
+  tty.c_lflag &= ~ICANON;  // 非规范模式
+  tty.c_lflag &= ~ECHO;    // 关闭回显
+  tty.c_lflag &= ~ECHOE;   // 关闭擦除字符的回显
+  tty.c_lflag &= ~ISIG;    // 关闭信号字符处理
+
+  // 设置超时
+  tty.c_cc[VMIN] = 0;      // 最小字符数
+  tty.c_cc[VTIME] = 10;    // 超时时间(1秒)
+
+  // 应用设置
+  if (tcsetattr(this->jy60_fd_, TCSANOW, &tty) != 0) {
+    LOGE("Failed to set terminal attributes for JY60 device");
+    close(this->jy60_fd_);
+    this->jy60_fd_ = -1;
+    return -1;
+  }
+
+  LOGW("Successfully opened JY60 device at %s", this->device_path_.c_str());
+  return 0;
+}
+
+// 从JY60设备读取一行数据
+std::string Localizer::read_jy60_line() {
+  if (this->jy60_fd_ < 0) return "";
+
+  char buffer[256];
+  std::string line;
+  int bytes_read;
+
+  while ((bytes_read = read(this->jy60_fd_, buffer, sizeof(buffer) - 1)) > 0) {
+    buffer[bytes_read] = '\0';
+    line += buffer;
+    
+    // 检查是否有换行符
+    size_t newline_pos = line.find('\n');
+    if (newline_pos != std::string::npos) {
+      line = line.substr(0, newline_pos);
+      break;
+    }
+  }
+
+  return line;
+}
+
+std::tuple<double, double, double> Localizer::parse_accelerometer(const std::string& line) {
+  if (line.find("ACC:") != std::string::npos) {
+    std::istringstream iss(line.substr(4));
+    double x, y, z;
+    if (iss >> x >> y >> z) {
+      // 转换为 m/s² (g → m/s²)
+      return std::make_tuple(x * 9.8, y * 9.8, z * 9.8);
+    }
+  }
+  return std::make_tuple(0.0, 0.0, 0.0);
+}
+
+std::tuple<double, double, double> Localizer::parse_gyroscope(const std::string& line) {
+  if (line.find("GYRO:") != std::string::npos) {
+    std::istringstream iss(line.substr(5));
+    double x, y, z;
+    if (iss >> x >> y >> z) {
+      // 转换为 rad/s (°/s → rad/s)
+      const double DEG_TO_RAD = M_PI / 180.0;
+      return std::make_tuple(x * DEG_TO_RAD, y * DEG_TO_RAD, z * DEG_TO_RAD);
+    }
+  }
+  return std::make_tuple(0.0, 0.0, 0.0);
+}
+
+std::tuple<double, double, double> Localizer::parse_angle(const std::string& line) {
+  if (line.find("ANGLE:") != std::string::npos) {
+    std::istringstream iss(line.substr(6));
+    double pitch, roll, yaw;
+    if (iss >> pitch >> roll >> yaw) {
+      return std::make_tuple(pitch, roll, yaw);
+    }
+  }
+  return std::make_tuple(0.0, 0.0, 0.0);
+}
+
+// 发布加速度计数据到系统中
+void Localizer::publish_accelerometer(double x, double y, double z) {
+  // 在实际实现中，我们需要将数据发送到消息队列
+  // 这里暂时只记录日志，后续需要完善实现
+  LOGW("Publishing accelerometer data: x=%f, y=%f, z=%f", x, y, z);
+}
+
+// 发布陀螺仪数据到系统中
+void Localizer::publish_gyroscope(double x, double y, double z) {
+  // 在实际实现中，我们需要将数据发送到消息队列
+  // 这里暂时只记录日志，后续需要完善实现
+  LOGW("Publishing gyroscope data: x=%f, y=%f, z=%f", x, y, z);
+}
+
+// 发布角度数据到系统中
+void Localizer::publish_orientation(double pitch, double roll, double yaw) {
+  // 在实际实现中，我们需要将数据发送到消息队列
+  // 这里暂时只记录日志，后续需要完善实现
+  LOGW("Publishing orientation data: pitch=%f, roll=%f, yaw=%f", pitch, roll, yaw);
+}
+
+// JY60设备数据读取线程
+void Localizer::jy60_reader_thread() {
+  if (!this->is_jy60_device_ || this->jy60_fd_ < 0) return;
+
+  LOGW("Starting JY60 reader thread");
+  
+  while (this->jy60_running_) {
+    std::string line = this->read_jy60_line();
+    if (!line.empty()) {
+      // 移除空格和换行符
+      line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+      
+      // 解析数据
+      auto acc = this->parse_accelerometer(line);
+      auto gyro = this->parse_gyroscope(line);
+      auto angle = this->parse_angle(line);
+      
+      // 发布数据
+      this->publish_accelerometer(std::get<0>(acc), std::get<1>(acc), std::get<2>(acc));
+      this->publish_gyroscope(std::get<0>(gyro), std::get<1>(gyro), std::get<2>(gyro));
+      this->publish_orientation(std::get<0>(angle), std::get<1>(angle), std::get<2>(angle));
+    }
+    
+    // 短暂休眠以避免过度占用CPU
+    usleep(10000); // 10ms
+  }
+  
+  LOGW("JY60 reader thread stopped");
+}
+
+// 启动JY60设备读取
+void Localizer::start_jy60_reader() {
+  if (!this->is_jy60_device_) return;
+  
+  if (this->open_jy60_device() == 0) {
+    this->jy60_running_ = true;
+    this->jy60_thread_ = std::thread(&Localizer::jy60_reader_thread, this);
+  }
+}
+
+// 停止JY60设备读取
+void Localizer::stop_jy60_reader() {
+  if (this->jy60_thread_.joinable()) {
+    this->jy60_running_ = false;
+    this->jy60_thread_.join();
+  }
+  
+  if (this->jy60_fd_ >= 0) {
+    close(this->jy60_fd_);
+    this->jy60_fd_ = -1;
+  }
 }

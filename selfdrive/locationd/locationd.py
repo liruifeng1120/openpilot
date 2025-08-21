@@ -5,6 +5,7 @@ import capnp
 import numpy as np
 from enum import Enum
 from collections import defaultdict
+import argparse
 
 from cereal import log, messaging
 from cereal.services import SERVICE_LIST
@@ -28,6 +29,10 @@ INPUT_INVALID_LIMIT = 2.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored
 INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad inputs by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
+
+
+# 添加枚举类型定义
+ImuDeviceType = Enum('ImuDeviceType', 'NONE JY60 OTHER')
 
 
 def calculate_invalid_input_decay(invalid_limit, recovery_time, frequency):
@@ -255,6 +260,18 @@ def sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, senso
 
 def main():
   config_realtime_process([0, 1, 2, 3], 5)
+
+  # 解析命令行参数
+  parser = argparse.ArgumentParser()
+  parser.add_argument('--device', default='/dev/ttyUSB0', help='JY60 device path')
+  parser.add_argument('--baud', default=9600, type=int, help='JY60 baud rate')
+  parser.add_argument('--type', default='jy60', help='IMU device type')
+  args = parser.parse_args()
+
+  # 根据参数设置设备类型
+  is_jy60 = args.type.lower() == 'jy60'
+  
+  cloudlog.info(f"Locationd started with device: {args.device}, baud: {args.baud}, type: {args.type}")
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
   SIMULATION = bool(int(os.getenv("SIMULATION", "0")))
