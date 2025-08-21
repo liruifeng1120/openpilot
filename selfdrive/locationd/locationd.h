@@ -6,6 +6,7 @@
 #include <memory>
 #include <map>
 #include <string>
+#include <thread>
 
 #include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
@@ -24,6 +25,13 @@
 
 enum LocalizerGnssSource {
   UBLOX, QCOM
+};
+
+// 添加JY60设备类型枚举
+enum class ImuDeviceType {
+  NONE,
+  JY60,
+  OTHER
 };
 
 class Localizer {
@@ -64,6 +72,20 @@ public:
 
   void input_fake_gps_observations(double current_time);
 
+  // 添加JY60设备相关的方法声明
+  void set_device_type(ImuDeviceType type);
+  bool is_jy60() const;
+  void set_device_params(const std::string& device_path, int baud_rate);
+  std::tuple<double, double, double> parse_accelerometer(const std::string& line);
+  std::tuple<double, double, double> parse_gyroscope(const std::string& line);
+  std::tuple<double, double, double> parse_angle(const std::string& line);
+  void publish_accelerometer(double x, double y, double z);
+  void publish_gyroscope(double x, double y, double z);
+  void publish_orientation(double pitch, double roll, double yaw);
+  void start_jy60_reader();
+  void stop_jy60_reader();
+  void jy60_reader_thread();
+
 private:
   std::unique_ptr<LiveKalman> kf;
 
@@ -95,6 +117,19 @@ private:
   float gps_vertical_variance_factor;
   double gps_time_offset;
   Eigen::VectorXd camodo_yawrate_distribution = Eigen::Vector2d(0.0, 10.0); // mean, std
+
+  // 添加JY60设备相关的成员变量
+  ImuDeviceType device_type_;
+  bool is_jy60_device_ = false;
+  std::string device_path_;
+  int baud_rate_;
+  int jy60_fd_;
+  std::thread jy60_thread_;
+  bool jy60_running_ = false;
+
+  // JY60设备私有方法
+  int open_jy60_device();
+  std::string read_jy60_line();
 
   void configure_gnss_source(const LocalizerGnssSource &source);
 };
