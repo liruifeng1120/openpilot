@@ -8,7 +8,7 @@ import cereal.messaging as messaging
 
 def test_jy62_imu():
     print("开始测试JY62 IMU设备")
-    print("确保设备已连接到/dev/ttyUSB0")
+    print("确保设备已连接到正确的串口设备（如 /dev/ttyUSB0 或 /dev/ttyACM0），并检查波特率是否匹配（如 115200）")
     print("按 Ctrl+C 停止测试")
     
     # 订阅IMU消息

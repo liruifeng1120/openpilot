@@ -7,7 +7,7 @@ echo "开始配置JY62设备访问权限..."
 
 # 检查是否以root权限运行
 if [[ $EUID -ne 0 ]]; then
-   echo "此脚本需要root权限才能正确配置系统"
+   echo "此脚本需要root权限才能正确配置系统" 
    echo "请使用 sudo 运行此脚本:"
    echo "sudo $0"
    exit 1
