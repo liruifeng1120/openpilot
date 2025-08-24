@@ -106,19 +106,15 @@ class LocationEstimator:
     if which == "accelerometer" and msg.which() == "acceleration" and not PC:
       sensor_time = msg.timestamp * 1e-9
 
-    #   if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
-    #     return HandleLogResult.TIMING_INVALID
+      if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
+        return HandleLogResult.TIMING_INVALID
 
-    #   if not self._validate_sensor_source(msg.source):
-    #     return HandleLogResult.SENSOR_SOURCE_INVALID
+      if not self._validate_sensor_source(msg.source):
+        return HandleLogResult.SENSOR_SOURCE_INVALID
 
-    #   v = msg.acceleration.v
-    #   meas = np.array([-v[2], -v[1], -v[0]])
-    if which == "carState":
-      self.car_speed = abs(msg.vEgo)
-      sensor_time = t
-      # # accel
-      meas = np.array([msg.aEgo, 0, -9.81])
+      v = msg.acceleration.v
+      meas = np.array([-v[2], -v[1], -v[0]])
+
       if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
@@ -131,16 +127,14 @@ class LocationEstimator:
     elif which == "gyroscope" and msg.which() == "gyroUncalibrated" and not PC:
       sensor_time = msg.timestamp * 1e-9
 
-    #   if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
-    #     return HandleLogResult.TIMING_INVALID
+      if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
+        return HandleLogResult.TIMING_INVALID
 
-    #   if not self._validate_sensor_source(msg.source):
-    #     return HandleLogResult.SENSOR_SOURCE_INVALID
+      if not self._validate_sensor_source(msg.source):
+        return HandleLogResult.SENSOR_SOURCE_INVALID
 
-    #   v = msg.gyroUncalibrated.v
-    #   meas = np.array([-v[2], -v[1], -v[0]])
-      # GYRO
-      meas = np.array([0, 0, -msg.yawRate])
+      v = msg.gyroUncalibrated.v
+      meas = np.array([-v[2], -v[1], -v[0]])
 
       gyro_bias = self.kf.x[States.GYRO_BIAS]
       gyro_camodo_yawrate_err = np.abs((meas[2] - gyro_bias[2]) - self.camodo_yawrate_distribution[0])
