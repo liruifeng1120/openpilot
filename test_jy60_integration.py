@@ -3,15 +3,15 @@ import time
 import subprocess
 import os
 
-def test_jy60_integration():
+def test_jy62_integration():
     """
-    测试JY60设备与系统的集成
+    测试JY62设备与系统的集成
     """
-    print("开始测试JY60设备集成")
+    print("开始测试JY62设备集成")
     
     # 检查设备是否存在
     if not os.path.exists('/dev/ttyUSB0'):
-        print("警告: /dev/ttyUSB0设备不存在，请检查JY60设备连接")
+        print("警告: /dev/ttyUSB0设备不存在，请检查JY62设备连接")
         return False
     
     # 检查locationd可执行文件
@@ -34,9 +34,9 @@ def test_jy60_integration():
         # 启动locationd进程（短暂运行）
         process = subprocess.Popen([
             locationd_path, 
-            '--type=jy60', 
+            '--type=jy62', 
             '--device=/dev/ttyUSB0',
-            '--baud=9600'
+            '--baud=115200'
         ], cwd='/home/liruifeng/ajouatom', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         # 等待几秒钟看是否有错误
@@ -76,7 +76,7 @@ def check_system_manager_config():
     with open(config_path, 'r') as f:
         content = f.read()
         
-    if 'locationd.*--type=jy60' in content:
+    if 'locationd.*--type=jy62' in content:
         print("✓ 系统管理器配置正确")
         return True
     else:
@@ -84,21 +84,21 @@ def check_system_manager_config():
         return False
 
 if __name__ == "__main__":
-    print("JY60设备集成测试")
+    print("JY62设备集成测试")
     print("=" * 30)
     
     # 检查系统配置
     config_ok = check_system_manager_config()
     
     # 测试设备集成
-    integration_ok = test_jy60_integration()
+    integration_ok = test_jy62_integration()
     
     print("\n测试结果:")
     print(f"系统配置: {'通过' if config_ok else '失败'}")
     print(f"设备集成: {'通过' if integration_ok else '失败'}")
     
     if config_ok and integration_ok:
-        print("\n✓ JY60设备已正确集成到系统中")
+        print("\n✓ JY62设备已正确集成到系统中")
         print("您可以使用桌面快捷方式启动系统")
     else:
-        print("\n✗ JY60设备集成存在问题，请检查上述错误")
+        print("\n✗ JY62设备集成存在问题，请检查上述错误")

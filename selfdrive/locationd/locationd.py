@@ -32,7 +32,7 @@ POSENET_STD_HIST_HALF = 20
 
 
 # 添加枚举类型定义
-ImuDeviceType = Enum('ImuDeviceType', 'NONE JY60 OTHER')
+ImuDeviceType = Enum('ImuDeviceType', 'NONE JY62 OTHER')
 
 
 def calculate_invalid_input_decay(invalid_limit, recovery_time, frequency):
@@ -263,9 +263,9 @@ def main():
 
   # 解析命令行参数
   parser = argparse.ArgumentParser()
-  parser.add_argument('--device', default='/dev/ttyUSB0', help='JY60 device path')
-  parser.add_argument('--baud', default=9600, type=int, help='JY60 baud rate')
-  parser.add_argument('--type', default='jy60', help='IMU device type')
+  parser.add_argument('--device', default='/dev/ttyUSB0', help='JY62 device path')
+  parser.add_argument('--baud', default=115200, type=int, help='JY62 baud rate')
+  parser.add_argument('--type', default='jy62', help='IMU device type')
   args = parser.parse_args()
 
   # 根据参数设置设备类型

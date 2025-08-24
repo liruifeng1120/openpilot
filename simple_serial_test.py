@@ -8,20 +8,20 @@ def test_serial_communication():
     """
     print("=== 直接串口通信测试 ===")
     try:
-        # 尝试连接到JY60设备
-        ser = serial.Serial('/dev/ttyUSB0', 9600, 
+        # 尝试连接到JY62设备
+        ser = serial.Serial('/dev/ttyUSB0', 115200, 
                            bytesize=serial.EIGHTBITS,
                            parity=serial.PARITY_NONE,
                            stopbits=serial.STOPBITS_ONE,
                            timeout=2)
-        print("成功连接到JY60设备")
+        print("成功连接到JY62设备")
         
         print("读取原始数据包:")
         packet_count = 0
         start_time = time.time()
         
         while time.time() - start_time < 5 and packet_count < 10:  # 读取5秒或10个数据包
-            data = ser.read(14)  # JY60 packets are 14 bytes long
+            data = ser.read(14)  # JY62 packets are 14 bytes long
             if len(data) == 14:
                 packet_count += 1
                 # 显示原始字节数据
@@ -71,6 +71,6 @@ def test_serial_communication():
         traceback.print_exc()
 
 if __name__ == "__main__":
-    print("开始JY60设备串口通信测试")
+    print("开始JY62设备串口通信测试")
     test_serial_communication()
     print("\n串口通信测试完成")

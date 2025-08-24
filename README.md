@@ -29,7 +29,7 @@ sudo apt-get install libicu66
 ``` bash
 chmod +x /home/你的用户名/ajouatom/setup_jy60_permissions.sh
 ```
-**运行simple_jy60_test.py脚本检查JY60设备是否正常工作**
+**运行simple_jy60_test.py脚本检查JY62设备是否正常工作**
 ``` bash
 cd /home/你的用户名/ajouatom && python3 simple_jy60_test.py
 ```
@@ -45,7 +45,7 @@ groups
 ``` bash
 sudo usermod -a -G dialout 你的用户名
 ```
-**将当前用户添加到dialout组以获取访问JY60设备的权限**
+**将当前用户添加到dialout组以获取访问JY62设备的权限**
 ``` bash
 sudo usermod -a -G dialout $USER
 ```
@@ -63,11 +63,11 @@ exec su -l $USER
 ```
 **重启**
 
-**运行JY60测试脚本检查设备是否正常工作**
+**运行JY62测试脚本检查设备是否正常工作**
 ``` bash
 cd /home/你的用户名/ajouatom && python3 simple_jy60_test.py
 ```
-**使用更详细的测试脚本检查JY60设备**
+**使用更详细的测试脚本检查JY62设备**
 ``` bash
 cd /home/你的用户名/ajouatom && python3 test_jy60_device.py
 ```
