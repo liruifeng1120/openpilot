@@ -112,6 +112,7 @@ class LocationEstimator:
 
       v = msg.acceleration.v
       meas = np.array([-v[2], -v[1], -v[0]])
+
       if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
@@ -270,7 +271,7 @@ def main():
 
   # 根据参数设置设备类型
   is_jy60 = args.type.lower() == 'jy60'
-  
+
   cloudlog.info(f"Locationd started with device: {args.device}, baud: {args.baud}, type: {args.type}")
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
