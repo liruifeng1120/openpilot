@@ -229,3 +229,4 @@ VAL_ 814 EspBehaviour 0 "Softoff" 1 "Fastoff" 2 "Immediateoff" 3 "Initial";
 VAL_ 834 DriveMode 2 "SPORT" 1 "ECO" 0 "SNOW" ;
 VAL_ 834 PowerMode 3 "HEV" 2 "FORCE_EV" 1 "EV" ;
 VAL_ 944 BTN_AccUpDown_Cmd 0 "NOTPRESSED" 1 "DOWN_SETSPEED" 3 "UP_RESETSPEED" ;
+

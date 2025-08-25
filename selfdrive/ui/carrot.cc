@@ -720,7 +720,7 @@ public:
 #endif
             }
             else if (xState == 4) {     //XState.e2ePrepare
-				      ui_draw_text(s, x, disp_y, "E2E주행중", disp_size, COLOR_WHITE, BOLD);
+				      ui_draw_text(s, x, disp_y, "E2E模式", disp_size, COLOR_WHITE, BOLD);
 			      }
             else if (xState == 0 || xState == 1 || xState == 2) {     //XState.lead
                 draw_dist = true;
@@ -2114,13 +2114,14 @@ public:
     int     disp_timer = 0;
     float cpuTemp = 0.0f;
     float cpuUsage = 0.0f;
+    float gpuUsage = 0.0f;
     int   memoryUsage = 0;
     float freeSpace = 0.0f;
     float voltage = 0.0f;
     void drawHud(UIState* s) {
         int show_device_state = params.getInt("ShowDeviceState");
         blink_timer = (blink_timer + 1) % 16;
-        disp_timer = (disp_timer + 1) % 64;
+        disp_timer = (disp_timer + 1) % 240;
         nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BOTTOM);
 
         int x = 140;// 120;
@@ -2210,7 +2211,7 @@ public:
         const SubMaster& sm = *(s->sm);
 
         // draw gap info
-        char driving_mode_str[32] = "연비";
+        char driving_mode_str[32] = "经济";
         int driving_mode = myDrivingMode;// params.getInt("MyDrivingMode");
         NVGcolor mode_color = COLOR_GREEN_ALPHA(210);
         NVGcolor text_color = COLOR_WHITE;
@@ -2248,7 +2249,7 @@ public:
         //float ddx = 70 / 4.;
         float ddy = 80 / 4.;
 #ifdef __UI_TEST
-        gap = 3;
+        gap = 4;
 #endif
         for (int i = 0; i < gap; i++) {
             //ui_fill_rect(s->vg, { (int)(dx + i * ddx), (int)dy, (int)ddx - 2, 48 }, COLOR_GREEN_ALPHA(180), 4, 3);
@@ -2341,7 +2342,7 @@ public:
             dy = by - 200;
             mode_color = COLOR_GREEN_ALPHA(190);
             ui_fill_rect(s->vg, { dx - 65, dy - 38, 130, 90 }, (cpuTemp>80 && blink_timer<=8)?COLOR_RED : mode_color, 15, 2);
-            if (disp_timer < 32) {
+            if (disp_timer < 120) {
                 ui_draw_text(s, dx, dy-5, "CPU", 25, COLOR_WHITE, BOLD);
                 sprintf(str, "%.0f\u00B0C", cpuTemp);
                 ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
@@ -2353,12 +2354,18 @@ public:
 
             dx += 150;
             ui_fill_rect(s->vg, { dx - 65, dy - 38, 130, 90 }, (memoryUsage > 85 && blink_timer <= 8) ? COLOR_RED : mode_color, 15, 2);
-            ui_draw_text(s, dx, dy-5, "MEM", 25, COLOR_WHITE, BOLD);
-            sprintf(str, "%d%%", memoryUsage);
-            ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
+            if (disp_timer < 120) {
+                ui_draw_text(s, dx, dy-5, "GPU", 25, COLOR_WHITE, BOLD);
+                sprintf(str, "%.0f%%", gpuUsage);
+                ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
+            } else {
+                ui_draw_text(s, dx, dy-5, "MEM", 25, COLOR_WHITE, BOLD);
+                sprintf(str, "%d%%", memoryUsage);
+                ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
+            }
 
             dx += 150;
-            if (disp_timer < 32) {
+            if (disp_timer < 120) {
               ui_fill_rect(s->vg, { dx - 65, dy - 38, 130, 90 }, mode_color, 15, 2);
               ui_draw_text(s, dx, dy - 5, "DISK", 25, COLOR_WHITE, BOLD);
               sprintf(str, "%.0f%%", 100 - freeSpace);
@@ -2392,10 +2399,10 @@ public:
             }
             if (show_datetime == 1 || show_datetime == 3) {
                 //strftime(str, sizeof(str), "%m-%d-%a", local);
-                const char* weekdays_ko[] = { "일", "월", "화", "수", "목", "금", "토" };
+                const char* weekdays_cn[] = { "日", "一", "二", "三", "四", "五", "六" };
                 strftime(str, sizeof(str), "%m-%d", local); // 날짜만 가져옴
                 int weekday_index = local->tm_wday; // tm_wday: 0=일, 1=월, ..., 6=토
-                snprintf(str + strlen(str), sizeof(str) - strlen(str), "(%s)", weekdays_ko[weekday_index]);
+                snprintf(str + strlen(str), sizeof(str) - strlen(str), "(%s)", weekdays_cn[weekday_index]);
 
                 ui_draw_text(s, x, y + 70, str, 60, COLOR_WHITE, BOLD, 3.0f, 8.0f);
                 nav_y += 70;
@@ -2508,12 +2515,14 @@ public:
       ui_draw_text(s, bx + dw, by + 70, get_tpms_text(rr), 40, get_tpms_color(rr), BOLD);
     }
     void makeDeviceInfo(const UIState* s) {
+
         SubMaster& sm = *(s->sm);
         auto deviceState = sm["deviceState"].getDeviceState();
         freeSpace = deviceState.getFreeSpacePercent();
         memoryUsage = deviceState.getMemoryUsagePercent();
         const auto cpuTempC = deviceState.getCpuTempC();
         const auto cpuUsagePercent = deviceState.getCpuUsagePercent();
+        gpuUsage = deviceState.getGpuUsagePercent();
         cpuTemp = 0.0f;
         if (cpuTempC.size() > 0) {
             for (int i = 0; i < cpuTempC.size(); i++) {
@@ -2523,14 +2532,12 @@ public:
         }
         cpuUsage = 0.0f;
         if (cpuUsagePercent.size() > 0) {
-            int cpu_size = 0;
-            for (cpu_size = 0; cpu_size < cpuUsagePercent.size(); cpu_size++) {
-                if (cpuUsagePercent[cpu_size] <= 0) break;
-                cpuUsage += cpuUsagePercent[cpu_size];
+            float total_usage = 0.0f;
+            for (int i = 0; i < cpuUsagePercent.size(); i++) {
+                total_usage += cpuUsagePercent[i];
             }
-            if (cpu_size > 0) cpuUsage /= cpu_size;
+            cpuUsage = total_usage / cpuUsagePercent.size();
         }
-
         auto peripheralState = sm["peripheralState"].getPeripheralState();
         voltage = peripheralState.getVoltage() / 1000.0;
     }
@@ -2819,6 +2826,7 @@ public:
             (float)live_torque_params.getCalPerc(), live_torque_params.getLiveValid() ? "ON" : "OFF",
             live_torque_params.getLatAccelFactorFiltered(), live_torque_params.getFrictionCoefficientFiltered(),
             live_params.getSteerRatio(), params.getFloat("CustomSR")/10.0);
+
         sprintf(top_right, "%s", str.toStdString().c_str());
 
         //top_left

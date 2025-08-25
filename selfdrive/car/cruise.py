@@ -464,8 +464,8 @@ class VCruiseCarrot:
           speed_kph = int(self.carrot_arg)
           if 0 < speed_kph < 200:
             v_cruise_kph = speed_kph
-            self._add_log(f"Cruise speed set to {v_cruise_kph} (carrot command)")       
-    
+            self._add_log(f"Cruise speed set to {v_cruise_kph} (carrot command)")
+
     return v_cruise_kph, button_type, long_pressed
 
   def _update_cruise_buttons(self, CS, CC, v_cruise_kph):
@@ -542,7 +542,7 @@ class VCruiseCarrot:
         else:
           if False: #CC.enabled and self._paddle_decel_active:  # 수정필요...
             self._paddle_decel_active = False
-          else:          
+          else:
             self._paddle_decel_active = True
         print("lfaButton")
       elif button_type == ButtonType.cancel:
@@ -666,6 +666,33 @@ class VCruiseCarrot:
       return False, d_final
 
   def _update_cruise_state(self, CS, CC, v_cruise_kph):
+     # 添加 AutoEngage 逻辑
+    auto_engage = self.params.get_int("AutoEngage")
+    gear = car.CarState.GearShifter
+    driving_gear = CS.gearShifter not in (gear.neutral, gear.park, gear.reverse, gear.unknown)
+
+    # 添加调试日志
+    with open("/data/debug/cruise_autoengage.log", "a") as f:
+        import time
+        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"[{timestamp}] AutoEngage={auto_engage}, vEgo={CS.vEgo:.3f}, "
+                f"driving_gear={driving_gear}, brakePressed={CS.brakePressed}, "
+                f"CC.enabled={CC.enabled}, _lat_enabled={self._lat_enabled}\n")
+
+    if auto_engage > 0 and driving_gear and CS.vEgo > 8.33 and not CS.brakePressed:
+        if auto_engage == 1:
+            self._lat_enabled = True
+        elif auto_engage == 2:
+            self._lat_enabled = True
+            if not CC.enabled:
+              # 添加调试日志
+              with open("/data/debug/cruise_autoengage.log", "a") as f:
+                f.write(f"[{timestamp}] Before _cruise_control: "
+                        f"_cruise_cancel_state={self._cruise_cancel_state}, "
+                        f"autoCruiseControl={self.autoCruiseControl}, "
+                        f"autoCruiseControl_cancel_timer={self.autoCruiseControl_cancel_timer}\n")
+              self._cruise_control(1, -1, "Auto cruise on (AutoEngage)")
+
     if not CC.enabled:
       self._pause_auto_speed_up = False
       if self._brake_pressed_count == -1 and self._soft_hold_active > 0:
@@ -715,7 +742,7 @@ class VCruiseCarrot:
           if self.xState == 3:  # 감속중
             v_cruise_kph = self.v_ego_kph_set
           self._cruise_control(1, 0, "Cruise on (traffic sign)")
-        elif 0 < self.d_rel < 20: 
+        elif 0 < self.d_rel < 20:
           # v_cruise_kph = self.v_ego_kph_set # 전방에 차가 가까이 있을때, 기존속도 유지
           self._cruise_control(1, -1 if self.v_ego_kph_set < 1 else 0, "Cruise on (lead car)")
 

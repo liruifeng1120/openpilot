@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <ctime>
 #include <vector>
 
 using namespace EKFS;
@@ -267,6 +268,8 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     if ((meas.norm() < ROTATION_SANITY_CHECK) && gyro_valid) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_GYRO, { meas });
       this->observation_values_invalid["gyroscope"] *= DECAY;
+      this->imu_sensors_available = true;
+      this->last_imu_sensor_time = current_time;
     } else {
       this->observation_values_invalid["gyroscope"] += 1.0;
     }
@@ -285,6 +288,8 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     if (meas.norm() < ACCEL_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
       this->observation_values_invalid["accelerometer"] *= DECAY;
+      this->imu_sensors_available = true;
+      this->last_imu_sensor_time = current_time;
     } else {
       this->observation_values_invalid["accelerometer"] += 1.0;
     }
@@ -441,8 +446,33 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
 }
 
 void Localizer::handle_car_state(double current_time, const cereal::CarState::Reader& log) {
+
   this->car_speed = std::abs(log.getVEgo());
   this->standstill = log.getStandstill();
+
+  // 检查IMU传感器是否可用（1秒内有数据）
+  bool imu_timeout = (current_time - this->last_imu_sensor_time) > IMU_TIMEOUT;
+  if (imu_timeout) {
+    this->imu_sensors_available = false;
+  }
+
+  // PC环境下直接使用CAN信号数据
+  if (!this->imu_sensors_available) {
+    // 从CAN信号提取加速度数据
+    VectorXd accel_meas(3);
+    accel_meas << log.getAEgo(), 0.0, -9.81;  // 添加横向加速度
+    if (accel_meas.norm() < ACCEL_SANITY_CHECK) {
+      this->kf->predict_and_observe(current_time, OBSERVATION_PHONE_ACCEL, {accel_meas});
+    }
+
+    // 从CAN信号提取yawRate数据，跳过交叉验证
+    VectorXd gyro_meas(3);
+    gyro_meas << 0.0, 0.0, -log.getYawRate();
+    if (gyro_meas.norm() < ROTATION_SANITY_CHECK) {
+      this->kf->predict_and_observe(current_time, OBSERVATION_PHONE_GYRO, {gyro_meas});
+    }
+  }
+
   if (this->standstill) {
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ACCEL, { Vector3d(0.0, 0.0, 0.0) });
@@ -696,7 +726,7 @@ int Localizer::locationd_thread() {
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
-  const std::vector<std::string> critical_input_services = {"cameraOdometry", "liveCalibration", "accelerometer", "gyroscope"};
+  const std::vector<std::string> critical_input_services = {"cameraOdometry", "liveCalibration"};
   for (std::string service : critical_input_services) {
     this->observation_values_invalid.insert({service, 0.0});
   }
@@ -706,21 +736,28 @@ int Localizer::locationd_thread() {
     sm.update();
     if (filterInitialized){
       this->observation_timings_invalid_reset();
+
       for (const char* service : service_list) {
         if (sm.updated(service) && sm.valid(service)){
           const cereal::Event::Reader log = sm[service];
           this->handle_msg(log);
         }
       }
+
     } else {
-      //filterInitialized = sm.allAliveAndValid();
+      // 过滤器初始化检查 - 跳过GPS和IMU传感器
       bool allValid = true;
-      for (const char* service : service_list) {
-        if (service != gps_location_socket && !sm.valid(service)) {
-          allValid = false;
-          break;
+
+        for (const char* service : service_list) {
+          bool service_valid = sm.valid(service);
+          bool skip_service = (service == gps_location_socket ||
+                              strcmp(service, "accelerometer") == 0 ||
+                              strcmp(service, "gyroscope") == 0);
+
+          if (!skip_service && !service_valid) {
+            allValid = false;
+          }
         }
-      }
       filterInitialized = allValid;
     }
 
@@ -733,17 +770,6 @@ int Localizer::locationd_thread() {
       bool gpsOK = this->is_gps_ok();
       bool sensorsOK = sm.allAliveAndValid({"accelerometer", "gyroscope"});
 
-      /*
-      if (!sm.allValid()) {
-        for (const char* service : service_list) {
-          if (!sm.valid(service)) {
-            printf("Service %s is INVALID! (Alive: %d)\n", service, sm.alive(service));
-          }
-        }
-      }
-      printf("InputsOK: %d, SensorsOK: %d, GPSOK: %d, FilterInitialized: %d\n", inputsOK, sensorsOK, gpsOK, filterInitialized);
-      */
-      
       // Log time to first fix
       if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_valid_log_time)) {
         this->ttff = std::max(1e-3, (sm[trigger_msg].getLogMonoTime() * 1e-9) - this->first_valid_log_time);
@@ -754,7 +780,6 @@ int Localizer::locationd_thread() {
       pm.send("liveLocationKalman", bytes.begin(), bytes.size());
 
       if (cnt % 1200 == 0 && gpsOK) {  // once a minute
-        //ignore_gps = false;
         VectorXd posGeo = this->get_position_geodetic();
         std::string lastGPSPosJSON = util::string_format(
           "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));

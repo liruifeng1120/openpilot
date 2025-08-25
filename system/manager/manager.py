@@ -36,9 +36,11 @@ def get_default_params():
     ("SearchInput", "0"),
     ("GMapKey", "0"),
     ("MapboxStyle", "0"),
+    ("RadarVisionMode","2"),
+    ("AdjustCurveOffset", "-20"),
 
 
-    ("LongitudinalPersonalityMax", "3"),
+    ("LongitudinalPersonalityMax", "4"),
     ("ShowDebugUI", "0"),
     ("ShowTpms", "1"),
     ("ShowDateTime", "1"),
@@ -81,7 +83,7 @@ def get_default_params():
     ("AutoNaviSpeedCtrlMode", "2"),
     ("AutoNaviSpeedBumpTime", "1"),
     ("AutoNaviSpeedBumpSpeed", "35"),
-    ("AutoNaviSpeedSafetyFactor", "105"),
+    ("AutoNaviSpeedSafetyFactor", "110"),
     ("AutoNaviSpeedDecelRate", "120"),
     ("AutoRoadSpeedLimitOffset", "-1"),
     ("AutoNaviCountDownMode", "2"),
@@ -133,8 +135,8 @@ def get_default_params():
     ("DynamicTFollow", "0"),
     ("DynamicTFollowLC", "100"),
     ("HapticFeedbackWhenSpeedCamera", "0"),
-    ("UseLaneLineSpeed", "10"),
-    ("PathOffset", "15"),
+    ("UseLaneLineSpeed", "5"),
+    ("PathOffset", "0"),
     ("UseLaneLineCurveSpeed", "5"),
     ("AdjustLaneOffset", "0"),
     ("LaneChangeNeedTorque", "0"),
@@ -142,7 +144,7 @@ def get_default_params():
     ("LaneChangeBsd", "0"),
     ("MaxAngleFrames", "89"),
     ("LateralTorqueCustom", "0"),
-    ("LateralTorqueAccelFactor", "1900"),
+    ("LateralTorqueAccelFactor", "1550"),
     ("LateralTorqueFriction", "350"),
     ("LateralTorqueKpV", "85"),
     ("LateralTorqueKiV", "6"),
@@ -151,8 +153,8 @@ def get_default_params():
     ("LatMpcPathCost", "200"),
     ("LatMpcMotionCost", "7"),
     ("LatMpcAccelCost", "120"),
-    ("LatMpcJerkCost", "11"),
-    ("LatMpcSteeringRateCost", "1300"),
+    ("LatMpcJerkCost", "8"),
+    ("LatMpcSteeringRateCost", "700"),
     ("LatMpcInputOffset", "4"),
     ("LatMpcOutputOffset", "0"),
     ("CustomSteerMax", "0"),
@@ -163,7 +165,7 @@ def get_default_params():
     ("SpeedFromPCM", "1"),
     ("SteerActuatorDelay", "0"),
     ("MaxTimeOffroadMin", "60"),
-    ("DisableDM", "0"),
+    ("DisableDM", "1"),
     ("EnableConnect", "0"),
     ("MuteDoor", "0"),
     ("MuteSeatbelt", "0"),
@@ -178,10 +180,11 @@ def get_default_params():
     ("NNFFLite", "0"),
     ("ForceOffroad", "0"),
     ("BydModifiedStockLong", "0"),
-    ("AlwaysOnLKAS", "0"),
     ("BydAutoTuning", "0"),
+    ("ComfortBrake", "240"),
     ("BydLatUseSiglin", "0"),
     ("CameraOffset", "0"),
+    ("AutoEngage", "0"),
     ("UseRedPanda", "0"),
   ]
   return default_params
@@ -345,7 +348,7 @@ def manager_thread() -> None:
 
     # Exit main loop when uninstall/shutdown/reboot is needed
     shutdown = False
-    for param in ("DoUninstall", "DoShutdown", "DoReboot"):
+    for param in ("DoUninstall", "DoShutdown", "DoReboot", "DoSoftwareExit"):
       if params.get_bool(param):
         shutdown = True
         params.put("LastManagerExitReason", f"{param} {datetime.datetime.now()}")
@@ -387,7 +390,8 @@ def main() -> None:
   elif params.get_bool("DoShutdown"):
     cloudlog.warning("shutdown")
     HARDWARE.shutdown()
-
+  elif params.get_bool("DoSoftwareExit"):
+    cloudlog.warning("software exit only - no hardware action")
 
 if __name__ == "__main__":
   unblock_stdout()

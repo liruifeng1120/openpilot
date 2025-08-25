@@ -10,6 +10,8 @@ sensors = [
   'sensors/lsm6ds3_gyro.cc',
   'sensors/lsm6ds3_temp.cc',
   'sensors/mmc5603nj_magn.cc',
+  'sensors/serial.c',
+  'sensors/wit_c_sdk.c',
 ]
 libs = [common, messaging, 'pthread']
 if arch == "larch64":

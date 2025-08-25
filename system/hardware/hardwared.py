@@ -266,6 +266,9 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
     msg.deviceState.memoryUsagePercent = int(round(psutil.virtual_memory().percent))
+    gpu_raw = HARDWARE.get_gpu_usage_percent()
+    gpu_final = int(round(gpu_raw))
+    msg.deviceState.gpuUsagePercent = gpu_final
     msg.deviceState.gpuUsagePercent = int(round(HARDWARE.get_gpu_usage_percent()))
     online_cpu_usage = [int(round(n)) for n in psutil.cpu_percent(percpu=True)]
     offline_cpu_usage = [0., ] * (len(msg.deviceState.cpuTempC) - len(online_cpu_usage))
@@ -414,7 +417,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     msg.deviceState.started = started_ts is not None
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
-
+    pm.send("deviceState", msg)
     last_ping = params.get("LastAthenaPingTime")
     if last_ping is not None:
       msg.deviceState.lastAthenaPingTime = int(last_ping)

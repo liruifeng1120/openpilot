@@ -10,6 +10,7 @@ import time
 import numpy as np
 import zmq
 from datetime import datetime
+from openpilot.system.hardware.hw import Paths
 
 from ftplib import FTP
 from cereal import log
@@ -281,43 +282,43 @@ class CarrotMan:
 
     self.is_metric = self.params.get_bool("IsMetric")
 
-  def get_active_interface(self):  
-      """动态获取有IP地址的活跃网络接口"""  
-      import subprocess  
-      try:  
-          # 使用ip命令获取默认路由的接口  
-          result = subprocess.run(['ip', 'route', 'show', 'default'],   
-                                capture_output=True, text=True)  
-          if result.returncode == 0:  
-              for line in result.stdout.split('\\n'):  
-                  if 'dev' in line:  
-                      parts = line.split()  
-                      dev_index = parts.index('dev')  
-                      if dev_index + 1 < len(parts):  
-                          return parts[dev_index + 1].encode()  
-      except:  
-          pass  
-      
-      # 备用方案：检查常见的网络接口  
-      common_interfaces = ['wlo1', 'enp1s0', 'wlan0', 'eth0', 'br0']  
-      for iface_name in common_interfaces:  
-          try:  
-              with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:  
-                  # 尝试获取接口的IP地址  
-                  ip = fcntl.ioctl(  
-                      s.fileno(),  
-                      0x8915,  # SIOCGIFADDR  
-                      struct.pack('256s', iface_name.encode())  
-                  )[20:24]  
-                  if ip != b'\\x00\\x00\\x00\\x00':  # 有有效IP地址  
-                      return iface_name.encode()  
-          except:  
-              continue  
-      
+  def get_active_interface(self):
+      """动态获取有IP地址的活跃网络接口"""
+      import subprocess
+      try:
+          # 使用ip命令获取默认路由的接口
+          result = subprocess.run(['ip', 'route', 'show', 'default'],
+                                capture_output=True, text=True)
+          if result.returncode == 0:
+              for line in result.stdout.split('\\n'):
+                  if 'dev' in line:
+                      parts = line.split()
+                      dev_index = parts.index('dev')
+                      if dev_index + 1 < len(parts):
+                          return parts[dev_index + 1].encode()
+      except:
+          pass
+
+      # 备用方案：检查常见的网络接口
+      common_interfaces = ['wlo1', 'enp1s0', 'wlan0', 'eth0', 'br0']
+      for iface_name in common_interfaces:
+          try:
+              with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                  # 尝试获取接口的IP地址
+                  ip = fcntl.ioctl(
+                      s.fileno(),
+                      0x8915,  # SIOCGIFADDR
+                      struct.pack('256s', iface_name.encode())
+                  )[20:24]
+                  if ip != b'\\x00\\x00\\x00\\x00':  # 有有效IP地址
+                      return iface_name.encode()
+          except:
+              continue
+
       return b'wlo1'  # 根据你的网卡情况，默认使用wlo1
 
   def get_broadcast_address(self):
-    # 动态获取活跃的网络接口  
+    # 动态获取活跃的网络接口
     iface = self.get_active_interface()
     try:
       with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
@@ -622,7 +623,7 @@ class CarrotMan:
 
   def parse_kisa_data(self, data: bytes):
     result = {}
-    
+
     try:
       decoded = data.decode('utf-8')
     except UnicodeDecodeError:
@@ -638,7 +639,7 @@ class CarrotMan:
         except ValueError:
           result[key] = value
     return result
-  
+
   def kisa_app_thread(self):
     while True:
       try:
@@ -696,8 +697,10 @@ class CarrotMan:
 
   def make_tmux_data(self):
     try:
-      subprocess.run("rm /data/media/tmux.log; tmux capture-pane -pq -S-1000 > /data/media/tmux.log", shell=True, capture_output=True, text=False)
-      subprocess.run("/data/openpilot/selfdrive/apilot.py", shell=True, capture_output=True, text=False)
+      log_file = os.path.join(Paths.log_root(), "tmux.log")
+      openpilot_root = os.environ.get('OPENPILOT_ROOT', '/data/openpilot')
+      subprocess.run(f"rm {log_file}; tmux capture-pane -pq -S-1000 > {log_file}", shell=True, capture_output=True, text=False)
+      apilot_path = os.path.join(openpilot_root, 'selfdrive', 'apilot.py')
     except Exception as e:
       print(f"TMUX creation error: {e}")
       return
@@ -749,7 +752,9 @@ class CarrotMan:
       if self.show_panda_debug:
         self.show_panda_debug = False
         try:
-          subprocess.run("/data/openpilot/selfdrive/debug/debug_console_carrot.py", shell=True)
+          current_dir = os.path.dirname(os.path.abspath(__file__))
+          debug_script = os.path.join(current_dir, "..", "debug", "debug_console_carrot.py")
+          subprocess.run(debug_script, shell=True)
         except Exception as e:
           print(f"debug_console error: {e}")
           time.sleep(2)
@@ -787,6 +792,7 @@ class CarrotMan:
         socks = dict(poller.poll(100))
 
         if socket in socks and socks[socket] == zmq.POLLIN:
+          print("[DEBUG] Message available, attempting to receive...")
           message = socket.recv(zmq.NOBLOCK)
           print(f"Received:7710 request: {message}")
           json_obj = json.loads(message.decode())
@@ -835,9 +841,23 @@ class CarrotMan:
           socket.send(echo.encode())
       except Exception as e:
         print(f"carrot_cmd_zmq error: {e}")
+        print(f"[DEBUG] Error type: {type(e).__name__}")
+        print(f"[DEBUG] Error args: {e.args}")
+        print(f"[DEBUG] Socket state before close: closed={socket.closed}")
+        print(f"[DEBUG] Context state: closed={context.closed}")
+        print(f"[DEBUG] Full traceback:")
+      try:
         socket.close()
-        time.sleep(1) 
+      except Exception as close_e:
+        print(f"[DEBUG] Error closing socket: {close_e}")
+
+      time.sleep(1)
+
+      try:
         socket, poller = setup_socket()
+      except Exception as setup_e:
+        print(f"[DEBUG] Error recreating socket: {setup_e}")
+        raise
 
   def recvall(self, sock, n):
     """重复接收数据直到收到n字节的函数"""
@@ -1064,7 +1084,7 @@ class CarrotServ:
 
     self.gps_accuracy_phone = 0.0
     self.gps_accuracy_device = 0.0
-    
+
     self.totalDistance = 0
     self.xSpdLimit = 0
     self.xSpdDist = 0
@@ -1295,73 +1315,73 @@ class CarrotServ:
 
   def _get_sdi_descr(self, nSdiType):
     sdi_types = {
-        0: "信号超速",                    # 신호과속  
-        1: "超速（固定式）",              # 과속 (고정식)  
-        2: "区间监控开始",                # 구간단속 시작  
-        3: "区间监控结束",                # 구간단속 끝  
-        4: "区间监控中",                  # 구간단속중  
-        5: "跟车监控摄像头",              # 꼬리물기단속카메라  
-        6: "信号监控",                    # 신호 단속  
-        7: "超速（移动式）",              # 과속 (이동식)  
-        8: "固定式超速危险区间（箱式）",  # 고정식 과속위험 구간(박스형)  
-        9: "公交专用车道区间",            # 버스전용차로구간  
-        10: "可变车道监控",               # 가변 차로 단속  
-        11: "路肩监视点",                 # 갓길 감시 지점  
-        12: "禁止插队",                   # 끼어들기 금지  
-        13: "交通信息收集点",             # 교통정보 수집지점  
-        14: "防犯用CCTV",                 # 방범용cctv  
-        15: "超载车辆危险区间",           # 과적차량 위험구간  
-        16: "装载不良监控",               # 적재 불량 단속  
-        17: "停车监控点",                 # 주차단속 지점  
-        18: "单行道",                     # 일방통행도로  
-        19: "铁路道口",                   # 철길 건널목  
-        20: "儿童保护区域（学校区域开始）", # 어린이 보호구역(스쿨존 시작 구간)  
-        21: "儿童保护区域（学校区域结束）", # 어린이 보호구역(스쿨존 끝 구간)  
-        22: "减速带",                     # 과속방지턱  
-        23: "LPG充电站",                  # lpg충전소  
-        24: "隧道区间",                   # 터널 구간  
-        25: "服务区",                     # 휴게소  
-        26: "收费站",                     # 톨게이트  
-        27: "雾天注意区域",               # 안개주의 지역  
-        28: "有害物质区域",               # 유해물질 지역  
-        29: "事故多发",                   # 사고다발  
-        30: "急弯区域",                   # 급커브지역  
-        31: "急弯区间1",                  # 급커브구간1  
-        32: "急坡区间",                   # 급경사구간  
-        33: "野生动物交通事故频发区间",   # 야생동물 교통사고 잦은 구간  
-        34: "右侧视野不良点",             # 우측시야불량지점  
-        35: "视野不良点",                 # 시야불량지점  
-        36: "左侧视野不良点",             # 좌측시야불량지점  
-        37: "信号违反多发区间",           # 신호위반다발구간  
-        38: "超速行驶多发区间",           # 과속운행다발구간  
-        39: "交通拥堵区域",               # 교통혼잡지역  
-        40: "方向别车道选择点",           # 방향별차로선택지점  
-        41: "无断横穿事故多发点",         # 무단횡단사고다발지점  
-        42: "路肩事故多发点",             # 갓길 사고 다발 지점  
-        43: "超速事故多发点",             # 과속 사발 다발 지점  
-        44: "疲劳驾驶事故多发点",         # 졸음 사고 다발 지점  
-        45: "事故多发点",                 # 사고다발지점  
-        46: "行人事故多发点",             # 보행자 사고다발지점  
-        47: "车辆盗窃事故惯犯发生点",     # 차량도난사고 상습발생지점  
-        48: "落石注意区域",               # 낙석주의지역  
-        49: "结冰注意区域",               # 결빙주의지역  
-        50: "瓶颈点",                     # 병목지점  
-        51: "汇流道路",                   # 합류 도로  
-        52: "坠落注意区域",               # 추락주의지역  
-        53: "地下车道区间",               # 지하차도 구간  
-        54: "住宅密集区域（交通宁静区域）", # 주택밀집지역(교통진정지역)  
-        55: "立交桥",                     # 인터체인지  
-        56: "分岔点",                     # 분기점  
-        57: "服务区（可充LPG）",          # 휴게소(lpg충전가능)  
-        58: "桥梁",                       # 교량  
-        59: "制动装置事故多发点",         # 제동장치사고다발지점  
-        60: "中央线侵犯事故多发点",       # 중앙선침범사고다발지점  
-        61: "通行违反事故多发点",         # 통행위반사고다발지점  
-        62: "目的地对面引导",             # 목적지 건너편 안내  
-        63: "疲劳驾驶休息处引导",         # 졸음 쉼터 안내  
-        64: "老旧柴油车监控",             # 노후경유차단속  
-        65: "隧道内车道变更监控",         # 터널내 차로변경단속  
-        66: "" 
+        0: "信号超速",                    # 신호과속
+        1: "超速（固定式）",              # 과속 (고정식)
+        2: "区间监控开始",                # 구간단속 시작
+        3: "区间监控结束",                # 구간단속 끝
+        4: "区间监控中",                  # 구간단속중
+        5: "跟车监控摄像头",              # 꼬리물기단속카메라
+        6: "信号监控",                    # 신호 단속
+        7: "超速（移动式）",              # 과속 (이동식)
+        8: "固定式超速危险区间（箱式）",  # 고정식 과속위험 구간(박스형)
+        9: "公交专用车道区间",            # 버스전용차로구간
+        10: "可变车道监控",               # 가변 차로 단속
+        11: "路肩监视点",                 # 갓길 감시 지점
+        12: "禁止插队",                   # 끼어들기 금지
+        13: "交通信息收集点",             # 교통정보 수집지점
+        14: "防犯用CCTV",                 # 방범용cctv
+        15: "超载车辆危险区间",           # 과적차량 위험구간
+        16: "装载不良监控",               # 적재 불량 단속
+        17: "停车监控点",                 # 주차단속 지점
+        18: "单行道",                     # 일방통행도로
+        19: "铁路道口",                   # 철길 건널목
+        20: "儿童保护区域（学校区域开始）", # 어린이 보호구역(스쿨존 시작 구간)
+        21: "儿童保护区域（学校区域结束）", # 어린이 보호구역(스쿨존 끝 구간)
+        22: "减速带",                     # 과속방지턱
+        23: "LPG充电站",                  # lpg충전소
+        24: "隧道区间",                   # 터널 구간
+        25: "服务区",                     # 휴게소
+        26: "收费站",                     # 톨게이트
+        27: "雾天注意区域",               # 안개주의 지역
+        28: "有害物质区域",               # 유해물질 지역
+        29: "事故多发",                   # 사고다발
+        30: "急弯区域",                   # 급커브지역
+        31: "急弯区间1",                  # 급커브구간1
+        32: "急坡区间",                   # 급경사구간
+        33: "野生动物交通事故频发区间",   # 야생동물 교통사고 잦은 구간
+        34: "右侧视野不良点",             # 우측시야불량지점
+        35: "视野不良点",                 # 시야불량지점
+        36: "左侧视野不良点",             # 좌측시야불량지점
+        37: "信号违反多发区间",           # 신호위반다발구간
+        38: "超速行驶多发区间",           # 과속운행다발구간
+        39: "交通拥堵区域",               # 교통혼잡지역
+        40: "方向别车道选择点",           # 방향별차로선택지점
+        41: "无断横穿事故多发点",         # 무단횡단사고다발지점
+        42: "路肩事故多发点",             # 갓길 사고 다발 지점
+        43: "超速事故多发点",             # 과속 사발 다발 지점
+        44: "疲劳驾驶事故多发点",         # 졸음 사고 다발 지점
+        45: "事故多发点",                 # 사고다발지점
+        46: "行人事故多发点",             # 보행자 사고다발지점
+        47: "车辆盗窃事故惯犯发生点",     # 차량도난사고 상습발생지점
+        48: "落石注意区域",               # 낙석주의지역
+        49: "结冰注意区域",               # 결빙주의지역
+        50: "瓶颈点",                     # 병목지점
+        51: "汇流道路",                   # 합류 도로
+        52: "坠落注意区域",               # 추락주의지역
+        53: "地下车道区间",               # 지하차도 구간
+        54: "住宅密集区域（交通宁静区域）", # 주택밀집지역(교통진정지역)
+        55: "立交桥",                     # 인터체인지
+        56: "分岔点",                     # 분기점
+        57: "服务区（可充LPG）",          # 휴게소(lpg충전가능)
+        58: "桥梁",                       # 교량
+        59: "制动装置事故多发点",         # 제동장치사고다발지점
+        60: "中央线侵犯事故多发点",       # 중앙선침범사고다발지점
+        61: "通行违反事故多发点",         # 통행위반사고다발지점
+        62: "目的地对面引导",             # 목적지 건너편 안내
+        63: "疲劳驾驶休息处引导",         # 졸음 쉼터 안내
+        64: "老旧柴油车监控",             # 노후경유차단속
+        65: "隧道内车道变更监控",         # 터널내 차로변경단속
+        66: ""
     }
     return sdi_types.get(nSdiType, "")
 
@@ -1505,7 +1525,7 @@ class CarrotServ:
       if atc_type in ["turn left", "turn right"] and x_dist_to_turn > start_turn_dist:
         atc_type = "atc left" if atc_type == "turn left" else "atc right"
 
-    if self.autoTurnMapChange > 0 and check_steer: 
+    if self.autoTurnMapChange > 0 and check_steer:
       #print(f"x_dist_to_turn: {x_dist_to_turn}, atc_start_dist: {atc_start_dist}")
       #print(f"atc_activate_count: {self.atc_activate_count}")
       if self.atc_activate_count == 2:
@@ -1540,7 +1560,7 @@ class CarrotServ:
 
 
     return atc_desired, atc_type, atc_speed, atc_dist
-  
+
   def update_nav_instruction(self, sm):
     if sm.alive['navInstruction'] and sm.valid['navInstruction']:
       msg_nav = sm['navInstruction']
@@ -1570,7 +1590,7 @@ class CarrotServ:
         print(f"kisawazeroadspdlimit: {road_limit_speed} km/h")
         if not self.is_metric:
           road_limit_speed *= CV.MPH_TO_KPH
-        self.nRoadLimitSpeed = road_limit_speed 
+        self.nRoadLimitSpeed = road_limit_speed
     if "kisawazealert" in data:
       pass
     if "kisawazeendalert" in data:
@@ -1596,10 +1616,10 @@ class CarrotServ:
       if xSpdType >= 0:
         offset = 5 if self.is_metric else 5 * CV.MPH_TO_KPH
         self.xSpdLimit = self.nRoadLimitSpeed + offset
-        
+
         self.xSpdDist = distance
-        self.xSpdType =xSpdType 
-    
+        self.xSpdType =xSpdType
+
   def update_navi(self, remote_ip, sm, pm, vturn_speed, coords, distances, route_speed):
 
     self.debugText = ""
@@ -1631,7 +1651,7 @@ class CarrotServ:
     self.active_kisa_count = max(self.active_kisa_count - 1, 0)
     if self.active_kisa_count > 0:
       self.active_carrot = 2
-      
+
     elif self.active_count > 0:
       self.active_carrot = 2 if self.active_sdi_count > 0 else 1
     else:
@@ -1827,7 +1847,7 @@ class CarrotServ:
     inst = messaging.new_message('navInstructionCarrot')
     if self.active_carrot > 1:
       inst.valid = True
-    
+
       instruction = inst.navInstructionCarrot
       instruction.distanceRemaining = self.nGoPosDist
       instruction.timeRemaining = self.nGoPosTime
@@ -1845,7 +1865,7 @@ class CarrotServ:
       navTypeNext, navModifierNext, xTurnInfoNext = "invalid", "", -1
       if self.nTBTTurnTypeNext in nav_type_mapping:
         navTypeNext, navModifierNext, xTurnInfoNext = nav_type_mapping[self.nTBTTurnTypeNext]
-      
+
       instruction.maneuverType = navType
       instruction.maneuverModifier = navModifier
 
@@ -1940,7 +1960,7 @@ class CarrotServ:
       self.carrotCmdIndex = self.carrotIndex
       self.carrotCmd = json.get("carrotCmd")
       self.carrotArg = json.get("carrotArg")
-      print(f"carrotCmd = {self.carrotCmd}, {self.carrotArg}")
+      #print(f"carrotCmd = {self.carrotCmd}, {self.carrotArg}")
 
     self.active_count = 80
     now = time.monotonic()
@@ -2013,11 +2033,11 @@ class CarrotServ:
       self.nPosSpeed = float(json.get("nPosSpeed", self.nPosSpeed))
       self._update_tbt()
       self._update_sdi()
-      print(
-        f"sdi = {self.nSdiType}, {self.nSdiSpeedLimit}, {self.nSdiPlusType}, " +
-        f"tbt = {self.nTBTTurnType}, {self.nTBTDist}, " +
-        f"next = {self.nTBTTurnTypeNext}, {self.nTBTDistNext}"
-      )
+      #print(
+      #  f"sdi = {self.nSdiType}, {self.nSdiSpeedLimit}, {self.nSdiPlusType}, " +
+      #  f"tbt = {self.nTBTTurnType}, {self.nTBTDist}, " +
+      #  f"next = {self.nTBTTurnTypeNext}, {self.nTBTDistNext}"
+      #)
       #print(json)
     else:
       #print(json)

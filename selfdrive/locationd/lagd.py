@@ -4,6 +4,13 @@ import numpy as np
 import capnp
 from collections import deque
 from functools import partial
+import datetime
+debug_file = open(f"/data/debug/lagd_debug.log", 'a')
+
+def debug_print(msg):
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    debug_file.write(f"[{timestamp}] {msg}\n")
+    debug_file.flush()
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -229,8 +236,22 @@ class LateralLagEstimator:
       liveDelay.lateralDelayEstimateStd = 0.0
 
     liveDelay.validBlocks = self.block_avg.valid_blocks
-    liveDelay.calPerc = min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) //
+    calculated_perc = min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) //
                             (self.min_valid_block_count * self.block_size), 100)
+    liveDelay.calPerc = calculated_perc
+
+    # 添加校准进度计算调试
+    debug_print(f"DEBUG: get_msg calibration progress:"
+                f"  valid_blocks:{self.block_avg.valid_blocks}, "
+                f"  block_size:{self.block_size}, "
+                f"  idx:{self.block_avg.idx}, "
+                f"  min_valid_block_count:{self.min_valid_block_count}, "
+                f"  numerator:{self.block_avg.valid_blocks * self.block_size + self.block_avg.idx}, "
+                f"  denominator:{self.min_valid_block_count * self.block_size}, "
+                f"  calculated_perc:{calculated_perc}, "
+                f"  status:{liveDelay.status}, "
+                f"  enabled:{self.enabled}")
+
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
 
@@ -247,8 +268,8 @@ class LateralLagEstimator:
       self.desired_curvature = msg.desiredCurvature
     elif which == 'liveLocationKalman':
       self.yaw_rate = msg.angularVelocityCalibrated.value[2]
-      self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]    
-      self.pose_valid = msg.angularVelocityCalibrated.valid and msg.posenetOK and msg.inputsOK  
+      self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+      self.pose_valid = msg.angularVelocityCalibrated.valid and msg.posenetOK and msg.inputsOK
       self.calib_valid = msg.status == log.LiveLocationKalman.Status.valid
     self.t = t
 
@@ -283,6 +304,26 @@ class LateralLagEstimator:
     )
     okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and \
            fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
+
+    # 添加详细的校准条件调试
+    debug_print(f"DEBUG: Calibration conditions check:"
+                f"lat_active:{self.lat_active},"
+                f"steering_pressed:{self.steering_pressed},"
+                f"steering_saturated:{self.steering_saturated},"
+                f"v_ego_ok:{fast},"
+                f"yaw_rate_ok:{turning},"
+                f"pose_valid:{self.pose_valid},"
+                f"yaw_rate_sanity:{np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK},"
+                f"yaw_rate_std_ok:{self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK},"
+                f"sensors_valid:{sensors_valid},"
+                f"la_actual_ok:{np.abs(la_actual_pose) <= self.max_lat_accel},"
+                f"la_diff_ok:{np.abs(la_desired - la_actual_pose) <= self.max_lat_accel_diff},"
+                f"la_valid:{la_valid},"
+                f"calib_valid:{calib_valid},"
+                f"has_recovered:{has_recovered},"
+                f"final okay:{okay},"
+                f"points.num_okay:{self.points.num_okay},"
+                f"block_avg.valid_blocks:{self.block_avg.valid_blocks}")
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
@@ -359,7 +400,6 @@ def retrieve_initial_lag(params: Params, CP: car.CarParams):
 
 def main():
   config_realtime_process([0, 1, 2, 3], 5)
-
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
   pm = messaging.PubMaster(['liveDelay'])
@@ -375,7 +415,6 @@ def main():
   if (initial_lag_params := retrieve_initial_lag(params, CP)) is not None:
     lag, valid_blocks = initial_lag_params
     lag_learner.reset(lag, valid_blocks)
-
   while True:
     sm.update()
     if sm.all_checks():
@@ -389,8 +428,21 @@ def main():
     if sm.frame % 5 == 0:
       lag_learner.update_estimate()
       lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)
+
       lag_msg_dat = lag_msg.to_bytes()
       pm.send('liveDelay', lag_msg_dat)
 
       if sm.frame % 1200 == 0: # cache every 60 seconds
         params.put_nonblocking("LiveDelay", lag_msg_dat)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+      pass
+    except Exception as e:
+        import traceback
+        raise
+    finally:
+        debug_file.close()

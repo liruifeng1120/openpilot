@@ -95,6 +95,9 @@ private:
   float gps_vertical_variance_factor;
   double gps_time_offset;
   Eigen::VectorXd camodo_yawrate_distribution = Eigen::Vector2d(0.0, 10.0); // mean, std
+  bool imu_sensors_available = false;
+  double last_imu_sensor_time = 0.0;
+  static constexpr double IMU_TIMEOUT = 1.0; // 1秒超时
 
   void configure_gnss_source(const LocalizerGnssSource &source);
 };

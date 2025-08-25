@@ -247,6 +247,7 @@ bool ConfirmationDialog::rich(const QString &prompt_text, QWidget *parent) {
 // MultiOptionDialog
 
 MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringList &l, const QString &current, QWidget *parent) : DialogBase(parent) {
+  selection = current;
   QFrame *container = new QFrame(this);
   container->setStyleSheet(R"(
     QFrame { background-color: #1B1B1B; }
@@ -284,7 +285,7 @@ MultiOptionDialog::MultiOptionDialog(const QString &prompt_text, const QStringLi
 
   QPushButton *confirm_btn = new QPushButton(tr("Select"));
   confirm_btn->setObjectName("confirm_btn");
-  confirm_btn->setEnabled(false);
+  confirm_btn->setEnabled(true);
 
   int total_button = 0;
   int current_selected_button = 0;

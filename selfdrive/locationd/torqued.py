@@ -186,6 +186,7 @@ class TorqueEstimator(ParameterEstimator):
         vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
         steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque']).item()
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY).item()
+
         if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
           if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
             self.filtered_points.add_point(steer, lateral_acc)
@@ -243,6 +244,11 @@ def main(demo=False):
   while True:
     sm.update()
     if sm.all_checks():
+      for which in sm.updated.keys():
+        if sm.updated[which]:
+          t = sm.logMonoTime[which] * 1e-9
+          estimator.handle_log(t, which, sm[which])
+    else:
       for which in sm.updated.keys():
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9

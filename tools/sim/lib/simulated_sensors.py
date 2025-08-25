@@ -15,7 +15,7 @@ class SimulatedSensors:
   """Simulates the C3 sensors (acc, gyro, gps, peripherals, dm state, cameras) to OpenPilot"""
 
   def __init__(self, dual_camera=False):
-    self.pm = messaging.PubMaster(['accelerometer', 'gyroscope', 'gpsLocationExternal', 'driverStateV2', 'driverMonitoringState', 'peripheralState'])
+    self.pm = messaging.PubMaster(['accelerometer', 'gyroscope', 'gpsLocationExternal', 'driverStateV2', 'peripheralState'])
     self.camerad = Camerad(dual_camera=dual_camera)
     self.last_perp_update = 0
     self.last_dmon_update = 0
@@ -82,22 +82,23 @@ class SimulatedSensors:
     self.pm.send('peripheralState', dat)
 
   def send_fake_driver_monitoring(self):
+    pass
     # dmonitoringmodeld output
-    dat = messaging.new_message('driverStateV2')
-    dat.driverStateV2.leftDriverData.faceOrientation = [0., 0., 0.]
-    dat.driverStateV2.leftDriverData.faceProb = 1.0
-    dat.driverStateV2.rightDriverData.faceOrientation = [0., 0., 0.]
-    dat.driverStateV2.rightDriverData.faceProb = 1.0
-    self.pm.send('driverStateV2', dat)
+    #dat = messaging.new_message('driverStateV2')
+    #dat.driverStateV2.leftDriverData.faceOrientation = [0., 0., 0.]
+    #dat.driverStateV2.leftDriverData.faceProb = 1.0
+    #dat.driverStateV2.rightDriverData.faceOrientation = [0., 0., 0.]
+    #dat.driverStateV2.rightDriverData.faceProb = 1.0
+    #self.pm.send('driverStateV2', dat)
 
     # dmonitoringd output
-    dat = messaging.new_message('driverMonitoringState', valid=True)
-    dat.driverMonitoringState = {
-      "faceDetected": True,
-      "isDistracted": False,
-      "awarenessStatus": 1.,
-    }
-    self.pm.send('driverMonitoringState', dat)
+    #dat = messaging.new_message('driverMonitoringState', valid=True)
+    #dat.driverMonitoringState = {
+    #  "faceDetected": True,
+    #  "isDistracted": False,
+    #  "awarenessStatus": 1.,
+    #}
+    #self.pm.send('driverMonitoringState', dat)
 
   def send_camera_images(self, world: 'World'):
     world.image_lock.acquire()

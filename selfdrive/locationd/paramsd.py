@@ -46,12 +46,17 @@ class ParamsLearner:
 
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
-      device_pose = Pose.from_live_pose(msg)
-      calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
-    
+      if which == 'liveLocationKalman':
+        try:
+          device_pose = Pose.from_live_pose(msg)
+          calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+        except AttributeError as e:
+          print(f"Schema mismatch in paramsd: {e}")
+          return
+
       #self.yaw_rate = msg.angularVelocityCalibrated.value[2]
       #self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]
-      
+
       yaw_rate_valid = msg.angularVelocityDevice.valid
       yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
       yaw_rate_valid = yaw_rate_valid and abs(self.yaw_rate) < 1  # rad/s
@@ -190,7 +195,7 @@ def main():
 
   while True:
     sm.update()
-    if sm.all_checks():
+    if not REPLAY or sm.all_checks():
       for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
@@ -203,7 +208,7 @@ def main():
         lat = location.positionGeodetic.value[0]
         lon = location.positionGeodetic.value[1]
         params_memory.put("LastGPSPosition", json.dumps({"latitude": lat, "longitude": lon, "bearing": bearing}))
-        
+
       x = learner.kf.x
       P = np.sqrt(learner.kf.P.diagonal())
       if not all(map(math.isfinite, x)):

@@ -174,17 +174,25 @@ class Calibrator:
     else:
       return self.rpy
 
+
   def handle_cam_odom(self, trans: list[float],
                             rot: list[float],
                             wide_from_device_euler: list[float],
                             trans_std: list[float],
                             road_transform_trans: list[float],
                             road_transform_trans_std: list[float]) -> np.ndarray | None:
+
     self.old_rpy_weight = max(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
+    # PC环境下调整数据质量阈值
+    if self.not_car:
+        angle_std_threshold = MAX_VEL_ANGLE_STD * 5  # PC环境下放宽5倍
+        height_std_threshold = MAX_HEIGHT_STD * 5
+
+    else:
+        angle_std_threshold = MAX_VEL_ANGLE_STD
+        height_std_threshold = MAX_HEIGHT_STD
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
-    angle_std_threshold = MAX_VEL_ANGLE_STD
-    height_std_threshold = MAX_HEIGHT_STD
     rpy_certain = np.arctan2(trans_std[1], trans[0]) < angle_std_threshold
     if len(road_transform_trans_std) == 3:
       height_certain = road_transform_trans_std[2] < height_std_threshold
@@ -192,6 +200,7 @@ class Calibrator:
       height_certain = True
 
     certain_if_calib = (rpy_certain and height_certain) or (self.valid_blocks < INPUTS_NEEDED)
+
     if not (straight_and_fast and certain_if_calib):
       return None
 
@@ -271,16 +280,46 @@ def main() -> NoReturn:
     sm.update(timeout)
 
     if sm.updated['cameraOdometry']:
-      calibrator.handle_v_ego(sm['carState'].vEgo)
-      new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
-                                           sm['cameraOdometry'].rot,
-                                           sm['cameraOdometry'].wideFromDeviceEuler,
-                                           sm['cameraOdometry'].transStd,
-                                           sm['cameraOdometry'].roadTransformTrans,
-                                           sm['cameraOdometry'].roadTransformTransStd)
+        # 数据补全逻辑
+        if sm.valid['carState']:
+            # 如果carState有效但cameraOdometry的trans[0]为0，使用carState速度补全
+            if abs(sm['cameraOdometry'].trans[0]) < 0.1 and sm['carState'].vEgo > MIN_SPEED_FILTER:
+                # 创建修正后的cameraOdometry数据
+                corrected_trans = list(sm['cameraOdometry'].trans)
+                corrected_trans[0] = sm['carState'].vEgo
 
-      if DEBUG and new_rpy is not None:
-        print('got new rpy', new_rpy)
+                # 改善transStd数据质量
+                corrected_trans_std = list(sm['cameraOdometry'].transStd)
+                if corrected_trans_std[1] > 0 and corrected_trans[0] > 0:
+                    # 计算更合理的角度标准差
+                    angle_std = np.arctan2(corrected_trans_std[1], corrected_trans[0])
+                    if angle_std > MAX_VEL_ANGLE_STD:
+                        # 调整transStd[1]使角度标准差满足要求
+                        corrected_trans_std[1] = corrected_trans[0] * np.tan(MAX_VEL_ANGLE_STD * 0.8)
+
+                # 使用修正后的数据进行校准
+                calibrator.handle_v_ego(sm['carState'].vEgo)
+                new_rpy = calibrator.handle_cam_odom(corrected_trans,
+                                                  sm['cameraOdometry'].rot,
+                                                  sm['cameraOdometry'].wideFromDeviceEuler,
+                                                  corrected_trans_std,
+                                                  sm['cameraOdometry'].roadTransformTrans,
+                                                  sm['cameraOdometry'].roadTransformTransStd)
+            else:
+                # 使用原始数据
+                calibrator.handle_v_ego(sm['carState'].vEgo)
+                new_rpy = calibrator.handle_cam_odom(sm['cameraOdometry'].trans,
+                                                  sm['cameraOdometry'].rot,
+                                                  sm['cameraOdometry'].wideFromDeviceEuler,
+                                                  sm['cameraOdometry'].transStd,
+                                                  sm['cameraOdometry'].roadTransformTrans,
+                                                  sm['cameraOdometry'].roadTransformTransStd)
+        else:
+            # carState无效时的处理
+            new_rpy = None
+
+    if DEBUG and new_rpy is not None:
+      print('got new rpy', new_rpy)
 
     # 4Hz driven by cameraOdometry
     if sm.frame % 5 == 0:

@@ -16,7 +16,7 @@ disable_dm = params.get_int("DisableDM") > 0
 CameraType = namedtuple("CameraType", ["msg_name", "stream_type", "cam_id"])
 CAMERAS = [
   CameraType("roadCameraState", VisionStreamType.VISION_STREAM_ROAD, os.getenv("ROAD_CAM", "0")),
-  #CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, os.getenv("DRIVER_CAM", "2")),
+  #CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, os.getenv("DRIVER_CAM", "0")),
 ]
 if not disable_dm:
   CAMERAS.append(CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, os.getenv("DRIVER_CAM", "2")))

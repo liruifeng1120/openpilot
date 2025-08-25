@@ -193,7 +193,10 @@ class CarState(CarStateBase):
 
             if mrr_id == 2: #1:left, 2:front, 3:right
                 if bool(cp_cam.vl["RADAR_MRR"]["IsValid"]):
-                    self.mrr_leading_dist = int(cp_cam.vl["RADAR_MRR"]["LongDist"])
+                    raw_dist = int(cp_cam.vl["RADAR_MRR"]["LongDist"])
+                    # 增加距离滤波，避免异常值导致误判
+                    if 3 < raw_dist < 200:
+                        self.mrr_leading_dist = raw_dist
                 else:
                     self.mrr_leading_dist = 199
 

@@ -129,10 +129,18 @@ class Measurement:
 
   @classmethod
   def from_measurement_xyz(cls, measurement: log.LivePose.XYZMeasurement) -> 'Measurement':
-    return cls(
-      xyz=np.array([measurement.x, measurement.y, measurement.z]),
-      xyz_std=np.array([measurement.xStd, measurement.yStd, measurement.zStd])
-    )
+    try:
+      return cls(
+        xyz=np.array([measurement.x, measurement.y, measurement.z]),
+        xyz_std=np.array([measurement.xStd, measurement.yStd, measurement.zStd])
+      )
+    except AttributeError:
+      # 临时使用默认值，避免崩溃
+      #print("Schema mismatch in paramsd: capnp/schema.c++:511: failed: struct has no such member; name = x")
+      return cls(
+        xyz=np.array([0.0, 0.0, 0.0]),
+        xyz_std=np.array([1.0, 1.0, 1.0])
+        )
 
 
 class Pose:

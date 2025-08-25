@@ -141,11 +141,20 @@ class Pc(HardwareBase):
     pass
 
   def get_gpu_usage_percent(self):
+    import glob
+    max_usage = 0
     try:
-      with open('/sys/class/drm/card0/device/gpu_busy_percent') as f:
-        return int(f.read().strip())
+        gpu_busy_files = glob.glob('/sys/class/drm/card*/device/gpu_busy_percent')
+        for gpu_file in gpu_busy_files:
+            try:
+                with open(gpu_file) as f:
+                    usage = int(f.read().strip())
+                    max_usage = max(max_usage, usage)
+            except:
+                continue
     except Exception:
-      return 0
+        pass
+    return max_usage
 
   def get_modem_temperatures(self):
     return []

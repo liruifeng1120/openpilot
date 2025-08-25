@@ -71,18 +71,25 @@ class SelfdriveD:
     # TODO: de-couple selfdrived with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
-    ignore = self.sensor_packets + self.gps_packets + ["accelerometer", "gyroscope", "alertDebug", 'liveLocationKalman','liveParameters','liveTorqueParameters', 'livePose','driverAssistance']
+    #ignore = self.sensor_packets + self.gps_packets + ["accelerometer", "gyroscope", "alertDebug", 'liveLocationKalman','liveParameters','liveTorqueParameters', 'livePose', 'driverAssistance']
+    ignore = self.sensor_packets + self.gps_packets + ["accelerometer", "gyroscope", "alertDebug"]
+
     if SIMULATION:
-      ignore += ['driverCameraState', 'managerState']
+    # ignore = self.sensor_packets + self.gps_packets + ["accelerometer", "gyroscope", "alertDebug", 'liveLocationKalman','liveParameters','liveTorqueParameters', 'livePose','driverAssistance']
+      ignore += ['driverCameraState', 'managerState', 'pc_sensor_bridge']
     elif self.disable_dm > 0:
+      #ignore = self.sensor_packets + self.gps_packets + ["accelerometer", "gyroscope", "alertDebug"]
+    #  ignore = self.sensor_packets + self.gps_packets + ["accelerometer", "gyroscope", "alertDebug", 'liveLocationKalman','liveParameters','liveTorqueParameters', 'livePose','driverAssistance']
       self.camera_packets.remove("driverCameraState")
+    #else:
+    #   ignore = self.sensor_packets + self.gps_packets + ["alertDebug", 'pc_sensor_bridge']
     ignore += ['driverMonitoringState']
 
     if REPLAY:
       # no vipc in replay will make them ignored anyways
       ignore += ['roadCameraState', 'wideRoadCameraState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman', # 'liveDelay',
+                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'carrotMan',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \
@@ -396,8 +403,12 @@ class SelfdriveD:
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
-    if self.sm.frame == 550 and Params().get("NNFFModelName", encoding='utf-8') is not None:
-      self.events.add(EventName.torqueNNLoad)
+    try:
+      if self.sm.frame == 550 and Params().get("NNFFModelName", encoding='utf-8') is not None:
+        self.events.add(EventName.torqueNNLoad)
+    except:
+      pass
+
     # decrement personality on distance button press
     #if self.CP.openpilotLongitudinalControl:
     #  if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):

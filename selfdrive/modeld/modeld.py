@@ -277,7 +277,7 @@ def main(demo=False):
       #lat_smooth_seconds = params.get_float("SteerSmoothSec") * 0.01
       long_delay = params.get_float("LongActuatorDelay")*0.01
       vEgoStopping = params.get_float("VEgoStopping") * 0.01
-      
+
     if custom_lat_delay > 0.0:
       lat_delay = custom_lat_delay + lat_smooth_seconds
     else:
@@ -394,6 +394,12 @@ def main(demo=False):
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
+
+      # 添加清除写入标志
+      modelv2_send.clear_write_flag()
+      drivingdata_send.clear_write_flag()
+      posenet_send.clear_write_flag()
+
     last_vipc_frame_id = meta_main.frame_id
 
 
