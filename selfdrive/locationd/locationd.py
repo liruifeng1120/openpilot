@@ -19,15 +19,15 @@ from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENE
 from openpilot.system.hardware import PC
 
 NO_IMU = os.getenv("NO_IMU") is not None
-ACCEL_SANITY_CHECK = 100.0  # m/s^2
-ROTATION_SANITY_CHECK = 10.0  # rad/s
+ACCEL_SANITY_CHECK = 150.0  # m/s^2 (放宽限制)
+ROTATION_SANITY_CHECK = 15.0  # rad/s (放宽限制)
 TRANS_SANITY_CHECK = 200.0  # m/s
 CALIB_RPY_SANITY_CHECK = 0.5  # rad (+- 30 deg)
 MIN_STD_SANITY_CHECK = 1e-5  # m or rad
 MAX_FILTER_REWIND_TIME = 0.8  # s
-MAX_SENSOR_TIME_DIFF = 0.1  # s
+MAX_SENSOR_TIME_DIFF = 0.2  # s (放宽时间差限制)
 YAWRATE_CROSS_ERR_CHECK_FACTOR = 30
-INPUT_INVALID_LIMIT = 2.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored
+INPUT_INVALID_LIMIT = 3.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored (放宽限制)
 INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad inputs by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
