@@ -5,12 +5,7 @@ import capnp
 from collections import deque
 from functools import partial
 import datetime
-debug_file = open(f"/data/debug/lagd_debug.log", 'a')
 
-def debug_print(msg):
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    debug_file.write(f"[{timestamp}] {msg}\n")
-    debug_file.flush()
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -240,18 +235,6 @@ class LateralLagEstimator:
                             (self.min_valid_block_count * self.block_size), 100)
     liveDelay.calPerc = calculated_perc
 
-    # 添加校准进度计算调试
-    debug_print(f"DEBUG: get_msg calibration progress:"
-                f"  valid_blocks:{self.block_avg.valid_blocks}, "
-                f"  block_size:{self.block_size}, "
-                f"  idx:{self.block_avg.idx}, "
-                f"  min_valid_block_count:{self.min_valid_block_count}, "
-                f"  numerator:{self.block_avg.valid_blocks * self.block_size + self.block_avg.idx}, "
-                f"  denominator:{self.min_valid_block_count * self.block_size}, "
-                f"  calculated_perc:{calculated_perc}, "
-                f"  status:{liveDelay.status}, "
-                f"  enabled:{self.enabled}")
-
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
 
@@ -304,26 +287,6 @@ class LateralLagEstimator:
     )
     okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and \
            fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
-
-    # 添加详细的校准条件调试
-    debug_print(f"DEBUG: Calibration conditions check:"
-                f"lat_active:{self.lat_active},"
-                f"steering_pressed:{self.steering_pressed},"
-                f"steering_saturated:{self.steering_saturated},"
-                f"v_ego_ok:{fast},"
-                f"yaw_rate_ok:{turning},"
-                f"pose_valid:{self.pose_valid},"
-                f"yaw_rate_sanity:{np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK},"
-                f"yaw_rate_std_ok:{self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK},"
-                f"sensors_valid:{sensors_valid},"
-                f"la_actual_ok:{np.abs(la_actual_pose) <= self.max_lat_accel},"
-                f"la_diff_ok:{np.abs(la_desired - la_actual_pose) <= self.max_lat_accel_diff},"
-                f"la_valid:{la_valid},"
-                f"calib_valid:{calib_valid},"
-                f"has_recovered:{has_recovered},"
-                f"final okay:{okay},"
-                f"points.num_okay:{self.points.num_okay},"
-                f"block_avg.valid_blocks:{self.block_avg.valid_blocks}")
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
@@ -444,5 +407,3 @@ if __name__ == "__main__":
     except Exception as e:
         import traceback
         raise
-    finally:
-        debug_file.close()
