@@ -767,7 +767,7 @@
     </message>
     <message>
         <source>0:Fusion,1:Radar Only,2:Vision Only</source>
-        <translation type="unfinished">0:雷达＋视觉融合,1:雷达,2:视觉</translation>
+        <translation type="unfinished">0:雷达＋视觉融合(不稳定),1:雷达(不稳定),2:视觉</translation>
     </message>
     <message>
         <source>Enable automatic torque parameter tuning</source>
