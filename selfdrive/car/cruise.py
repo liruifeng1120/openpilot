@@ -671,26 +671,12 @@ class VCruiseCarrot:
     gear = car.CarState.GearShifter
     driving_gear = CS.gearShifter not in (gear.neutral, gear.park, gear.reverse, gear.unknown)
 
-    # 添加调试日志
-    with open("/data/debug/cruise_autoengage.log", "a") as f:
-        import time
-        timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-        f.write(f"[{timestamp}] AutoEngage={auto_engage}, vEgo={CS.vEgo:.3f}, "
-                f"driving_gear={driving_gear}, brakePressed={CS.brakePressed}, "
-                f"CC.enabled={CC.enabled}, _lat_enabled={self._lat_enabled}\n")
-
     if auto_engage > 0 and driving_gear and CS.vEgo > 8.33 and not CS.brakePressed:
         if auto_engage == 1:
             self._lat_enabled = True
         elif auto_engage == 2:
             self._lat_enabled = True
             if not CC.enabled:
-              # 添加调试日志
-              with open("/data/debug/cruise_autoengage.log", "a") as f:
-                f.write(f"[{timestamp}] Before _cruise_control: "
-                        f"_cruise_cancel_state={self._cruise_cancel_state}, "
-                        f"autoCruiseControl={self.autoCruiseControl}, "
-                        f"autoCruiseControl_cancel_timer={self.autoCruiseControl_cancel_timer}\n")
               self._cruise_control(1, -1, "Auto cruise on (AutoEngage)")
 
     if not CC.enabled:
