@@ -10,6 +10,7 @@ import math
 from typing import Tuple
 import cereal.messaging as messaging
 
+from cereal import log
 from openpilot.common.realtime import DT_DMON
 from openpilot.system.hardware import TICI
 
@@ -137,7 +138,7 @@ class JY62Sensor:
         dat = messaging.new_message('accelerometer', valid=True)
         dat.accelerometer = {
           'timestamp': int(data['timestamp'] * 1e9),
-          'source': 'bno055',
+          'source': log.SensorEventData.SensorSource.jy62,
           'type': 1,
           'acceleration': {
             'v': [data['ax'], data['ay'], data['az']],
@@ -153,7 +154,7 @@ class JY62Sensor:
         dat = messaging.new_message('gyroscope', valid=True)
         dat.gyroscope = {
           'timestamp': int(data['timestamp'] * 1e9),
-          'source': 'bno055',
+          'source': log.SensorEventData.SensorSource.jy62,
           'type': 2,
           'gyroUncalibrated': {
             'v': [data['wx'], data['wy'], data['wz']],
