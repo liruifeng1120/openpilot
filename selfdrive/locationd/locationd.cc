@@ -427,7 +427,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     }
     orientation_error(i) -= M_PI;
   }
-  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos[2] }, orientation_ned_gps)));
+  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos[1], ecef_pos[2] }, orientation_ned_gps)));
 
   if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD) {
     this->determine_gps_mode(current_time);
@@ -800,7 +800,16 @@ int main(int argc, char *argv[]) {
 
   // 解析命令行参数
   int opt;
-  while ((opt = getopt(argc, argv, "d:b:t:")) != -1) {
+  const char* short_opts = "d:b:t:";
+  const struct option long_opts[] = {
+    {"device", required_argument, NULL, 'd'},
+    {"baud", required_argument, NULL, 'b'},
+    {"type", required_argument, NULL, 't'},
+    {NULL, 0, NULL, 0}
+  };
+  int long_index = 0;
+
+  while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_index)) != -1) {
     switch (opt) {
       case 'd':
         device_path = optarg;
@@ -812,7 +821,7 @@ int main(int argc, char *argv[]) {
         device_type = optarg;
         break;
       default:
-        fprintf(stderr, "Usage: %s [-d device_path] [-b baud_rate] [-t device_type]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-d device_path|--device=device_path] [-b baud_rate|--baud=baud_rate] [-t device_type|--type=device_type]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
   }
@@ -874,8 +883,17 @@ int Localizer::open_jy62_device() {
   speed_t baud_rate;
   switch (this->baud_rate_) {
     case 9600:   baud_rate = B9600;   break;
+    case 19200:  baud_rate = B19200;  break;
+    case 38400:  baud_rate = B38400;  break;
+    case 57600:  baud_rate = B57600;  break;
     case 115200: baud_rate = B115200; break;
-    default:     baud_rate = B9600;   break;
+    case 230400: baud_rate = B230400; break;
+    case 460800: baud_rate = B460800; break;
+    case 921600: baud_rate = B921600; break;
+    default:     
+      LOGW("Unsupported baud rate %d, using default 115200", this->baud_rate_);
+      baud_rate = B115200;   
+      break;
   }
 
   cfsetispeed(&tty, baud_rate);
@@ -1054,6 +1072,10 @@ std::vector<uint8_t> Localizer::read_jy62_packet() {
   if (bytes_read > 0) {
     // 将新数据添加到缓冲区
     buffer.insert(buffer.end(), temp_buffer, temp_buffer + bytes_read);
+  } else if (bytes_read < 0) {
+    // 读取错误
+    LOGE("Error reading from JY62 device: %s", strerror(errno));
+    return {};
   }
 
   // 如果缓冲区太大，清理掉旧数据避免内存泄漏
@@ -1061,6 +1083,7 @@ std::vector<uint8_t> Localizer::read_jy62_packet() {
     buffer.erase(buffer.begin(), buffer.begin() + 512);
   }
 
+  // 尝试从缓冲区中提取完整数据包
   while (buffer.size() >= 11) {
     // 查找数据包起始标记
     size_t start_pos = 0;
@@ -1091,7 +1114,9 @@ std::vector<uint8_t> Localizer::read_jy62_packet() {
     bool valid_type = (packet_type >= 0x50 && packet_type <= 0x59);
     if (!valid_type) {
       // 未知类型，跳过起始字节并继续查找
-      buffer.erase(buffer.begin());
+      if (!buffer.empty()) {
+        buffer.erase(buffer.begin());
+      }
       continue;
     }
 
@@ -1104,7 +1129,9 @@ std::vector<uint8_t> Localizer::read_jy62_packet() {
     if (checksum != buffer[10]) {
       LOGW("Checksum mismatch: expected 0x%02x, got 0x%02x", checksum, buffer[10]);
       // 校验失败，仅跳过起始字节，而不是整个数据包
-      buffer.erase(buffer.begin());
+      if (!buffer.empty()) {
+        buffer.erase(buffer.begin());
+      }
       continue;
     }
 
@@ -1123,8 +1150,7 @@ bool Localizer::parse_jy62_packet(const std::vector<uint8_t>& packet,
                          double& accel_x, double& accel_y, double& accel_z,
                          double& gyro_x, double& gyro_y, double& gyro_z) {
   // 检查数据包大小
-  if (packet.size() != 14) {
-    // 使用正确的日志函数
+  if (packet.size() < 11) {  // 至少需要11个字节
     cloudlog_e(0, __FILE__, __LINE__, __func__, "Invalid JY62 packet size: %zu", packet.size());
     return false;
   }
@@ -1135,12 +1161,12 @@ bool Localizer::parse_jy62_packet(const std::vector<uint8_t>& packet,
     return false;
   }
 
-  // 计算校验和
-  uint8_t expected_sum = 0x55 + packet[1];
-  for (int i = 2; i < 13; i++) {
+  // 计算校验和 (前10个字节之和的低8位)
+  uint8_t expected_sum = 0;
+  for (int i = 0; i < 10; i++) {
     expected_sum += packet[i];
   }
-  uint8_t actual_sum = packet[13];
+  uint8_t actual_sum = packet[10];
 
   if (expected_sum != actual_sum) {
     cloudlog_e(0, __FILE__, __LINE__, __func__, "JY62 packet checksum error: expected 0x%02x, got 0x%02x",
@@ -1152,10 +1178,13 @@ bool Localizer::parse_jy62_packet(const std::vector<uint8_t>& packet,
   uint8_t type = packet[1];
   switch (type) {
     case 0x51: { // 加速度数据
+      // 检查是否有足够的数据
+      if (packet.size() < 11) return false;
+      
       // 解析加速度数据
-      int16_t ax = (packet[2] << 8) | packet[3];
-      int16_t ay = (packet[4] << 8) | packet[5];
-      int16_t az = (packet[6] << 8) | packet[7];
+      int16_t ax = (int16_t)((packet[3] << 8) | packet[2]);
+      int16_t ay = (int16_t)((packet[5] << 8) | packet[4]);
+      int16_t az = (int16_t)((packet[7] << 8) | packet[6]);
       
       // 转换为物理单位 (g)
       accel_x = ax / 32768.0 * 16.0;
@@ -1165,10 +1194,13 @@ bool Localizer::parse_jy62_packet(const std::vector<uint8_t>& packet,
       return true;
     }
     case 0x52: { // 角速度数据
+      // 检查是否有足够的数据
+      if (packet.size() < 11) return false;
+      
       // 解析角速度数据
-      int16_t wx = (packet[2] << 8) | packet[3];
-      int16_t wy = (packet[4] << 8) | packet[5];
-      int16_t wz = (packet[6] << 8) | packet[7];
+      int16_t wx = (int16_t)((packet[3] << 8) | packet[2]);
+      int16_t wy = (int16_t)((packet[5] << 8) | packet[4]);
+      int16_t wz = (int16_t)((packet[7] << 8) | packet[6]);
       
       // 转换为物理单位 (°/s)
       gyro_x = wx / 32768.0 * 2000.0;
@@ -1178,10 +1210,13 @@ bool Localizer::parse_jy62_packet(const std::vector<uint8_t>& packet,
       return true;
     }
     case 0x53: { // 角度数据
+      // 检查是否有足够的数据
+      if (packet.size() < 11) return false;
+      
       // 解析角度数据
-      int16_t roll_l = (packet[2] << 8) | packet[3];
-      int16_t pitch_l = (packet[4] << 8) | packet[5];
-      int16_t yaw_l = (packet[6] << 8) | packet[7];
+      int16_t roll_l = (int16_t)((packet[3] << 8) | packet[2]);
+      int16_t pitch_l = (int16_t)((packet[5] << 8) | packet[4]);
+      int16_t yaw_l = (int16_t)((packet[7] << 8) | packet[6]);
       
       // 转换为物理单位 (°)
       double roll = roll_l / 32768.0 * 180.0;
