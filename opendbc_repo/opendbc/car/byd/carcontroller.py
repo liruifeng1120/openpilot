@@ -237,32 +237,6 @@ class CarController(CarControllerBase):
         self.sss = 0
         self.rfss = 0
 
-      # 调试日志（仅用于监控，不影响控制逻辑）
-      if CC.longActive:
-        # 获取视觉距离用于对比
-        vision_distance = 199
-        if self.sm.alive['modelV2']:
-            model_data = self.sm['modelV2']
-            if len(model_data.leadsV3) > 0 and model_data.leadsV3[0].prob > 0.5:
-                vision_distance = model_data.leadsV3[0].x[0]
-
-        try:
-          with open("/data/debug/byd_mpc_debug_final.log", "a") as f:
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            f.write(f"[{timestamp}] BYD CarController Final: "
-                   f"mpc_accel={mpc_target_accel:.3f}, "
-                   f"final_accel={final_accel:.3f}, "
-                   f"v_ego={CS.out.vEgo:.2f}, "
-                   f"lead_speed={lead_speed:.2f}, "
-                   f"relative_speed={relative_speed:.2f}, "
-                   f"radar_dist={lead_distance}, "
-                   f"vision_dist={vision_distance:.1f}, "
-                   f"fusion_dist={fusion_distance:.1f}, "
-                   f"data_source={data_source}, "
-                   f"running={running}\n")
-        except:
-          pass
-
       self.mpc_acc_counter = int(self.mpc_acc_counter + 1) & 0xF
 
       # 发送控制命令
