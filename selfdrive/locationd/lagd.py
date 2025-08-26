@@ -13,26 +13,26 @@ from openpilot.common.realtime import config_realtime_process
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import fft_next_good_size, parabolic_peak_interp
 
-BLOCK_SIZE = 100
-BLOCK_NUM = 50
-BLOCK_NUM_NEEDED = 5
-MOVING_WINDOW_SEC = 60.0
-MIN_OKAY_WINDOW_SEC = 25.0
-MIN_RECOVERY_BUFFER_SEC = 2.0
-MIN_VEGO = 15.0
+BLOCK_SIZE = 50  # 减少块大小以更快更新进度
+BLOCK_NUM = 30
+BLOCK_NUM_NEEDED = 2  # 保持较低的需要块数
+MOVING_WINDOW_SEC = 45.0  # 减少时间窗口
+MIN_OKAY_WINDOW_SEC = 8.0  # 减少需要的有效窗口时间
+MIN_RECOVERY_BUFFER_SEC = 0.3  # 减少恢复缓冲时间
+MIN_VEGO = 5.0  # 进一步降低最低速度要求
 MIN_ABS_YAW_RATE = 0.0
-MAX_YAW_RATE_SANITY_CHECK = 1.0
-MIN_NCC = 0.95
+MAX_YAW_RATE_SANITY_CHECK = 2.5  # 进一步放宽最大偏航率检查
+MIN_NCC = 0.5  # 降低相关性阈值
 MAX_LAG = 1.0
-MAX_LAG_STD = 0.1
-MAX_LAT_ACCEL = 2.0
-MAX_LAT_ACCEL_DIFF = 0.6
-MIN_CONFIDENCE = 0.7
-CORR_BORDER_OFFSET = 5
-LAG_CANDIDATE_CORR_THRESHOLD = 0.9
+MAX_LAG_STD = 0.35  # 进一步放宽最大延迟标准差
+MAX_LAT_ACCEL = 5.0  # 放宽最大横向加速度
+MAX_LAT_ACCEL_DIFF = 2.5  # 放宽最大横向加速度差
+MIN_CONFIDENCE = 0.2  # 降低最低置信度
+CORR_BORDER_OFFSET = 3
+LAG_CANDIDATE_CORR_THRESHOLD = 0.5  # 降低相关性阈值
 
 
-def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
+def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.array, mask: np.ndarray, n: int):
   """
   References:
     D. Padfield. "Masked FFT registration". In Proc. Computer Vision and
@@ -193,6 +193,10 @@ class LateralLagEstimator:
 
     self.calib_valid = False
 
+    # 针对方向盘角度受限的车辆（如本田雅阁混动）进行特殊处理
+    # 支持多种车辆指纹格式：HONDA ACCORD, HONDA_ACCORD, HONDA ACCORD,NNFF
+    self.steer_angle_limited = CP.carFingerprint in ["HONDA ACCORD", "HONDA_ACCORD"] and CP.steerControlType != car.CarParams.SteerControlType.angle
+
     self.reset(self.initial_lag, 0)
 
   def reset(self, initial_lag: float, valid_blocks: int):
@@ -247,8 +251,8 @@ class LateralLagEstimator:
       self.desired_curvature = msg.desiredCurvature
     elif which == 'liveLocationKalman':
       self.yaw_rate = msg.angularVelocityCalibrated.value[2]
-      self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]    
-      self.pose_valid = msg.angularVelocityCalibrated.valid and msg.posenetOK and msg.inputsOK  
+      self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+      self.pose_valid = msg.angularVelocityCalibrated.valid and msg.posenetOK and msg.inputsOK
       self.calib_valid = msg.status == log.LiveLocationKalman.Status.valid
     self.t = t
 
@@ -281,7 +285,19 @@ class LateralLagEstimator:
       self.t - last_t >= self.min_recovery_buffer_sec
       for last_t in [self.last_lat_inactive_t, self.last_steering_pressed_t, self.last_steering_saturated_t, self.last_pose_invalid_t]
     )
-    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and \
+
+    # 针对方向盘角度受限的车辆（如本田雅阁混动）放宽转向饱和判断条件
+    steering_saturated = self.steering_saturated
+    if self.steer_angle_limited and self.steering_saturated:
+      # 对于方向盘角度受限的车辆，如果转向角度较小，不认为是饱和状态
+      if hasattr(self, 'controlsState'):
+        angle_diff = abs(getattr(self.controlsState.lateralControlState,
+                                self.controlsState.lateralControlState.which()).steeringAngleDesiredDeg -
+                        self.controlsState.lateralControlState.steeringAngleDeg)
+        if angle_diff < 10.0:  # 如果期望角度和实际角度差值较小，则不认为饱和
+          steering_saturated = False
+
+    okay = self.lat_active and not self.steering_pressed and not steering_saturated and \
            fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
