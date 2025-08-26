@@ -73,6 +73,7 @@ class LocationEstimator:
 
   def _validate_sensor_source(self, source: log.SensorEventData.SensorSource):
     # some segments have two IMUs, ignore the second one
+    # Allow JY62 sensor data by checking if source is not bmx055
     return source != log.SensorEventData.SensorSource.bmx055
 
   def _validate_sensor_time(self, sensor_time: float, t: float):
