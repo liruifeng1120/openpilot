@@ -183,7 +183,8 @@ class VCruiseCarrot:
     self._cruise_cancel_state = False
     self._pause_auto_speed_up = False
     self._activate_cruise = 0
-    self._lat_enabled = self.params.get_int("AutoEngage") > 0
+    # 수정默认값을False，解决未按按钮就激活车道保持的问题
+    self._lat_enabled = False
     self._v_cruise_kph_at_brake = 0
     self.cruise_state_available_last = False
 
@@ -324,8 +325,9 @@ class VCruiseCarrot:
       self._cruise_ready = True if self._activate_cruise == -2 else False
 
     if CS.cruiseState.available:
-      if not self.cruise_state_available_last:
-        self._lat_enabled = True
+      # 移除自动设置_lat_enabled为True的逻辑，解决未按按钮就激活车道保持的问题
+      # if not self.cruise_state_available_last:
+      #   self._lat_enabled = True
       if not self.CP.pcmCruise:
         # if stock cruise is completely disabled, then we can use our own set speed logic
         self.v_cruise_kph = np.clip(v_cruise_kph, self._cruise_speed_min, self._cruise_speed_max)
