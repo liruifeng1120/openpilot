@@ -443,7 +443,7 @@ class VCruiseCarrot:
   def _carrot_command(self, v_cruise_kph, button_type, long_pressed):
     if self.carrot_cmd_index_last != self.carrot_cmd_index:
       self.carrot_cmd_index_last = self.carrot_cmd_index
-      print(f"Carrot command(cruise.py): {self.carrot_cmd} {self.carrot_arg}")
+      #print(f"Carrot command(cruise.py): {self.carrot_cmd} {self.carrot_arg}")
       if self.carrot_cmd == "CRUISE":
         if self.carrot_arg == "OFF":
           self._cruise_control(-2, -1, "Cruise off (carrot command)")
@@ -753,7 +753,7 @@ class VCruiseCarrot:
         elif self.d_rel > 0:
           self._paddle_decel_active = False
           v_cruise_kph = self.v_ego_kph_set
-          
+
 
     if self._gas_pressed_count > self._gas_tok_timer:
       if CS.aEgo < -0.5:
