@@ -759,25 +759,27 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   latLongToggles->addItem(new CValueControl("CustomSteerDeltaDown", tr("LAT: CustomSteerDeltaDown(0)"), "", "../assets/offroad/icon_logic.png", 0, 50, 1));
 
   dispToggles = new ListWidget(this);
-  //dispToggles->addItem(new CValueControl("ShowHudMode", tr("DISP:Display Mode"), tr("0:Frog,1:APilot,2:Bottom,3:Top,4:Left,5:Left-Bottom"), "../assets/offroad/icon_shell.png", 0, 5, 1));
-  dispToggles->addItem(new CValueControl("ShowDebugUI", tr("DISP:Debug Info"), "", "../assets/offroad/icon_shell.png", 0, 2, 1));
-  dispToggles->addItem(new CValueControl("ShowTpms", tr("DISP:Tpms Info"), "", "../assets/offroad/icon_shell.png", 0, 3, 1));
-  dispToggles->addItem(new CValueControl("ShowDateTime", tr("DISP:Time Info"), tr("0:None,1:Time/Date,2:Time,3:Date"), "../assets/offroad/icon_calendar.png", 0, 3, 1));
-  //dispToggles->addItem(new CValueControl("ShowSteerRotate", tr("DISP:Handle rotate"), tr("0:None,1:Rotate"), "../assets/offroad/icon_shell.png", 0, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowPathEnd", tr("DISP:Path End"), tr("0:None,1:Display"), "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowAccelRpm", tr("DISP:Accel meter"), tr("0:None,1:Display,1:Accel+RPM"), "../assets/offroad/icon_shell.png", 0, 2, 1));
-  //dispToggles->addItem(new CValueControl("ShowTpms", tr("DISP:TPMS"), tr("0:None,1:Display"), "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowSteerMode", tr("DISP:Handle Display Mode"), tr("0:Black,1:Color,2:None"), "../assets/offroad/icon_shell.png", 0, 2, 1));
-  dispToggles->addItem(new CValueControl("ShowDeviceState", tr("DISP:Device State"), tr("0:None,1:Display"), "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowConnInfo", tr("DISP:APM connection"), tr("0:NOne,1:Display"), "../assets/offroad/icon_shell.png", 0, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowLaneInfo", tr("DISP:Lane Info"), tr("-1:None, 0:Path, 1:Path+Lane, 2: Path+Lane+RoadEdge"), "../assets/offroad/icon_shell.png", -1, 2, 1));
-  //dispToggles->addItem(new CValueControl("ShowBlindSpot", tr("DISP:BSD Info"), tr("0:None,1:Display"), "../assets/offroad/icon_shell.png", 0, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowGapInfo", tr("DISP:GAP Info"), tr("0:None,1:Display"), "../assets/offroad/icon_shell.png", -1, 1, 1));
-  //dispToggles->addItem(new CValueControl("ShowDmInfo", tr("DISP:DM Info"), tr("0:None,1:Display,-1:Disable(Reboot)"), "../assets/offroad/icon_shell.png", -1, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowRadarInfo", tr("DISP:Radar Info"), tr("0:None,1:Display,2:RelPos,3:Stopped Car"), "../assets/offroad/icon_shell.png", 0, 3, 1));
-  dispToggles->addItem(new CValueControl("ShowRouteInfo", tr("DISP:Route Info"), tr("0:None,1:Display"), "../assets/offroad/icon_shell.png", 0, 1, 1));
-  dispToggles->addItem(new CValueControl("ShowPlotMode", tr("DISP:Debug plot"), "", "../assets/offroad/icon_shell.png", 0, 10, 1));
-  dispToggles->addItem(new CValueControl("ShowCustomBrightness", tr("Brightness ratio"), "", "../assets/offroad/icon_brightness.png", 0, 100, 10));
+  dispToggles->addItem(new CValueControl("ShowDebugLog", "调试日志", "值的每个位代表一种日志,bit0-导航信息,bit1-变道请求,bit2-变道状态机,bit4-变道状态信息", 0, 255, 1));
+  dispToggles->addItem(new CValueControl("ShowDebugUI", "调试信息", "", 0, 2, 1));
+  dispToggles->addItem(new CValueControl("ShowTpms", "胎压信息", "", 0, 3, 1));
+  dispToggles->addItem(new CValueControl("ShowDateTime", "时间信息", "0:无,1:时间/日期,2:仅时间,3:仅日期", 0, 3, 1));
+  dispToggles->addItem(new CValueControl("ShowPathEnd", "轨迹终点", "0:无,1:显示", 0, 1, 1));
+  dispToggles->addItem(new CValueControl("ShowDeviceState", "设备状态", "0:无,1:显示", 0, 1, 1));
+  dispToggles->addItem(new CValueControl("ShowLaneInfo", "车道信息", "-1:无,0:轨迹,1:轨迹+车道线,2:轨迹+车道线+路沿", -1, 2, 1));
+  dispToggles->addItem(new CValueControl("ShowRadarInfo", "雷达信息", "0:无,1:显示,2:相对位置,3:静止车辆", 0, 3, 1));
+  dispToggles->addItem(new CValueControl("ShowRouteInfo", "路线信息", "0:无,1:显示", 0, 1, 1));
+  dispToggles->addItem(new CValueControl("ShowPlotMode", "调试图表", "", 0, 10, 1));
+  dispToggles->addItem(new CValueControl("ShowCustomBrightness", "亮度比例", "", 0, 100, 10));
+
+  //dispToggles->addItem(new CValueControl("ShowHudMode", "Display Mode", "0:Frog,1:APilot,2:Bottom,3:Top,4:Left,5:Left-Bottom", 0, 5, 1));
+  //dispToggles->addItem(new CValueControl("ShowSteerRotate", "Handle rotate", "0:None,1:Rotate", 0, 1, 1));
+  //dispToggles->addItem(new CValueControl("ShowAccelRpm", "Accel meter", "0:None,1:Display,1:Accel+RPM", 0, 2, 1));
+  //dispToggles->addItem(new CValueControl("ShowTpms", "TPMS", "0:None,1:Display", 0, 1, 1));
+  //dispToggles->addItem(new CValueControl("ShowSteerMode", "Handle Display Mode", "0:Black,1:Color,2:None", 0, 2, 1));
+  //dispToggles->addItem(new CValueControl("ShowConnInfo", "APM connection", "0:NOne,1:Display", 0, 1, 1));
+  //dispToggles->addItem(new CValueControl("ShowBlindSpot", "BSD Info", "0:None,1:Display", 0, 1, 1));
+  //dispToggles->addItem(new CValueControl("ShowGapInfo", "GAP Info", "0:None,1:Display", -1, 1, 1));
+  //dispToggles->addItem(new CValueControl("ShowDmInfo", "DM Info", "0:None,1:Display,-1:Disable(Reboot)", -1, 1, 1));
 
   pathToggles = new ListWidget(this);
   pathToggles->addItem(new CValueControl("ShowPathModeCruiseOff", tr("DISP: Path Mode: Cruise OFF"), tr("0:Normal,1,2:Rec,3,4:^^,5,6:Rec,7,8:^^,9,10,11,12:Smooth^^"), "../assets/offroad/icon_shell.png", 0, 15, 1));

@@ -40,6 +40,7 @@ def get_default_params():
 
 
     ("LongitudinalPersonalityMax", "4"),
+    ("ShowDebugLog", "0"),
     ("ShowDebugUI", "1"),
     ("ShowTpms", "1"),
     ("ShowDateTime", "1"),
@@ -72,7 +73,7 @@ def get_default_params():
     ("AutoCurveSpeedFactor", "120"),
     ("AutoCurveSpeedAggressiveness", "90"),
 
-    ("AutoTurnControl", "0"),
+    ("AutoTurnControl", "2"),
     ("AutoTurnControlSpeedTurn", "20"),
     ("AutoTurnControlTurnEnd", "6"),
     ("AutoTurnMapChange", "0"),
