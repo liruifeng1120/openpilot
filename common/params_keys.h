@@ -319,6 +319,8 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"AutoDoForkBlinkerDistH", PERSISTENT},
     {"AutoForkDecalRateH", PERSISTENT},
     {"AutoForkSpeedMinH", PERSISTENT},
+    {"AutoForkDecalRate", PERSISTENT},
+    {"AutoForkSpeedMin", PERSISTENT},
     {"AutoForkDistOffset", PERSISTENT},
     {"AutoDoForkCheckDist", PERSISTENT},
     {"AutoDoForkBlinkerDist", PERSISTENT},
