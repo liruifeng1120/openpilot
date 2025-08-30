@@ -855,33 +855,34 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   });
 
   startToggles->addItem(selectCarBtn);
-  startToggles->addItem(new CValueControl("HyundaiCameraSCC", tr("HYUNDAI: CAMERA SCC"), tr("1:Connect the SCC's CAN line to CAM, 2:Sync Cruise state, 3:StockLong"), "../assets/offroad/icon_shell.png", 0, 3, 1));
-  startToggles->addItem(new ParamControl("IsLdwsCar", tr("IsLdwsCar"), "", "../assets/offroad/icon_road.png", this));
-  startToggles->addItem(new CValueControl("EnableRadarTracks", tr("Enable Radar Track"), tr("1:Enable RadarTrack, -1,2:Disable use HKG SCC radar at all times"), "../assets/offroad/icon_shell.png", -1, 2, 1));
-  startToggles->addItem(new CValueControl("CanfdHDA2", tr("CANFD: HDA2 mode"), tr("1:HDA2,2:HDA2+BSM"), "../assets/offroad/icon_shell.png", 0, 2, 1));
-  startToggles->addItem(new CValueControl("AutoCruiseControl", tr("Auto Cruise control"), tr("Softhold, Auto Cruise ON/OFF control"), "../assets/offroad/icon_road.png", 0, 3, 1));
-  startToggles->addItem(new CValueControl("CruiseOnDist", tr("CRUISE: Auto ON distance(0cm)"), tr("When GAS/Brake is OFF, Cruise ON when the lead car gets closer."), "../assets/offroad/icon_road.png", 0, 2500, 50));
-  startToggles->addItem(new CValueControl("AutoEngage", tr("Auto Engage control on start"), tr("1:SteerEnable, 2:Steer/Cruise Engage"), "../assets/offroad/icon_road.png", 0, 2, 1));
-  startToggles->addItem(new ParamControl("DisableMinSteerSpeed", tr("Disable Min.SteerSpeed (Eg. SMDPS"), "", "../assets/offroad/icon_road.png", this));
-  startToggles->addItem(new CValueControl("AutoGasTokSpeed", tr("Auto AccelTok speed"), tr("Gas(Accel)Tok enable speed"), "../assets/offroad/icon_road.png", 0, 200, 5));
-  startToggles->addItem(new ParamControl("AutoGasSyncSpeed", tr("Auto update Cruise speed"), "", "../assets/offroad/icon_road.png", this));
-  startToggles->addItem(new CValueControl("SpeedFromPCM", tr("Read Cruise Speed from PCM"), tr("Toyota must set to 1, Honda 3"), "../assets/offroad/icon_road.png", 0, 3, 1));
-  startToggles->addItem(new CValueControl("SoundVolumeAdjust", tr("Sound Volume(100%)"), "", "../assets/offroad/icon_sound.png", 5, 200, 5));
-  startToggles->addItem(new CValueControl("SoundVolumeAdjustEngage", tr("Sound Volume, Engage(10%)"), "", "../assets/offroad/icon_sound.png", 5, 200, 5));
-  startToggles->addItem(new CValueControl("MaxTimeOffroadMin", tr("Power off time (min)"), "", "../assets/offroad/icon_sandtimer.png", 1, 600, 10));
-  startToggles->addItem(new ParamControl("DisableDM", tr("Disable DM"), "", "../assets/img_driver_face_static_x.png", this));
-  startToggles->addItem(new CValueControl("EnableConnect", tr("EnableConnect"), tr("Your device may be banned by Comma"), "../assets/offroad/icon_sandtimer.png", 0, 1, 1));
-  //startToggles->addItem(new CValueControl("CarrotCountDownSpeed", tr("NaviCountDown Speed(10)"), "", "../assets/offroad/icon_shell.png", 0, 200, 5));
-  startToggles->addItem(new CValueControl("MapboxStyle", tr("Mapbox Style(0)"), "", "../assets/offroad/icon_shell.png", 0, 2, 1));
-  startToggles->addItem(new CValueControl("RecordRoadCam", tr("Record Road camera(0)"), tr("1:RoadCam, 2:RoadCam+WideRoadCam"), "../assets/offroad/icon_shell.png", 0, 2, 1));
-  startToggles->addItem(new CValueControl("HDPuse", tr("Use HDP(CCNC)(0)"), tr("1:While Using APN, 2:Always"), "../assets/offroad/icon_shell.png", 0, 2, 1));
-  startToggles->addItem(new ParamControl("HotspotOnBoot", tr("Hotspot enabled on boot"), "", "../assets/offroad/icon_shell.png", this));
-  startToggles->addItem(new ParamControl("SoftwareMenu", tr("Enable Software Menu"), "", "../assets/offroad/icon_shell.png", this));
-  //startToggles->addItem(new ParamControl("NoLogging", tr("Disable Logger"), "", "../assets/offroad/icon_shell.png", this));
-  //startToggles->addItem(new ParamControl("LaneChangeNeedTorque", tr("LaneChange: Need Torque"), "", "../assets/offroad/icon_shell.png", this));
-  //startToggles->addItem(new CValueControl("LaneChangeLaneCheck", tr("LaneChange: Check lane exist"), tr("(0:No,1:Lane,2:+Edge)"), "../assets/offroad/icon_shell.png", 0, 2, 1));
-  startToggles->addItem(new CValueControl("NNFF", tr("NNFF"), tr("Twilsonco's NNFF(Reboot required)"), "../assets/offroad/icon_road.png", 0, 1, 1));
-  startToggles->addItem(new CValueControl("NNFFLite", tr("NNFFLite"), tr("Twilsonco's NNFF-Lite(Reboot required)"), "../assets/offroad/icon_road.png", 0, 1, 1));
+  startToggles->addItem(new CValueControl("HyundaiCameraSCC", "现代: 摄像头SCC(0)", "1:连接SCC的CAN线到摄像头, 2:同步定速状态, 3:原厂长控，不是用摄像头实现SCC的均设置为0", 0, 3, 1));
+  startToggles->addItem(new CValueControl("CanfdHDA2", "CANFD: HDA2 模式", "1:HDA2, 2:HDA2+盲点监测, 一般非CanFD车型设置为0", 0, 2, 1));
+  startToggles->addItem(new CValueControl("EnableRadarTracks", "启用雷达追踪(1)", "1:启用雷达追踪, -1,2:禁用 (始终使用HKG SCC雷达)，胜达设置为1", -1, 2, 1));
+  startToggles->addItem(new CValueControl("AutoCruiseControl", "自动巡航控制(0)", "自动巡航总开关,0-关,>1开,>1 softmode1 否则softmode2", 0, 3, 1));
+  startToggles->addItem(new CValueControl("CruiseOnDist", "定速: 自动开启距离(0cm)", "当油门/刹车未踩下时，前车靠近自动开启定速", 0, 2500, 50));
+  startToggles->addItem(new CValueControl("AutoEngage", "车辆启动时自动开启的功能", "1:车道保持启用, 2:车道保持+定速启用", 0, 2, 1));
+  startToggles->addItem(new CValueControl("AutoGasTokSpeed", "轻踩油门开启巡航的速度", "当车速大于此速度时，轻点油门可自动开启巡航，前提是'自动巡航控制'必须要打开", 0, 200, 5));
+  startToggles->addItem(new CValueControl("SpeedFromPCM", "从PCM读取定速速度(2)", "丰田必须设为1, 本田设为3，默认为2", 0, 3, 1));
+  startToggles->addItem(new CValueControl("SoundVolumeAdjust", "提示音音量(100%)", "", 5, 200, 5));
+  startToggles->addItem(new CValueControl("SoundVolumeAdjustEngage", "接管提示音音量(10%)", "", 5, 200, 5));
+  startToggles->addItem(new CValueControl("MaxTimeOffroadMin", "熄屏时间 (分钟)", "", 1, 600, 10));
+  startToggles->addItem(new CValueControl("EnableConnect", "启用远程连接", "您的设备可能会被 Comma 封禁", 0, 2, 1));
+  startToggles->addItem(new CValueControl("MapboxStyle", "地图样式(0)", "", 0, 2, 1));
+  startToggles->addItem(new CValueControl("RecordRoadCam", "记录前置摄像头(0)", "1:前置, 2:前置+广角前置", 0, 2, 1));
+  startToggles->addItem(new CValueControl("HDPuse", "使用HDP(CCNC)(0)", "1:使用APN时, 2:始终启用", 0, 2, 1));
+  startToggles->addItem(new CValueControl("NNFF", "NNFF", "Twilsonco的NNFF(需重启)", 0, 1, 1));
+  startToggles->addItem(new CValueControl("NNFFLite", "NNFF精简版", "Twilsonco的NNFF-Lite(需重启)", 0, 1, 1));
+  startToggles->addItem(new CValueControl("AutoGasSyncSpeed", "踩油门自动更新巡航速度", "0-关闭，1-开启，当开启此功能时，如果踩油门且当前车速高于巡航速度，巡航速度会自动调整为当前车速", 0, 1, 1));
+  startToggles->addItem(new CValueControl("DisableMinSteerSpeed", "禁用最小转向速度限制", "", 0, 1, 1));
+  startToggles->addItem(new CValueControl("DisableDM", "禁用疲劳监测(DM)", "", 0, 1, 1));
+  startToggles->addItem(new CValueControl("HotspotOnBoot", "开机启用热点", "", 0, 1, 1));
+  startToggles->addItem(new CValueControl("SoftwareMenu", "启用软件菜单", "", 0, 1, 1));
+  startToggles->addItem(new CValueControl("IsLdwsCar", "是否LDWS车型", "", 0, 1, 1));
+
+  //startToggles->addItem(new CValueControl("CarrotCountDownSpeed", "导航倒计时速度(10)", "", 0, 200, 5));
+  //startToggles->addItem(new ParamControl("NoLogging", "禁用日志记录", "", this));
+  //startToggles->addItem(new ParamControl("LaneChangeNeedTorque", "变道: 需要方向盘施力", "", this));
+  //startToggles->addItem(new CValueControl("LaneChangeLaneCheck", "变道: 检查车道存在", "(0:否,1:车道,2:+路肩)", 0, 2, 1));
 
   speedToggles = new ListWidget(this);
   speedToggles->addItem(new CValueControl("RoadType", "手动指定道路类型(-1)", "-1:导航自动识别，0:高速(无应急车道) 1:高速(有应急车道), >=2:其它道路", -1, 100, 1));
@@ -907,15 +908,21 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   speedToggles->addItem(new CValueControl("AutoTurnControlTurnEnd", "ATC: 转弯控制距离时间(6)", "距离=速度*时间", 0, 30, 1));
   speedToggles->addItem(new CValueControl("AutoTurnMapChange", "ATC 自动地图切换(0)", "", 0, 1, 1));
   //new
-  speedToggles->addItem(new CValueControl("AutoHighWayDoForkBlinkerDist", "ATC 高速进匝道口提前打灯的距离(50m)", "在距离匝道口多少米时提前打转向灯", 0, 500, 5));
-  speedToggles->addItem(new CValueControl("AutoHighWayDoForkDistOffset", "ATC 高速进匝道口距离(10m)", "在距离匝道口多少米时打方向盘进匝道", 0, 200, 5));
-  speedToggles->addItem(new CValueControl("AutoHighWayForkDecalRate", "ATC 高速进匝道口前降速比率(70%)", "在进匝道口把车速降至道路限速的比率,0表示关闭此功能", 0, 100, 5));
-  speedToggles->addItem(new CValueControl("AutoHighWayForkSpeedMin", "ATC 高速进匝道口前降速最低速度(60)", "在进匝道口前允许把车速降至的最低速度，低于此速度时则不再继续降低", 0, 100, 5));
-  speedToggles->addItem(new CValueControl("AutoHighWayForkDistOffset", "ATC 高速提前变道距离(1000m)", "高速上提前自动变道至最左或最右车道的距离", 0, 2000, 5));
-  speedToggles->addItem(new CValueControl("AutoDoForkBlinkerDist", "ATC 公路进分叉口提前打灯距离(10m)", "在距离分叉口多少米时提前打转向灯", 0, 500, 5));
-  speedToggles->addItem(new CValueControl("AutoDoForkDistOffset", "ATC 公路进分叉口距离(0m)", "在距离分叉口多少米时打方向盘进叉路", 0, 200, 5));
-  speedToggles->addItem(new CValueControl("AutoForkDistOffset", "ATC 公路提前变道距离(50m)", "公路上提前自动变道至最左或最右车道的距离", 0, 2000, 5));
-  speedToggles->addItem(new CValueControl("AutoTurnDistOffset", "ATC 自动转弯距离偏移(0m)", "设置距离偏移，可以让自动转弯提前", -100, 200, 1));
+  speedToggles->addItem(new CValueControl("AutoForkDistOffsetH", "H 高速提前变道靠边的距离(1000m)", "在距离匝道口多少米时开始变道到最侧面车道", 0, 2000, 5));
+  speedToggles->addItem(new CValueControl("AutoDoForkDecalDistH", "H 高速进匝道口提前减速的距离(50m)", "在距离匝道口多少米时开始减速", 0, 500, 5));
+  speedToggles->addItem(new CValueControl("AutoDoForkBlinkerDistH", "H 高速进匝道口提前打灯的距离(10m)", "在距离匝道口多少米时开始打转身灯准备变道，但不是一定会立即变道，还需要等匝道出现的条件成立", 0, 200, 2));
+  speedToggles->addItem(new CValueControl("AutoDoForkCheckDistH", "H 高速提前识别出现匝道口的距离(3m)", "在靠近匝道口时提前识别匝道口出现的距离，是在模型预留的轨迹上提前检测的距离", 0, 100, 1));
+  speedToggles->addItem(new CValueControl("AutoForkDecalRateH", "H 高速进匝道口前降速比率(80%)", "在进匝道口把车速降至道路限速的比率,0表示关闭此功能", 0, 100, 5));
+  speedToggles->addItem(new CValueControl("AutoForkSpeedMinH", "H 高速进匝道口前降速最低速度(60)", "在进匝道口前允许把车速降至的最低速度，低于此速度时则不再继续降低", 0, 100, 5));
+
+  speedToggles->addItem(new CValueControl("AutoForkDistOffset", "L 公路提前变道靠边的距离(30m)", "在距离公路分叉口多少米时开始变道到最侧面车道", 0, 1000, 5));
+  speedToggles->addItem(new CValueControl("AutoDoForkDecalDist", "L 公路进分叉口提前减速的距离(20m)", "在距离公路分叉口多少米时开始减速", 0, 500, 5));
+  speedToggles->addItem(new CValueControl("AutoDoForkBlinkerDist", "L 公路进分叉口提前打灯距离(5m)", "在距离公路分叉口多少米时提前打转向灯准备变道，但不是一定会立即变道，还需要等分叉口出现的条件成立", 0, 200, 1));
+  speedToggles->addItem(new CValueControl("AutoDoForkCheckDist", "L 公路提前识别出现分叉口的距离(2m)", "在靠近公路分叉口时提前识别分叉口出现的距离，是在模型预留的轨迹上提前检测的距离", 0, 100, 1));
+  speedToggles->addItem(new CValueControl("AutoForkDecalRate", "L 公路进分叉口前降速比率(80%)", "在进公路分叉口时把车速降至道路限速的比率,0表示关闭此功能", 0, 100, 5));
+  speedToggles->addItem(new CValueControl("AutoForkSpeedMin", "L 公路进分叉口前降速最低速度(45)", "在进公路分叉口时前允许把车速降至的最低速度，低于此速度时则不再继续降低", 0, 100, 5));
+
+  speedToggles->addItem(new CValueControl("AutoTurnDistOffset", "ATC 自动转弯距离偏移(0m)", "提前自动转弯的距离，一般为0，仅针对转弯类型(非变道)", -100, 200, 1));
   speedToggles->addItem(new CValueControl("AutoTurnInNotRoadEdge", "ATC 允许在非侧边车道时自动变道(0)", "0-不允许在非侧边车道自动变道，1-允许", 0, 1, 1));
   speedToggles->addItem(new CValueControl("ContinuousLaneChange", "ATC 允许自动连续变道(0)", "0-关闭，1-允许连续变多条车道", 0, 1, 1));
   speedToggles->addItem(new CValueControl("ContinuousLaneChangeCnt", "ATC 允许连续变道次数(x+1)", "允许连续变道的次数=x+1次", 0, 4, 1));
@@ -924,7 +931,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   speedToggles->addItem(new CValueControl("AutoUpRoadLimit", "自动提高低于60km/h的公路限速(0)", "0-关闭，1-当普通公路限速低于60时，会把道路限速加上提速偏移值", 0, 1, 1));
   speedToggles->addItem(new CValueControl("AutoUpRoadLimit40KMH", "低于40km/h的公路提速偏移(15km/h)", "允许提高限速时，会把道路限速加上此提速偏移值", 0, 50, 1));
   speedToggles->addItem(new CValueControl("AutoUpHighwayRoadLimit", "自动提高低于60km/h的匝道限速(0)", "0-关闭，1-当高速公路限速低于60时，会把道路限速加上提速偏移值", 0, 1, 1));
-  speedToggles->addItem(new CValueControl("AutoUpHighwayRoadLimit40KMH", "低于40km/h的匝道提速偏移(15km/h)", "允许提高限速时，会把道路限速加上此提速偏移值", 0, 50, 1));
+  speedToggles->addItem(new CValueControl("AutoUpHighwayRoadLimit40KMH", "低于40km/h的匝道提速偏移(20km/h)", "允许提高限速时，会把道路限速加上此提速偏移值", 0, 50, 1));
 
   toggles_layout->addWidget(cruiseToggles);
   toggles_layout->addWidget(latLongToggles);
