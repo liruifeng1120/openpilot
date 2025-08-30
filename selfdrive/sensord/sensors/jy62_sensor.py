@@ -16,7 +16,7 @@ from openpilot.system.hardware import TICI
 
 
 class JY62Sensor:
-  def __init__(self, device_path='/dev/ttyUSB0', baud_rate=115200):
+  def __init__(self, device_path='/dev/ttyUSB0', baud_rate=9600):
     self.device_path = device_path
     self.baud_rate = baud_rate
     self.ser = None

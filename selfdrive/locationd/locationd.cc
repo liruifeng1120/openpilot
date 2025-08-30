@@ -103,7 +103,7 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
   this->device_type_ = ImuDeviceType::NONE;
   this->is_jy62_device_ = false;
   this->device_path_ = "/dev/ttyUSB0";
-  this->baud_rate_ = 115200;  // JY62设备默认波特率
+  this->baud_rate_ = 9600;  // JY62设备默认波特率
   this->jy62_fd_ = -1;
   this->jy62_running_ = false;
 }
@@ -792,7 +792,7 @@ int Localizer::locationd_thread() {
 
 int main(int argc, char *argv[]) {
   const std::string default_device_path = "/dev/ttyUSB0";
-  const int default_baud_rate = 115200;
+  const int default_baud_rate = 9600;
 
   std::string device_path = default_device_path;
   int baud_rate = default_baud_rate;

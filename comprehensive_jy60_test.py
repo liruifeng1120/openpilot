@@ -92,7 +92,7 @@ def test_direct_serial_communication():
     print("\n=== 直接串口通信测试 ===")
     try:
         # 尝试连接到JY62设备
-        ser = serial.Serial('/dev/ttyUSB0', 115200, 
+        ser = serial.Serial('/dev/ttyUSB0', 9600, 
                            bytesize=serial.EIGHTBITS,
                            parity=serial.PARITY_NONE,
                            stopbits=serial.STOPBITS_ONE,

@@ -50,7 +50,7 @@ proc = subprocess.Popen([
     './selfdrive/locationd/locationd', 
     '--type=jy62',
     '--device=/dev/ttyUSB0',
-    '--baud=115200'
+    '--baud=9600'
 ], cwd='/home/liruifeng/ajouatom')
 
 print(f'locationd进程已启动，PID: {proc.pid}')

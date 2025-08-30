@@ -36,7 +36,7 @@ source .venv/bin/activate
 # 设置环境变量以启用JY62设备支持
 export IMU_TYPE=jy62
 export IMU_DEVICE=/dev/ttyUSB0
-export IMU_BAUD=115200
+export IMU_BAUD=9600
 
 echo "环境变量设置:"
 echo "  IMU_TYPE=$IMU_TYPE"

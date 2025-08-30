@@ -296,7 +296,7 @@ def main():
   # 解析命令行参数
   parser = argparse.ArgumentParser()
   parser.add_argument('--device', default='/dev/ttyUSB0', help='JY62 device path')
-  parser.add_argument('--baud', default=115200, type=int, help='JY62 baud rate')
+  parser.add_argument('--baud', default=9600, type=int, help='JY62 baud rate')
   parser.add_argument('--type', default='jy62', help='IMU device type')
   args = parser.parse_args()
 

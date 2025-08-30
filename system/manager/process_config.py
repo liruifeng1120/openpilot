@@ -100,7 +100,7 @@ procs = [
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
   # 更新locationd配置以支持JY62设备
-  NativeProcess("locationd", "selfdrive/locationd", ["./locationd", "--type=jy62", "--device=/dev/ttyUSB0", "--baud=115200"], only_onroad),
+  NativeProcess("locationd", "selfdrive/locationd", ["./locationd", "--type=jy62", "--device=/dev/ttyUSB0", "--baud=9600"], only_onroad),
   #PythonProcess("locationd", "selfdrive.locationd.locationd", only_onroad),
   NativeProcess("_pandad", "selfdrive/pandad", ["./pandad"], always_run, enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),

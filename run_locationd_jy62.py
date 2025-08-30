@@ -13,7 +13,7 @@ def main():
     # 设置环境变量
     os.environ['IMU_TYPE'] = 'jy62'
     os.environ['IMU_DEVICE'] = '/dev/ttyUSB0'
-    os.environ['IMU_BAUD'] = '115200'
+    os.environ['IMU_BAUD'] = '9600'
     
     print("启动支持JY62设备的locationd服务...")
     print("环境变量设置:")
