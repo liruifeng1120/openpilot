@@ -754,6 +754,26 @@
         <translation type="obsolete">修改BYD原车纵向控制逻辑</translation>
     </message>
     <message>
+        <source>CalibrationParams</source>
+        <translation type="vanished">相机校准参数</translation>
+    </message>
+    <message>
+        <source>LiveDelay</source>
+        <translation type="vanished">横向延迟校准参数</translation>
+    </message>
+    <message>
+        <source>LiveTorqueParameters</source>
+        <translation type="vanished">扭矩校准参数</translation>
+    </message>
+    <message>
+        <source>Select calibration parameter to reset</source>
+        <translation type="vanished">选择重置校准参数</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset %1?</source>
+        <translation type="vanished">你确认要重置 %1?</translation>
+    </message>
+    <message>
         <source>Radar Vision Mode</source>
         <translation type="unfinished">纵向控制数据源选择</translation>
     </message>
@@ -922,7 +942,7 @@
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>您确定要重置设备校准吗？</translation>
+        <translation type="vanished">您确定要重置设备校准吗？</translation>
     </message>
     <message>
         <source>Review Training Guide</source>
@@ -1083,6 +1103,26 @@
     <message>
         <source>Reboot &amp; Disengage to Calibration</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CalibrationParams</source>
+        <translation type="unfinished">相机校准参数</translation>
+    </message>
+    <message>
+        <source>LiveDelay</source>
+        <translation type="unfinished">横向延迟校准参数</translation>
+    </message>
+    <message>
+        <source>LiveTorqueParameters</source>
+        <translation type="unfinished">扭矩校准参数</translation>
+    </message>
+    <message>
+        <source>Select calibration parameter to reset</source>
+        <translation type="unfinished">选择重置校准参数</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset %1?</source>
+        <translation type="unfinished">你确认要重置 %1?</translation>
     </message>
 </context>
 <context>
