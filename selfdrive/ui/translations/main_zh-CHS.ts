@@ -994,7 +994,7 @@
     </message>
     <message>
         <source>ReCalibration</source>
-        <translation>重新校准</translation>
+        <translation>重置校准</translation>
     </message>
     <message>
         <source>Git Pull &amp; Reboot</source>
