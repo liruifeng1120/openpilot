@@ -34,22 +34,30 @@ fi
 
 # 3. 复制udev规则文件
 echo "安装udev规则..."
-cp /home/liruifeng/ajouatom/99-jy60.rules /etc/udev/rules.d/
-chmod 644 /etc/udev/rules.d/99-jy60.rules
+cp /home/$LOGNAME/ajouatom/99-jy62.rules /etc/udev/rules.d/
+chmod 644 /etc/udev/rules.d/99-jy62.rules
 
 # 4. 重新加载udev规则
 echo "重新加载udev规则..."
 udevadm control --reload-rules
 udevadm trigger
 
-# 5. 显示设备信息
-echo "当前连接的USB串口设备:"
-ls -l /dev/ttyUSB* 2>/dev/null || echo "没有检测到USB串口设备"
-
-echo ""
 echo "配置完成！"
-echo "请执行以下操作之一以使组权限生效："
-echo "1. 重新登录系统"
-echo "2. 运行命令: newgrp dialout"
 echo ""
-echo "之后您应该能够访问JY62设备"
+echo "请执行以下步骤来验证配置："
+echo "1. 运行测试脚本验证设备连接:"
+echo "   cd /home/$LOGNAME/ajouatom && python3 simple_jy62_test.py"
+echo ""
+echo "2. 检查设备权限:"
+echo "   ls -l /dev/ttyUSB*"
+echo ""
+echo "3. 检查用户组:"
+echo "   groups"
+echo ""
+echo "如果仍有权限问题，请尝试以下操作："
+echo "sudo usermod -a -G dialout $LOGNAME"
+echo "newgrp dialout"
+echo ""
+echo "然后再次运行测试："
+echo "cd /home/$LOGNAME/ajouatom && python3 simple_jy62_test.py"
+echo "cd /home/$LOGNAME/ajouatom && python3 test_jy62_device.py"
