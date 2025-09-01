@@ -60,7 +60,7 @@ class CameraMJPG:
 
         # 多线程相关
         if num_workers is None:
-            num_workers = os.cpu_count() or 12
+            num_workers = os.cpu_count() or 4
         self.num_workers = num_workers
         self.frame_queue = queue.Queue(maxsize=max_queue_size)
         self.output_queue = queue.Queue(maxsize=max_queue_size)
