@@ -139,9 +139,6 @@ class VCruiseHelper:
       self.v_cruise_kph = int(round(np.clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
 
     self.v_cruise_cluster_kph = self.v_cruise_kph
-
-
-
 from openpilot.common.params import Params
 #from openpilot.selfdrive.selfdrived.events import Events
 #EventName = log.OnroadEvent.EventName
@@ -204,7 +201,6 @@ class VCruiseCarrot:
     self.carrot_cmd = ""
     self.carrot_arg = ""
 
-
     self._cancel_timer = 0
     self.d_rel = 0
     self.v_rel = 0
@@ -221,6 +217,9 @@ class VCruiseCarrot:
     self.useLaneLineSpeed = self.params.get_int("UseLaneLineSpeed")
     self.useLaneLineSpeedApply = self.useLaneLineSpeed
 
+  @property
+  def lat_enabled(self):
+      return self._lat_enabled
 
   @property
   def v_cruise_initialized(self):
@@ -275,6 +274,9 @@ class VCruiseCarrot:
     self._add_log("")
     self.update_params(is_metric)
     self.frame += 1
+    # 提前同步BTN_TOGGLE_ACC_OnOff状态
+    if hasattr(CS, 'latEnabled'):
+        self._lat_enabled = CS.latEnabled
     if CS.gearShifter != GearShifter.drive:
       self.autoCruiseControl_cancel_timer = 20 * 100  # 20 sec
     else:
@@ -324,8 +326,8 @@ class VCruiseCarrot:
       self._cruise_ready = True if self._activate_cruise == -2 else False
 
     if CS.cruiseState.available:
-      if not self.cruise_state_available_last:
-        self._lat_enabled = True
+      #if not self.cruise_state_available_last:
+      #  self._lat_enabled = True
       if not self.CP.pcmCruise:
         # if stock cruise is completely disabled, then we can use our own set speed logic
         self.v_cruise_kph = np.clip(v_cruise_kph, self._cruise_speed_min, self._cruise_speed_max)
@@ -345,6 +347,10 @@ class VCruiseCarrot:
 
     self.cruise_state_available_last = CS.cruiseState.available
     self.enabled_last = CC.enabled
+    # 添加状态同步，确保不被其他逻辑覆盖
+    if hasattr(CS, 'latEnabled'):
+        old_lat_enabled = self._lat_enabled
+        self._lat_enabled = CS.latEnabled
 
   def initialize_v_cruise(self, CS, experimental_mode: bool) -> None:
     return
@@ -469,6 +475,11 @@ class VCruiseCarrot:
     return v_cruise_kph, button_type, long_pressed
 
   def _update_cruise_buttons(self, CS, CC, v_cruise_kph):
+    # 同步BTN_TOGGLE_ACC_OnOff状态到横向控制
+    if hasattr(CS, 'latEnabled'):
+        # 直接使用BYD CarState中的BTN_TOGGLE_ACC_OnOff状态
+        self._lat_enabled = CS.latEnabled
+
     button_kph, button_type, long_pressed = self._prepare_buttons(CS, v_cruise_kph)
 
     v_cruise_kph, button_type, long_pressed = self._carrot_command(v_cruise_kph, button_type, long_pressed)
@@ -482,9 +493,14 @@ class VCruiseCarrot:
         self._add_log(f"Cruise Cancel state RESET {button_type}")
         self._cruise_cancel_state = False
 
+      # BTN_TOGGLE_ACC_OnOff = ON + BTN_AccUpDown_Cmd：启用横向和纵向控制
+      if self._lat_enabled and not CC.enabled:
+          self._cruise_control(1, -1, "Cruise on (BTN_TOGGLE_ACC_OnOff + BTN_AccUpDown_Cmd)")
+          self._add_log(f"Cruise enabled by {button_type} with lateral control ON")
+
     if not long_pressed:
       if button_type == ButtonType.accelCruise:
-        self._lat_enabled = True
+        #self._lat_enabled = True
         self._pause_auto_speed_up = False
         if self._soft_hold_active > 0:
           self._soft_hold_active = 0
@@ -500,7 +516,7 @@ class VCruiseCarrot:
         self.carrot_cruise_active = False
 
       elif button_type == ButtonType.decelCruise:
-        self._lat_enabled = True
+        #self._lat_enabled = True
         self._pause_auto_speed_up = True
         #self.carrot_cruise_active = False
 
@@ -509,7 +525,7 @@ class VCruiseCarrot:
         elif self._cruise_ready:
           self._paddle_decel_active = True
           pass
-        elif not CC.enabled:
+        elif not CC.enabled and self._lat_enabled: #添加横向控制检查
           v_cruise_kph = max(self.v_ego_kph_set, self._cruise_speed_min)
         elif self.v_ego_kph_set > v_cruise_kph + 2 and self._cruise_button_mode in [2, 3]:
           v_cruise_kph = max(self.v_ego_kph_set, self._cruise_speed_min)
@@ -535,7 +551,7 @@ class VCruiseCarrot:
         #self.events.append(EventName.personalityChanged)
       elif button_type == ButtonType.lfaButton:
         if self._lfa_button_mode == 0:
-          self._lat_enabled = not self._lat_enabled
+          #self._lat_enabled = not self._lat_enabled
           self._add_log("Lateral " + "enabled" if self._lat_enabled else "disabled")
         elif self._lfa_button_mode == 2:
           self.carrot_cruise_active = True
@@ -547,9 +563,11 @@ class VCruiseCarrot:
         print("lfaButton")
       elif button_type == ButtonType.cancel:
         self._paddle_decel_active = False
-        #if self._cruise_cancel_state:
-        #  self._lat_enabled = not self._lat_enabled
-        #  self._add_log("Lateral " + "enabled" if self._lat_enabled else "disabled")
+        # BTN_AccCancel：只关闭纵向控制，横向控制状态跟随BTN_TOGGLE_ACC_OnOff
+        if CC.enabled:
+            self._cruise_control(-1, -1, "Cruise off (BTN_AccCancel)")
+            self._add_log("Cruise cancelled by cancel button, lateral control follows BTN_TOGGLE_ACC_OnOff")
+        # 不修改 self._lat_enabled，让它继续跟随BTN_TOGGLE_ACC_OnOff
         self._cruise_cancel_state = True
         #self._v_cruise_kph_at_brake = 0
     else:
@@ -568,7 +586,9 @@ class VCruiseCarrot:
 
       elif button_type == ButtonType.cancel:
         self._cruise_cancel_state = True
-        self._lat_enabled = False
+        # 长按cancel不关闭横向控制，横向控制由BTN_TOGGLE_ACC_OnOff状态决定
+        if CC.enabled:
+            self._cruise_control(-1, -1, "Cruise off (long press cancel)")
         self._paddle_decel_active = False
         self.params.put_bool_nonblocking("ExperimentalMode", not self.params.get_bool("ExperimentalMode"))
 
@@ -666,19 +686,6 @@ class VCruiseCarrot:
       return False, d_final
 
   def _update_cruise_state(self, CS, CC, v_cruise_kph):
-     # 添加 AutoEngage 逻辑
-    auto_engage = self.params.get_int("AutoEngage")
-    gear = car.CarState.GearShifter
-    driving_gear = CS.gearShifter not in (gear.neutral, gear.park, gear.reverse, gear.unknown)
-
-    if auto_engage > 0 and driving_gear and CS.vEgo > 8.33 and not CS.brakePressed:
-        if auto_engage == 1:
-            self._lat_enabled = True
-        elif auto_engage == 2:
-            self._lat_enabled = True
-            if not CC.enabled:
-              self._cruise_control(1, -1, "Auto cruise on (AutoEngage)")
-
     if not CC.enabled:
       self._pause_auto_speed_up = False
       if self._brake_pressed_count == -1 and self._soft_hold_active > 0:

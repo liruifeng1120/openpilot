@@ -83,7 +83,7 @@ class CarState(CarStateBase):
         self.mpc_lkas_config = int(cp_cam.vl["ACC_MPC_STATE"]["LKAS_Config"])
         lkas_config_isAccOn = (self.mpc_lkas_config != LKASConfig.DISABLE)
         lkas_isMainSwOn = bool(cp.vl["PCM_BUTTONS"]["BTN_TOGGLE_ACC_OnOff"])
-
+        self.lkas_isMainSwOn = bool(cp.vl["PCM_BUTTONS"]["BTN_TOGGLE_ACC_OnOff"])
         lkas_hud_AccOn1 = bool(cp_cam.vl["ACC_HUD_ADAS"]["AccOn1"])
         self.acc_state  = cp_cam.vl["ACC_HUD_ADAS"]["AccState"]
         self.adas_set_dist = cp_cam.vl["ACC_HUD_ADAS"]["SetDistance"]
@@ -169,7 +169,7 @@ class CarState(CarStateBase):
         ret.cruiseState.enabled = self.acc_state in (3, 5)
         ret.cruiseState.standstill = ret.standstill
         ret.cruiseState.speed = cp_cam.vl["ACC_HUD_ADAS"]["SetSpeed"] * CV.KPH_TO_MS
-
+        ret.latEnabled = self.lkas_isMainSwOn and self.lkas_allowed_speed
         #Todo: some firmware have these fields asserted.
         ret.steerFaultTemporary = bool((self.acc_state == 7) or self.eps_warning)
 
