@@ -1,8 +1,6 @@
-## ⚠️ 법적 안내 / Legal Notice
+## ⚠️ 法律声明 / Legal Notice
 
-🚫 대한민국 자동차관리법 개정안에 따라, 본 소프트웨어를 실제 차량에 장착하거나 주행에 사용하는 것은 법률에 위배될 수 있습니다.
-이 저장소에 있는 모든 소프트웨어는 **연구, 실험, 시뮬레이션 목적**으로만 제공됩니다.
-개발자는 본 소프트웨어의 실제 사용으로 인해 발생하는 **모든 법적 책임을 지지 않습니다.**
+本软件仅供研究和教育用途。开发者不对实际安装和使用承担任何责任。
 
 In accordance with the amended **Korean Motor Vehicle Management Act** (effective August 14, 2025),
 **modifying or installing software that affects the safe operation of a vehicle** is prohibited.
@@ -25,13 +23,13 @@ deb http://security.ubuntu.com/ubuntu focal-security main
 sudo apt-get update
 sudo apt-get install libicu66
 ```
-## ⚠️ 编译后执行根目录下setup_jy60_permissions.sh脚本，如果没有权限请执行下列代码
+## ⚠️ 编译后执行根目录下setup_jy62_permissions.sh脚本，如果没有权限请执行下列代码
 ``` bash
-chmod +x /home/你的用户名/ajouatom/setup_jy60_permissions.sh
+chmod +x /home/$LOGNAME/ajouatom/setup_jy62_permissions.sh
 ```
-**运行simple_jy60_test.py脚本检查JY62设备是否正常工作**
+**运行simple_jy62_test.py脚本检查JY62设备是否正常工作**
 ``` bash
-cd /home/你的用户名/ajouatom && python3 simple_jy60_test.py
+cd /home/$LOGNAME/ajouatom && python3 simple_jy62_test.py
 ```
 **检查/dev/ttyUSB0设备是否存在以及权限设置**
 ``` bash
@@ -43,11 +41,7 @@ groups
 ```
 **将当前用户添加到dialout组**
 ``` bash
-sudo usermod -a -G dialout 你的用户名
-```
-**将当前用户添加到dialout组以获取访问JY62设备的权限**
-``` bash
-sudo usermod -a -G dialout $USER
+sudo usermod -a -G dialout $LOGNAME
 ```
 **应用组权限更改**
 ``` bash
@@ -59,52 +53,29 @@ groups
 ```
 **重新登录shell以应用组更改**
 ``` bash
-exec su -l $USER
+exec su -l $LOGNAME
 ```
 **重启**
+``` bash
+sudo reboot
+```
 
 **运行JY62测试脚本检查设备是否正常工作**
 ``` bash
-cd /home/你的用户名/ajouatom && python3 simple_jy60_test.py
+cd /home/$LOGNAME/ajouatom && python3 simple_jy62_test.py
 ```
 **使用更详细的测试脚本检查JY62设备**
 ``` bash
-cd /home/你的用户名/ajouatom && python3 test_jy60_device.py
+cd /home/$LOGNAME/ajouatom && python3 test_jy62_device.py
 ```
-<div align="center" style="text-align: center;">
-
-<h1>carrotpilot</h1>
-
-<h3>
-  <a href="https://g4iwnl.gitbook.io/carrotpilot">Manual</a>
-</h3>
-
-![image](https://github.com/user-attachments/assets/4d80d256-7e66-4473-a289-04a50733b7e0)
-
 
 <div align="center" style="text-align: center;">
 
-<h1>openpilot</h1>
-
-<p>
-  <b>openpilot is an operating system for robotics.</b>
-  <br>
-  Currently, it upgrades the driver assistance system in 275+ supported cars.
-</p>
+<h1>ajouatom</h1>
 
 <h3>
-  <a href="https://docs.comma.ai">Docs</a>
-  <span> · </span>
-  <a href="https://docs.comma.ai/contributing/roadmap/">Roadmap</a>
-  <span> · </span>
-  <a href="https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md">Contribute</a>
-  <span> · </span>
-  <a href="https://discord.comma.ai">Community</a>
-  <span> · </span>
-  <a href="https://comma.ai/shop">Try it on a comma 3X</a>
+  基于 openpilot 和 JY62 IMU 设备的自动驾驶研究平台
 </h3>
-
-Quick start: `bash <(curl -fsSL openpilot.comma.ai)`
 
 ![openpilot tests](https://github.com/commaai/openpilot/actions/workflows/selfdrive_tests.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
@@ -114,78 +85,77 @@ Quick start: `bash <(curl -fsSL openpilot.comma.ai)`
 
 </div>
 
-<table>
-  <tr>
-    <td><a href="https://youtu.be/NmBfgOanCyk" title="Video By Greer Viau"><img src="https://github.com/commaai/openpilot/assets/8762862/2f7112ae-f748-4f39-b617-fabd689c3772"></a></td>
-    <td><a href="https://youtu.be/VHKyqZ7t8Gw" title="Video By Logan LeGrand"><img src="https://github.com/commaai/openpilot/assets/8762862/92351544-2833-40d7-9e0b-7ef7ae37ec4c"></a></td>
-    <td><a href="https://youtu.be/SUIZYzxtMQs" title="A drive to Taco Bell"><img src="https://github.com/commaai/openpilot/assets/8762862/05ceefc5-2628-439c-a9b2-89ce77dc6f63"></a></td>
-  </tr>
-</table>
+## 简介
+
+ajouatom 是一个基于 [openpilot](https://github.com/commaai/openpilot) 的自动驾驶研究平台，专门针对使用 JY62 IMU 设备的开发和测试环境。该项目主要用于科研、实验和仿真目的。
+
+## 功能特性
+
+- 支持 JY62 IMU 设备的数据采集与处理
+- 基于 openpilot 的自动驾驶功能
+- 完整的传感器测试和验证工具
+- 适用于研究和开发的模块化架构
+
+## 硬件要求
+
+- JY62 IMU 设备
+- USB 转串口适配器（如果需要）
+- 运行 Ubuntu 20.04 或 24.04 的计算机
+
+## 软件要求
+
+- Python 3.8+
+- Docker (可选)
+- SCons 构建系统
+
+## 安装指南
+
+### 1. 克隆仓库
+
+```bash
+git clone https://github.com/liruifeng1120/ajouatom.git
+cd ajouatom
+```
+
+### 2. 配置 JY62 设备权限
+
+按照上面的说明配置设备权限。
 
 
-Using openpilot in a car
-------
+## 项目结构
 
-To use openpilot in a car, you need four things:
-1. **Supported Device:** a comma 3/3X, available at [comma.ai/shop](https://comma.ai/shop/comma-3x).
-2. **Software:** The setup procedure for the comma 3/3X allows users to enter a URL for custom software. Use the URL `openpilot.comma.ai` to install the release version.
-3. **Supported Car:** Ensure that you have one of [the 275+ supported cars](docs/CARS.md).
-4. **Car Harness:** You will also need a [car harness](https://comma.ai/shop/car-harness) to connect your comma 3/3X to your car.
+```
+ajouatom/
+├── cereal/              # 消息传递和通信功能
+├── common/              # 通用工具和库
+├── selfdrive/           # 核心自动驾驶功能模块
+├── system/              # 系统级服务和管理模块
+├── tools/               # 开发和调试工具脚本
+├── panda/               # 与硬件通信的模块
+├── opendbc_repo/        # 车辆数据库
+├── README.md            # 项目说明文档
+└── ...
+```
 
-We have detailed instructions for [how to install the harness and device in a car](https://comma.ai/setup). Note that it's possible to run openpilot on [other hardware](https://blog.comma.ai/self-driving-car-for-free/), although it's not plug-and-play.
+## 开发指南
 
-### Branches
-| branch           | URL                                    | description                                                                         |
-|------------------|----------------------------------------|-------------------------------------------------------------------------------------|
-| `release3`         | openpilot.comma.ai                      | This is openpilot's release branch.                                                 |
-| `release3-staging` | openpilot-test.comma.ai                | This is the staging branch for releases. Use it to get new releases slightly early. |
-| `nightly`          | openpilot-nightly.comma.ai             | This is the bleeding edge development branch. Do not expect this to be stable.      |
-| `nightly-dev`      | installer.comma.ai/commaai/nightly-dev | Same as nightly, but includes experimental development features for some cars.      |
+### 代码规范
 
-To start developing openpilot
-------
+- 遵循 PEP 8 Python 代码规范
+- 使用类型提示
+- 编写单元测试
 
-openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot).
+### 贡献流程
 
-* Join the [community Discord](https://discord.comma.ai)
-* Check out [the contributing docs](docs/CONTRIBUTING.md)
-* Check out the [openpilot tools](tools/)
-* Read about the [development workflow](docs/WORKFLOW.md)
-* Code documentation lives at https://docs.comma.ai
-* Information about running openpilot lives on the [community wiki](https://github.com/commaai/openpilot/wiki)
+1. Fork 项目
+2. 创建功能分支
+3. 提交更改
+4. 发起 Pull Request
 
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](https://comma.ai/bounties) for external contributors.
+## 许可证
 
-Safety and Testing
-----
+本项目基于 MIT 许可证发布。有关详细信息，请参阅 [LICENSE](LICENSE) 文件。
 
-* openpilot observes [ISO26262](https://en.wikipedia.org/wiki/ISO_26262) guidelines, see [SAFETY.md](docs/SAFETY.md) for more details.
-* openpilot has software-in-the-loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
-* The code enforcing the safety model lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
-* panda has software-in-the-loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
-* Internally, we have a hardware-in-the-loop Jenkins test suite that builds and unit tests the various processes.
-* panda has additional hardware-in-the-loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
-* We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
+## 免责声明
 
-Licensing
-------
-
-openpilot is released under the MIT license. Some parts of the software are released under other licenses as specified.
-
-Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and its directors, officers, employees, agents, stockholders, affiliates, subcontractors and customers from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by user.
-
-**THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
-YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.
-NO WARRANTY EXPRESSED OR IMPLIED.**
-
-User Data and comma Account
-------
-
-By default, openpilot uploads the driving data to our servers. You can also access your data through [comma connect](https://connect.comma.ai/). We use your data to train better models and improve openpilot for everyone.
-
-openpilot is open source software: the user is free to disable data collection if they wish to do so.
-
-openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
-The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
-
-By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
+⚠️ 本软件仅供研究和教育用途。在实际车辆上使用本软件可能违反当地法律法规。使用本软件的风险由您自行承担。
