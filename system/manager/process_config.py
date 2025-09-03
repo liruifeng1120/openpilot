@@ -94,7 +94,7 @@ procs = [
   # https://github.com/tinygrad/tinygrad/blob/ac9c96dae1656dc220ee4acc39cef4dd449aa850/tinygrad/device.py#L26
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld.py"], only_onroad),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld.py"], enable_dm),
-  NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad),
+  NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad, enabled=not PC),
   #NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], always_run),
   #PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", only_onroad),
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
