@@ -46,13 +46,12 @@ class ParamsLearner:
 
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
-      if which == 'liveLocationKalman':
-        try:
-          device_pose = Pose.from_live_pose(msg)
-          calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
-        except AttributeError as e:
-          print(f"Schema mismatch in paramsd: {e}")
-          return
+      try:
+        device_pose = Pose.from_live_pose(msg)
+        calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+      except AttributeError as e:
+        print(f"Schema mismatch in paramsd: {e}")
+        return
 
       #self.yaw_rate = msg.angularVelocityCalibrated.value[2]
       #self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]
