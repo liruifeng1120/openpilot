@@ -68,6 +68,10 @@ cd /home/$LOGNAME/ajouatom && python3 simple_jy62_test.py
 ``` bash
 cd /home/$LOGNAME/ajouatom && python3 test_jy62_device.py
 ```
+**启动打印accelerometer, gyroscope的xyz参数**
+``` bash
+python3 selfdrive/sensord/sensors/jy62_sensor.py
+
 
 <div align="center" style="text-align: center;">
 
