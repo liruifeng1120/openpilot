@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=ajouatom
 Comment=Launch ajouatom with JY60 IMU support
-Exec=/bin/bash -c "cd /home/liruifeng/ajouatom && source .venv/bin/activate && IMU_TYPE=jy60 IMU_DEVICE=/dev/ttyUSB0 IMU_BAUD=9600 USE_WEBCAM=1 ROAD_CAM=0 python system/manager/manager.py"
+Exec=/bin/bash -c "cd /home/$LOGNAME/ajouatom && source .venv/bin/activate && IMU_TYPE=jy60 IMU_DEVICE=/dev/ttyUSB0 IMU_BAUD=9600 USE_WEBCAM=1 ROAD_CAM=0 python system/manager/manager.py"
 Terminal=true
 Type=Application
 Categories=Utility;

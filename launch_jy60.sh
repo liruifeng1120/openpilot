@@ -6,19 +6,19 @@
 echo "启动 SunnyPilot with JY62 IMU 支持"
 
 # 检查项目目录
-if [ ! -d "/home/liruifeng/ajouatom" ]; then
+if [ ! -d "/home/$LOGNAME/ajouatom" ]; then
     echo "错误: 项目目录不存在"
     exit 1
 fi
 
 # 检查虚拟环境
-if [ ! -d "/home/liruifeng/ajouatom/.venv" ]; then
+if [ ! -d "/home/$LOGNAME/ajouatom/.venv" ]; then
     echo "错误: 虚拟环境不存在，请先创建"
     exit 1
 fi
 
 # 检查必要文件
-if [ ! -f "/home/liruifeng/ajouatom/system/manager/manager.py" ]; then
+if [ ! -f "/home/$LOGNAME/ajouatom/system/manager/manager.py" ]; then
     echo "错误: 系统管理器不存在"
     exit 1
 fi
@@ -30,7 +30,7 @@ if [ ! -e "/dev/ttyUSB0" ]; then
 fi
 
 # 激活虚拟环境并启动系统
-cd /home/liruifeng/ajouatom
+cd /home/$LOGNAME/ajouatom
 source .venv/bin/activate
 
 # 设置环境变量以启用JY62设备支持

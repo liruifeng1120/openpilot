@@ -4,8 +4,8 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/home/liruifeng/ajouatom/selfdrive/locationd/locationd --type=jy62 --device=/dev/ttyUSB0 --baud=115200
-WorkingDirectory=/home/liruifeng/ajouatom
+ExecStart=/home/$LOGNAME/ajouatom/selfdrive/locationd/locationd --type=jy62 --device=/dev/ttyUSB0 --baud=115200
+WorkingDirectory=/home/$LOGNAME/ajouatom
 Restart=always
 RestartSec=3
 User=root

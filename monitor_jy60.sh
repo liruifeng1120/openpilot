@@ -12,24 +12,24 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 # 运行监控脚本
-PYTHONPATH=/home/liruifeng/ajouatom python3 -c "
+PYTHONPATH=/home/$LOGNAME/ajouatom python3 -c "
 import time
 import cereal.messaging as messaging
 
 def monitor_sensors():
     # 订阅传感器消息
     sm = messaging.SubMaster(['accelerometer', 'gyroscope'])
-    
+
     print('开始监控传感器数据...')
     print('时间\t\t\t加速度计(X\tY\tZ)\t\t陀螺仪(X\tY\tZ)')
     print('-' * 80)
-    
+
     try:
         while True:
             sm.update()
-            
+
             timestamp = time.strftime('%H:%M:%S')
-            
+
             if sm.updated['accelerometer']:
                 accel = sm['accelerometer']
                 ax = accel.acceleration.v[0]
@@ -38,7 +38,7 @@ def monitor_sensors():
                 accel_str = f'{ax:6.2f}\t{ay:6.2f}\t{az:6.2f}'
             else:
                 accel_str = '  -  \t  -  \t  -  '
-                
+
             if sm.updated['gyroscope']:
                 gyro = sm['gyroscope']
                 gx = gyro.angularVelocity.v[0]
@@ -47,11 +47,11 @@ def monitor_sensors():
                 gyro_str = f'{gx:6.2f}\t{gy:6.2f}\t{gz:6.2f}'
             else:
                 gyro_str = '  -  \t  -  \t  -  '
-                
+
             print(f'{timestamp}\t\t{accel_str}\t\t{gyro_str}')
-            
+
             time.sleep(0.1)  # 100ms更新间隔
-            
+
     except KeyboardInterrupt:
         print('\\n监控已停止')
     except Exception as e:

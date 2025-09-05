@@ -7,7 +7,7 @@ echo "开始配置JY62设备访问权限..."
 
 # 检查是否以root权限运行
 if [[ $EUID -ne 0 ]]; then
-   echo "此脚本需要root权限才能正确配置系统" 
+   echo "此脚本需要root权限才能正确配置系统"
    echo "请使用 sudo 运行此脚本:"
    echo "sudo $0"
    exit 1
@@ -34,7 +34,7 @@ fi
 
 # 3. 复制udev规则文件
 echo "安装udev规则..."
-cp /home/liruifeng/ajouatom/99-jy60.rules /etc/udev/rules.d/
+cp /home/$LOGNAME/ajouatom/99-jy60.rules /etc/udev/rules.d/
 chmod 644 /etc/udev/rules.d/99-jy60.rules
 
 # 4. 重新加载udev规则

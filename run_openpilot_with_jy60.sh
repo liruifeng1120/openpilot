@@ -11,7 +11,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # 确保我们在项目根目录
-cd /home/liruifeng/ajouatom
+cd /home/$LOGNAME/ajouatom
 
 # 检查必要的文件是否存在
 if [ ! -f "./selfdrive/locationd/locationd" ]; then
@@ -30,7 +30,7 @@ echo "按 Ctrl+C 停止系统"
 
 # 启动系统管理器（简化版本）
 # 在实际的openpilot系统中，这会更复杂，涉及多个进程和状态管理
-PYTHONPATH=/home/liruifeng/ajouatom python3 -c "
+PYTHONPATH=/home/$LOGNAME/ajouatom python3 -c "
 import time
 import subprocess
 import signal
@@ -47,11 +47,11 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # 启动locationd进程
 proc = subprocess.Popen([
-    './selfdrive/locationd/locationd', 
+    './selfdrive/locationd/locationd',
     '--type=jy62',
     '--device=/dev/ttyUSB0',
     '--baud=115200'
-], cwd='/home/liruifeng/ajouatom')
+], cwd='/home/$LOGNAME/ajouatom')
 
 print(f'locationd进程已启动，PID: {proc.pid}')
 
