@@ -213,14 +213,14 @@ public:
 
     button_group = new QButtonGroup(this);
     button_group->setExclusive(true);
-    for (int i = 0; i < button_texts.size(); i++) {
+    for (size_t i = 0; i < button_texts.size(); i++) {
       QPushButton *button = new QPushButton(button_texts[i], this);
       button->setCheckable(true);
-      button->setChecked(i == value);
+      button->setChecked(static_cast<int>(i) == value);
       button->setStyleSheet(style);
       button->setMinimumWidth(minimum_button_width);
       hlayout->addWidget(button);
-      button_group->addButton(button, i);
+      button_group->addButton(button, static_cast<int>(i));
     }
 
     QObject::connect(button_group, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id) {
@@ -241,7 +241,7 @@ public:
   void refresh() {
     int value = atoi(params.get(key).c_str());
     // 确保值在有效范围内
-    if (value >= 0 && value < button_group->buttons().size()) {
+    if (value >= 0 && value < static_cast<int>(button_group->buttons().size())) {
       button_group->button(value)->setChecked(true);
     } else {
       // 如果值无效，默认选择第一个按钮

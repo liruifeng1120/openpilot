@@ -300,5 +300,5 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"NNFF", PERSISTENT},
     {"NNFFLite", PERSISTENT},
     {"NNFFModelName", CLEAR_ON_OFFROAD_TRANSITION},
-    {"dp_dev_dashy", {PERSISTENT, INT, "0"}}, // 借鉴dp
+    {"dp_dev_dashy", {PERSISTENT, INT, "0"}// 借鉴dp
 };
