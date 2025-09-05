@@ -28,24 +28,24 @@ def get_default_params():
     ("DisengageOnAccelerator", "0"),
     ("GsmMetered", "1"),
     ("HasAcceptedTerms", "0"),
-    ("LanguageSetting", "main_en"),
+    ("LanguageSetting", "main_zh-CHS"),
     ("OpenpilotEnabledToggle", "1"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
     ("IsMetric", "1"),
-    ("RecordAudio", "1"),
+    ("RecordAudio", "0"),
 
     ("SearchInput", "0"),
     ("GMapKey", "0"),
-    ("MapboxStyle", "0"),    
+    ("MapboxStyle", "0"),
 
 
-    ("LongitudinalPersonalityMax", "3"),
-    ("ShowDebugUI", "0"),
+    ("LongitudinalPersonalityMax", "4"),
+    ("ShowDebugUI", "1"),
     ("ShowTpms", "1"),
     ("ShowDateTime", "1"),
     ("ShowPathEnd", "1"),
     ("ShowCustomBrightness", "100"),
-    ("ShowLaneInfo", "1"),
+    ("ShowLaneInfo", "2"),
     ("ShowRadarInfo", "1"),
     ("ShowDeviceState", "1"),
     ("ShowRouteInfo", "1"),
@@ -54,7 +54,7 @@ def get_default_params():
     ("ShowPathColorCruiseOff", "19"),
     ("ShowPathModeLane", "14"),
     ("ShowPathColorLane", "13"),
-    ("ShowPlotMode", "0"),
+    ("ShowPlotMode", "1"),
     ("AutoCruiseControl", "0"),
     ("CruiseEcoControl", "2"),
     ("CarrotCruiseDecel", "-1"),
@@ -70,7 +70,7 @@ def get_default_params():
     ("AutoRoadSpeedAdjust", "50"),
     ("AutoCurveSpeedLowerLimit", "30"),
     ("AutoCurveSpeedFactor", "120"),
-    ("AutoCurveSpeedAggressiveness", "100"),
+    ("AutoCurveSpeedAggressiveness", "90"),
 
     ("AutoTurnControl", "0"),
     ("AutoTurnControlSpeedTurn", "20"),
@@ -136,13 +136,13 @@ def get_default_params():
     ("DynamicTFollow", "0"),
     ("DynamicTFollowLC", "100"),
     ("HapticFeedbackWhenSpeedCamera", "0"),
-    ("UseLaneLineSpeed", "0"),
+    ("UseLaneLineSpeed", "10"),
     ("PathOffset", "0"),
-    ("UseLaneLineCurveSpeed", "0"),
+    ("UseLaneLineCurveSpeed", "10"),
     ("AdjustLaneOffset", "0"),
     ("LaneChangeNeedTorque", "0"),
     ("LaneChangeDelay", "0"),
-    ("LaneChangeBsd", "0"),
+    ("LaneChangeBsd", "1"),
     ("MaxAngleFrames", "89"),
     ("LateralTorqueCustom", "0"),
     ("LateralTorqueAccelFactor", "2500"),
@@ -162,10 +162,10 @@ def get_default_params():
     ("CustomSteerDeltaDown", "0"),
     ("CustomSteerDeltaUpLC", "0"),
     ("CustomSteerDeltaDownLC", "0"),
-    ("SpeedFromPCM", "2"),
+    ("SpeedFromPCM", "3"),
     ("SteerActuatorDelay", "0"),
     ("MaxTimeOffroadMin", "60"),
-    ("DisableDM", "0"),
+    ("DisableDM", "1"),
     ("EnableConnect", "0"),
     ("MuteDoor", "0"),
     ("MuteSeatbelt", "0"),
@@ -176,7 +176,7 @@ def get_default_params():
     ("SoftwareMenu", "1"),
     ("CustomSR", "0"),
     ("SteerRatioRate", "100"),
-    ("NNFF", "0"),
+    ("NNFF", "1"),
     ("NNFFLite", "0"),
   ]
   return default_params
@@ -301,15 +301,21 @@ def manager_thread() -> None:
   sm = messaging.SubMaster(['deviceState', 'carParams'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
+  # 添加传感器数据订阅
+  sensor_sm = messaging.SubMaster(['accelerometer', 'gyroscope'])
+
   write_onroad_params(False, params)
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   print_timer = 0
+  sensor_check_count = 0  # 用于检查传感器连接状态的计数器
+  gyro_connected = False  # 陀螺仪连接状态标志
 
   started_prev = False
 
   while True:
     sm.update(1000)
+    sensor_sm.update(0)  # 更新传感器数据
 
     started = sm['deviceState'].started
 
@@ -331,6 +337,14 @@ def manager_thread() -> None:
     print_timer = (print_timer + 1)%10
     if print_timer == 0:
       print(running)
+      # 每10次循环检查一次传感器连接状态（启动初期检查）
+      if sensor_check_count < 10:
+        if not gyro_connected and sensor_sm.updated['gyroscope']:
+          gyro_connected = True
+          print("✅陀螺仪连接成功，数据输出正常！")
+        elif not gyro_connected:
+          print("❌ 正在等待陀螺仪连接...")
+        sensor_check_count += 1
     cloudlog.debug(running)
 
     # send managerState
@@ -351,11 +365,19 @@ def manager_thread() -> None:
 
 def main() -> None:
   manager_init()
-  print(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
-  os.system(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
-  os.system(f"python ../../opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
-  os.system(f"python ../../opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
-  os.system(f"python ../../opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"python ./opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"python ./opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
+  os.system(f"python ./opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
+  os.system(f"python ./opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"python ./opendbc/car/honda/values.py > {Params().get_param_path()}/SupportedCars_honda")
+  os.system(f"python ./opendbc/car/byd/values.py > {Params().get_param_path()}/SupportedCars_byd")
+  os.system(f"python ./opendbc/car/rivian/values.py > {Params().get_param_path()}/SupportedCars_rivian")
+  os.system(f"python ./opendbc/car/subaru/values.py > {Params().get_param_path()}/SupportedCars_subaru")
+  os.system(f"python ./opendbc/car/ford/values.py > {Params().get_param_path()}/SupportedCars_ford")
+  os.system(f"python ./opendbc/car/nissan/values.py > {Params().get_param_path()}/SupportedCars_nissan")
+  os.system(f"python ./opendbc/car/tesla/values.py > {Params().get_param_path()}/SupportedCars_tesla")
+  os.system(f"python ./opendbc/car/chrysler/values.py > {Params().get_param_path()}/SupportedCars_chrysler")
+  os.system(f"python ./opendbc/car/volkswagen/values.py > {Params().get_param_path()}/SupportedCars_volkswagen")
 
   if os.getenv("PREPAREONLY") is not None:
     return

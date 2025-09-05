@@ -247,8 +247,8 @@ class LateralLagEstimator:
       self.desired_curvature = msg.desiredCurvature
     elif which == 'liveLocationKalman':
       self.yaw_rate = msg.angularVelocityCalibrated.value[2]
-      self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]    
-      self.pose_valid = msg.angularVelocityCalibrated.valid and msg.posenetOK and msg.inputsOK  
+      self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+      self.pose_valid = msg.angularVelocityCalibrated.valid and msg.posenetOK and msg.inputsOK
       self.calib_valid = msg.status == log.LiveLocationKalman.Status.valid
     self.t = t
 
