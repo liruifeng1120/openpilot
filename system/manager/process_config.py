@@ -1,6 +1,7 @@
 import os
 import operator
 import importlib.util
+import platform
 
 from cereal import car
 from openpilot.common.params import Params
@@ -57,6 +58,12 @@ def only_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
 def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started
 
+def dashy(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return int(params.get("dp_dev_dashy") or 0) > 0
+
+def dashy_with_video(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return int(params.get("dp_dev_dashy") or 0) == 2
+
 def enable_updated(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started and params.get_bool("SoftwareMenu")
 
@@ -79,15 +86,15 @@ procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not PC),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
+  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, and_(dashy_with_video, only_onroad))),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
   PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
-  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
-  PythonProcess("micd", "system.micd", iscar, enabled=not PC),
+  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad, enabled=platform.system() != "Darwin"),
+  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad, enabled=platform.system() != "Darwin"),
+  PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   # TODO: Make python process once TG allows opening QCOM from child pro
@@ -129,10 +136,11 @@ procs = [
   PythonProcess("statsd", "system.statsd", always_run),
 
   # debug procs
-  NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
+  NativeProcess("bridge", "cereal/messaging", ["./bridge"], or_(notcar, and_(dashy_with_video, only_onroad))),
+  PythonProcess("webrtcd", "system.webrtc.webrtcd", or_(notcar, and_(dashy_with_video, only_onroad))),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
+  PythonProcess("dashy", "dragonpilot.dashy.backend.server", dashy),
 
   PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", check_fleet, enabled=not PC),
   # PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", check_fleet),

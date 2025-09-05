@@ -11,6 +11,14 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(new SshToggle());
   addItem(new SshControl());
 
+  // Dashy mode settings
+  std::vector<QString> dashy_mode_texts{tr("Off"), tr("Lite"), tr("Full")};
+  dashy_mode_settings = new ButtonParamControl("dp_dev_dashy", tr("dashy"),
+                                        tr("dashy - dragonpilot's all-in-one system hub for you.\n\nVisit http://<device_ip>:5088 to access.\n\nOff - Turn off dashy completely.\nLite: File Manager only.\nFull: File Manager + Live Stream."),
+                                        "",
+                                        dashy_mode_texts);
+  addItem(dashy_mode_settings);
+
   joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("LongitudinalManeuverMode", false);
@@ -60,6 +68,10 @@ void DeveloperPanel::updateToggles(bool _offroad) {
       btn->setEnabled(_offroad);
     }
   }
+
+  // Make sure dashy_mode_settings is visible regardless of release status
+  dashy_mode_settings->setVisible(true);
+  dashy_mode_settings->setEnabled(_offroad);
 
   // longManeuverToggle and experimentalLongitudinalToggle should not be toggleable if the car does not have longitudinal control
   auto cp_bytes = params.get("CarParamsPersistent");

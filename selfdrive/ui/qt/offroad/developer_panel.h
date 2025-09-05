@@ -14,6 +14,7 @@ private:
   ParamControl* joystickToggle;
   ParamControl* longManeuverToggle;
   ParamControl* experimentalLongitudinalToggle;
+  ButtonParamControl* dashy_mode_settings;
   bool is_release;
   bool offroad = false;
 
