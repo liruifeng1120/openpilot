@@ -1013,7 +1013,7 @@ void Localizer::publish_accelerometer(double x, double y, double z) {
   event.setLogMonoTime(nanos_since_boot());
 
   auto accel = event.initAccelerometer();
-  accel.setSource(cereal::SensorEventData::SensorSource::BMX055);
+  accel.setSource(cereal::SensorEventData::SensorSource::JY62);  // 修改为JY62源
   accel.setSensor(SENSOR_ACCELEROMETER);
   accel.setType(SENSOR_TYPE_ACCELEROMETER);
   accel.setTimestamp(nanos_since_epoch());
@@ -1037,7 +1037,7 @@ void Localizer::publish_gyroscope(double x, double y, double z) {
   event.setLogMonoTime(nanos_since_boot());
 
   auto gyro = event.initGyroscope();
-  gyro.setSource(cereal::SensorEventData::SensorSource::BMX055);
+  gyro.setSource(cereal::SensorEventData::SensorSource::JY62);  // 修改为JY62源
   gyro.setSensor(SENSOR_GYRO_UNCALIBRATED);
   gyro.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
   gyro.setTimestamp(nanos_since_epoch());
