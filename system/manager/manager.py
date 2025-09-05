@@ -301,15 +301,20 @@ def manager_thread() -> None:
   sm = messaging.SubMaster(['deviceState', 'carParams'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
+  # 添加传感器数据订阅
+  sensor_sm = messaging.SubMaster(['accelerometer', 'gyroscope'])
+
   write_onroad_params(False, params)
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   print_timer = 0
+  sensor_print_count = 0  # 用于限制传感器数据打印次数
 
   started_prev = False
 
   while True:
     sm.update(1000)
+    sensor_sm.update(0)  # 更新传感器数据
 
     started = sm['deviceState'].started
 
@@ -332,6 +337,21 @@ def manager_thread() -> None:
     if print_timer == 0:
       print(running)
     cloudlog.debug(running)
+
+    # 打印传感器数据（最多50条）
+    if sensor_sm.updated['accelerometer'] and sensor_print_count < 50:
+      accel = sensor_sm['accelerometer']
+      if accel.which() == 'acceleration':
+        print(f"Accelerometer: x={accel.acceleration.v[0]:.3f}, "
+              f"y={accel.acceleration.v[1]:.3f}, z={accel.acceleration.v[2]:.3f}")
+        sensor_print_count += 1
+
+    if sensor_sm.updated['gyroscope'] and sensor_print_count < 50:
+      gyro = sensor_sm['gyroscope']
+      if gyro.which() == 'gyroUncalibrated':
+        print(f"Gyroscope: x={gyro.gyroUncalibrated.v[0]:.3f}, "
+              f"y={gyro.gyroUncalibrated.v[1]:.3f}, z={gyro.gyroUncalibrated.v[2]:.3f}")
+        sensor_print_count += 1
 
     # send managerState
     msg = messaging.new_message('managerState', valid=True)
