@@ -240,7 +240,16 @@ public:
 
   void refresh() {
     int value = atoi(params.get(key).c_str());
-    button_group->button(value)->setChecked(true);
+    // 确保值在有效范围内
+    if (value >= 0 && value < button_group->buttons().size()) {
+      button_group->button(value)->setChecked(true);
+    } else {
+      // 如果值无效，默认选择第一个按钮
+      if (!button_group->buttons().empty()) {
+        button_group->button(0)->setChecked(true);
+        params.put(key, "0"); // 重置参数值为0
+      }
+    }
   }
 
   void showEvent(QShowEvent *event) override {

@@ -13,6 +13,10 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   // Dashy mode settings
   std::vector<QString> dashy_mode_texts{tr("Off"), tr("Lite"), tr("Full")};
+  // 确保dp_dev_dashy参数存在，如果不存在则初始化为0
+  if (params.get("dp_dev_dashy").empty()) {
+    params.put("dp_dev_dashy", "0");
+  }
   dashy_mode_settings = new ButtonParamControl("dp_dev_dashy", tr("dashy"),
                                         tr("dashy - dragonpilot's all-in-one system hub for you.\n\nVisit http://<device_ip>:5088 to access.\n\nOff - Turn off dashy completely.\nLite: File Manager only.\nFull: File Manager + Live Stream."),
                                         "",
@@ -98,6 +102,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     experimentalLongitudinalToggle->setVisible(false);
   }
   experimentalLongitudinalToggle->refresh();
+  dashy_mode_settings->refresh();  // 确保dashy设置得到刷新
 
   offroad = _offroad;
 }
