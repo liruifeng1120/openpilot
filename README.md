@@ -23,6 +23,11 @@ deb http://security.ubuntu.com/ubuntu focal-security main
 sudo apt-get update
 sudo apt-get install libicu66
 ```
+**自动修改摄像头参数**
+``` bash
+# 虚拟环境下运行此命令再编译，把你要修改的参数写好，之后每次更新把这个文件拉进去ajouatom文件夹根目录替换就可以不用修改了.
+python update_camera_params.py
+```
 ## ⚠️ 编译后执行根目录下setup_jy62_permissions.sh脚本，如果没有权限请执行下列代码
 ``` bash
 chmod +x /home/$LOGNAME/ajouatom/setup_jy62_permissions.sh
@@ -70,8 +75,8 @@ cd /home/$LOGNAME/ajouatom && python3 test_jy62_device.py
 ```
 **启动打印accelerometer, gyroscope的xyz参数**
 ``` bash
-python3 selfdrive/sensord/sensors/jy62_sensor.py
-
+python3 selfdrive/sensord/sensors/jy62_sensor.py & python3 test_locationd_jy62.py
+```
 
 <div align="center" style="text-align: center;">
 
