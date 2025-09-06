@@ -21,7 +21,7 @@ from openpilot.system.hardware import PC, TICI
 from openpilot.selfdrive.navd.helpers import Coordinate
 from opendbc.car.common.conversions import Conversions as CV
 
-from openpilot.selfdrive.carrot.carrot_serv import CarrotServ
+from openpilot.selfdrive.carrot.carrot_serv import CarrotServ, nav_type_mapping
 from openpilot.selfdrive.carrot.carrot_speed import CarrotSpeed
 
 from openpilot.common.gps import get_gps_location_service
@@ -421,7 +421,7 @@ class CarrotMan:
     carrot_speed.maybe_save()
 
 
-  
+
   def carrot_navi_route(self):
 
     if self.carrot_serv.active_carrot > 1:
