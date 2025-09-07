@@ -3,7 +3,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.widgets.button import gui_button, DEFAULT_BUTTON_FONT_SIZE
+from openpilot.system.ui.widgets.button import gui_button, DEFAULT_BUTTON_FONT_SIZE, ButtonStyle
 
 
 class BaseDialog:
@@ -103,7 +103,8 @@ class OkayDialog(BaseDialog):
       button_x = (gui_app.width - BaseDialog.BUTTON_WIDTH) / 2
       button_y = dialog.textarea_rect.y + dialog.textarea_rect.height + (button_area_height - BaseDialog.BUTTON_HEIGHT) / 2
 
-      # Okay Button
+      # TOUCH RELIABILITY FIX: Use fixed gui_button instead of custom button
+      # The original code used gui_button which now has reliable touch handling
       if gui_button(rl.Rectangle(button_x, button_y, BaseDialog.BUTTON_WIDTH, BaseDialog.BUTTON_HEIGHT), okay_text):
         okay_pressed = True
 
@@ -139,9 +140,40 @@ class YesNoDialog(BaseDialog):
       no_button_rect = rl.Rectangle(no_button_x, button_top, BaseDialog.BUTTON_WIDTH, BaseDialog.BUTTON_HEIGHT)
       yes_button_rect = rl.Rectangle(yes_button_x, button_top, BaseDialog.BUTTON_WIDTH, BaseDialog.BUTTON_HEIGHT)
 
-      if draw_custom_button(no_button_rect, no_text, rl.Color(100, 20, 20, 255)):
+      # TOUCH RELIABILITY FIX: Replace draw_custom_button with hybrid approach
+      #
+      # ORIGINAL PROBLEM: draw_custom_button only handled mouse input
+      # The custom button function only checked rl.is_mouse_button_released()
+      # and completely ignored touch input, causing unreliable behavior on touch devices.
+      #
+      # SOLUTION: Use hybrid approach - gui_button for touch detection + custom rendering for colors
+      # - gui_button() provides reliable touch handling (invisible, NO_EFFECT style)
+      # - Custom drawing code maintains the original button colors and appearance
+      # - This gives us both reliable input handling AND the original visual design
+
+      # No button - dark red color as originally designed
+      no_clicked = gui_button(no_button_rect, "", font_size=1, button_style=ButtonStyle.NO_EFFECT)
+      # Draw original No button appearance with dark red color
+      rl.draw_rectangle_rec(no_button_rect, rl.Color(100, 20, 20, 255))  # Original dark red
+      font = gui_app.font()
+      text_size = rl.measure_text_ex(font, no_text, DEFAULT_BUTTON_FONT_SIZE, 0)
+      text_x = no_button_rect.x + (no_button_rect.width - text_size.x) / 2
+      text_y = no_button_rect.y + (no_button_rect.height - text_size.y) / 2
+      rl.draw_text_ex(font, no_text, rl.Vector2(text_x, text_y), DEFAULT_BUTTON_FONT_SIZE, 0, rl.WHITE)
+
+      if no_clicked:
         result = False
-      if draw_custom_button(yes_button_rect, yes_text, rl.Color(20, 100, 20, 255)):
+
+      # Yes button - dark green color as originally designed
+      yes_clicked = gui_button(yes_button_rect, "", font_size=1, button_style=ButtonStyle.NO_EFFECT)
+      # Draw original Yes button appearance with dark green color
+      rl.draw_rectangle_rec(yes_button_rect, rl.Color(20, 100, 20, 255))  # Original dark green
+      text_size = rl.measure_text_ex(font, yes_text, DEFAULT_BUTTON_FONT_SIZE, 0)
+      text_x = yes_button_rect.x + (yes_button_rect.width - text_size.x) / 2
+      text_y = yes_button_rect.y + (yes_button_rect.height - text_size.y) / 2
+      rl.draw_text_ex(font, yes_text, rl.Vector2(text_x, text_y), DEFAULT_BUTTON_FONT_SIZE, 0, rl.WHITE)
+
+      if yes_clicked:
         result = True
 
     # Main loop
@@ -156,23 +188,15 @@ class YesNoDialog(BaseDialog):
     return result
 
 
-def draw_custom_button(rect: rl.Rectangle, text: str, color: rl.Color) -> bool:
-  """Draws a custom button with specified color and handles click detection."""
-  mouse_pos = rl.get_mouse_position()
-  is_hovering = rl.check_collision_point_rec(mouse_pos, rect)
-  is_pressed = is_hovering and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
-  result = False
-
-  rl.draw_rectangle_rec(rect, color)
-
-  # Draw button text (centered)
-  font = gui_app.font()
-  text_size = rl.measure_text_ex(font, text, DEFAULT_BUTTON_FONT_SIZE, 0)
-  text_x = rect.x + (rect.width - text_size.x) / 2
-  text_y = rect.y + (rect.height - text_size.y) / 2
-  rl.draw_text_ex(font, text, rl.Vector2(text_x, text_y), DEFAULT_BUTTON_FONT_SIZE, 0, rl.WHITE)
-
-  if is_pressed:
-    result = True
-
-  return result
+# TOUCH RELIABILITY FIX: Removed draw_custom_button function
+#
+# ORIGINAL PROBLEM: This function only handled mouse input
+# The draw_custom_button function had the same core issue as the original gui_button:
+# - Only checked mouse events: rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
+# - No touch input handling whatsoever
+# - Caused dialog buttons to require multiple taps on touch devices
+#
+# SOLUTION: Replaced with hybrid approach using fixed gui_button
+# Instead of fixing this custom function, we replaced it with the reliable gui_button
+# for input handling while preserving the original visual appearance through custom drawing.
+# This eliminates code duplication and ensures consistent touch behavior across all buttons.

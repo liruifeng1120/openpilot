@@ -2,6 +2,7 @@
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
 from tsk.common.key_file_manager import KeyFileManager
 
 
@@ -52,10 +53,24 @@ class KeyboardDialog:
     self.key_status_text = f"Key installed: {key}" if key else "Key not installed"
 
   def draw_x_button(self, rect: rl.Rectangle, text: str) -> bool:
-    """Draws the "X" button and handles click detection."""
-    is_pressed = rl.check_collision_point_rec(rl.get_mouse_position(), rect) and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    """
+    TOUCH RELIABILITY FIX: X button with hybrid approach
 
-    # Draw button rectangle
+    ORIGINAL PROBLEM: Only handled mouse input
+    The original function only checked:
+    - rl.check_collision_point_rec(rl.get_mouse_position(), rect)
+    - rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    This made the X button unresponsive to touch input.
+
+    SOLUTION: Hybrid approach for reliable touch + original appearance
+    - Use gui_button() invisibly for reliable touch detection
+    - Use original drawing code to maintain the keyboard's visual design
+    """
+
+    # Use gui_button for reliable touch detection (invisible, NO_EFFECT style)
+    button_clicked = gui_button(rect, "", font_size=1, button_style=ButtonStyle.NO_EFFECT)
+
+    # Draw original button appearance
     rl.draw_rectangle_rec(rect, self.keyboard_bg_color)
 
     # Draw text
@@ -64,10 +79,23 @@ class KeyboardDialog:
     text_y = rect.y + (rect.height - text_size.y) / 2
     rl.draw_text_ex(gui_app.font(), text, rl.Vector2(text_x, text_y), self.font_size, 0, self.x_button_text_color)
 
-    return is_pressed
+    return button_clicked
 
   def draw_keyboard(self, rect: rl.Rectangle) -> None:
-    """Draws the on-screen keyboard."""
+    """
+    TOUCH RELIABILITY FIX: Keyboard keys with hybrid approach
+
+    ORIGINAL PROBLEM: All keyboard keys only handled mouse input
+    Each key only checked:
+    - rl.check_collision_point_rec(rl.get_mouse_position(), button_rect)
+    - rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    This made all 17 keyboard keys (0-9, a-f, <) unresponsive to touch.
+
+    SOLUTION: Hybrid approach for each key
+    - Use gui_button() invisibly for reliable touch detection
+    - Use original drawing code to maintain keyboard appearance
+    - Handle key input logic when touch is detected
+    """
     start_x = rect.x
     start_y = rect.y
 
@@ -78,9 +106,10 @@ class KeyboardDialog:
         button_y = start_y + row_index * (self.keyboard_button_height + self.keyboard_spacing)
         button_rect = rl.Rectangle(button_x, button_y, button_width, self.keyboard_button_height)
 
-        is_pressed = rl.check_collision_point_rec(rl.get_mouse_position(), button_rect) and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT)
+        # Use gui_button for reliable touch detection (invisible, NO_EFFECT style)
+        key_pressed = gui_button(button_rect, "", font_size=1, button_style=ButtonStyle.NO_EFFECT)
 
-        # Draw button rectangle
+        # Draw original button appearance
         rl.draw_rectangle_rec(button_rect, self.keyboard_bg_color)
         rl.draw_rectangle_lines_ex(button_rect, self.keyboard_border_thickness, self.keyboard_border_color)
 
@@ -90,7 +119,8 @@ class KeyboardDialog:
         text_y = button_y + (self.keyboard_button_height - text_size.y) / 2
         rl.draw_text_ex(gui_app.font(), key, rl.Vector2(text_x, text_y), self.font_size, 0, rl.LIGHTGRAY)
 
-        if is_pressed:
+        # Handle key input when touch is detected
+        if key_pressed:
           if key == "<":
             self.input_text = self.input_text[:-1]
           else:
@@ -168,19 +198,32 @@ class KeyboardDialog:
         rl.draw_text_ex(gui_app.font(), success_text, rl.Vector2(success_text_x, remaining_text_y), dialog.font_size, 0, rl.GREEN)
 
       elif dialog.show_install_button:
-        # Install Button
+        # TOUCH RELIABILITY FIX: Install button with hybrid approach
+        #
+        # ORIGINAL PROBLEM: Only handled mouse input
+        # The install button only checked:
+        # - rl.check_collision_point_rec(rl.get_mouse_position(), install_button_rect)
+        # - rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT)
+        # This made the install button unresponsive to touch input.
+        #
+        # SOLUTION: Hybrid approach for reliable touch + original appearance
         install_text = "Install this key"
         install_text_size = rl.measure_text_ex(gui_app.font(), install_text, dialog.font_size, 0)
         install_button_width = install_text_size.x + 40  # Add some padding
         install_button_height = install_text_size.y + 20 # Add some padding
         install_button_x = (gui_app.width - install_button_width) / 2
         install_button_rect = rl.Rectangle(install_button_x, remaining_text_y, install_button_width, install_button_height)
-        if rl.check_collision_point_rec(rl.get_mouse_position(), install_button_rect) and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+
+        # Use gui_button for reliable touch detection (invisible, NO_EFFECT style)
+        install_clicked = gui_button(install_button_rect, "", font_size=1, button_style=ButtonStyle.NO_EFFECT)
+
+        if install_clicked:
           # Install key
           dialog.key_file_manager.install_key(dialog.input_text)
           dialog.install_success = True
           dialog.show_install_button = False
 
+        # Draw original button appearance
         rl.draw_rectangle_rec(install_button_rect, dialog.keyboard_bg_color) # Keyboard background color
         install_text_x = install_button_x + (install_button_width - install_text_size.x) / 2
         install_text_y = remaining_text_y + (install_button_height - install_text_size.y) / 2

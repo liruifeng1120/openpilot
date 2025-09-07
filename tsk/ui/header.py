@@ -4,8 +4,9 @@ from typing import Optional
 import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
 from tsk.common.key_file_manager import KeyFileManager
-from tsk.ui.layout import Theme  # Import Theme
+from tsk.ui.layout import Theme
 
 
 class Header:
@@ -33,7 +34,7 @@ class Header:
     rl.draw_text_ex(gui_app.font(), menu_name, rl.Vector2(menu_name_x, text_y), Theme.title_font_size, 1.0, title_text_color)
 
   def _draw_navigation_buttons(self, rect: rl.Rectangle, current_menu: int) -> Optional[int]:
-    """Draws the navigation buttons and handles button clicks."""
+    """Draws the navigation buttons with reliable touch handling."""
     nav_button_width = self._calculate_nav_button_width()
 
     left_button_x = 0
@@ -43,12 +44,25 @@ class Header:
 
     new_menu = None
 
-    def handle_button(button_rect: rl.Rectangle, text: str, target_menu: int) -> Optional[int]:
-      """Handles drawing, input, and logic for a single navigation button."""
-      mouse_pos = rl.get_mouse_position()
-      is_hovering = rl.check_collision_point_rec(mouse_pos, button_rect)
-      is_pressed = is_hovering and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    def handle_nav_button(button_rect: rl.Rectangle, text: str, target_menu: int) -> Optional[int]:
+      """
+      TOUCH RELIABILITY FIX: Navigation button with hybrid approach
 
+      ORIGINAL PROBLEM: Only handled mouse input
+      The original handle_button function only checked:
+      - rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT)
+      This caused navigation buttons to be unresponsive to touch input.
+
+      SOLUTION: Hybrid approach for reliable touch + original appearance
+      - Use gui_button() invisibly for reliable touch detection
+      - Use original drawing code to maintain the header's visual design
+      - This preserves the exact appearance while fixing touch reliability
+      """
+
+      # Use gui_button for reliable touch detection (invisible, NO_EFFECT style)
+      button_clicked = gui_button(button_rect, "", font_size=1, button_style=ButtonStyle.NO_EFFECT)
+
+      # Draw original button appearance to maintain header design
       rl.draw_rectangle_rec(button_rect, Theme.button_color)
 
       lines = text.splitlines()
@@ -59,18 +73,19 @@ class Header:
         text_size = rl.measure_text_ex(gui_app.font(), line, Theme.nav_button_font_size, 1.0)
         text_x = button_rect.x + (button_rect.width - text_size.x) / 2
         text_y = start_y + i * text_size.y
-        font_color = Theme.brighten_color(rl.Color(100, 100, 100, 255), Theme.brighten_amount)  # Use the same color as other buttons
+        font_color = Theme.brighten_color(rl.Color(100, 100, 100, 255), Theme.brighten_amount)
         rl.draw_text_ex(gui_app.font(), line, rl.Vector2(text_x, text_y), Theme.nav_button_font_size, 1.0, font_color)
 
-      if is_pressed:
+      if button_clicked:
         return target_menu
       return None
-    if current_menu == Theme.menu_reboot:
-      new_menu = handle_button(left_button_rect, Theme.nav_button_text_left, Theme.menu_tools)
 
-      # --- Handle Right Button ---
+    # Handle navigation buttons based on current menu
+    if current_menu == Theme.menu_reboot:
+      new_menu = handle_nav_button(left_button_rect, Theme.nav_button_text_left, Theme.menu_tools)
+
     if current_menu == Theme.menu_tools:
-      right_menu = handle_button(right_button_rect, Theme.nav_button_text_right, Theme.menu_reboot)
+      right_menu = handle_nav_button(right_button_rect, Theme.nav_button_text_right, Theme.menu_reboot)
       if new_menu is None:
         new_menu = right_menu
 
