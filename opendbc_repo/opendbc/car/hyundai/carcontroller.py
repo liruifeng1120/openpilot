@@ -1,5 +1,5 @@
 import numpy as np
-from opendbc.can import CANPacker
+from opendbc.can.packer import CANPacker
 from opendbc.car import Bus, DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg, structs, apply_std_steer_angle_limits
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.hyundai import hyundaicanfd, hyundaican
@@ -167,10 +167,6 @@ class CarController(CarControllerBase):
     apply_angle = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw, 
                                                CS.out.steeringAngleDeg, CC.latActive, self.params.ANGLE_LIMITS)
 
-    if abs(apply_angle - self.apply_angle_last) > 0.1:
-      alpha = min(0.1 + 0.9 * CS.out.vEgoRaw / (30.0 * CV.KPH_TO_MS), 1.0)
-      apply_angle = self.apply_angle_last * (1 - alpha) + apply_angle * alpha
-
     if angle_control:
       apply_steer_req = CC.latActive
 
@@ -283,11 +279,12 @@ class CarController(CarControllerBase):
 
       # prevent LFA from activating on HDA2 by sending "no lane lines detected" to ADAS ECU
       if self.frame % 5 == 0 and hda2 and not camera_scc:
-        can_sends.extend(hyundaicanfd.create_suppress_lfa(self.packer, self.CAN, CS))
+        can_sends.append(hyundaicanfd.create_suppress_lfa(self.packer, self.CAN, CS.hda2_lfa_block_msg,
+                                                          self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING))
 
       # LFA and HDA icons
-      if self.frame % 5 == 0 and camera_scc:
-        can_sends.extend(hyundaicanfd.create_lfahda_cluster(self.packer, CS, self.CAN, CC.longActive, CC.latActive))
+      if self.frame % 5 == 0 and (not hda2 or hda2_long):
+        can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, CS, self.CAN, CC.longActive, CC.latActive))
 
       # blinkers
       if hda2 and self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
@@ -475,7 +472,7 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
     set_speed_in_units = hud_control.setSpeed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH)
     target = int(set_speed_in_units+0.5)
-    current = int(CS.out.cruiseState.speed * (CV.MS_TO_KPH if CS.is_metric else CV.MS_TO_MPH) + 0.5)
+    current = int(CS.out.cruiseState.speed*CV.MS_TO_KPH + 0.5)
     v_ego_kph = CS.out.vEgo * CV.MS_TO_KPH
 
     send_button = 0
