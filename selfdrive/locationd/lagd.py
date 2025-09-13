@@ -11,6 +11,7 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.locationd.helpers import fft_next_good_size, parabolic_peak_interp
 
 BLOCK_SIZE = 50  # 减少块大小以更快更新进度
@@ -151,8 +152,6 @@ class BlockAverage:
 
 
 class LateralLagEstimator:
-  inputs = {"carControl", "carState", "controlsState", "liveLocationKalman"}
-
   def __init__(self, CP: car.CarParams, dt: float,
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
                window_sec: float = MOVING_WINDOW_SEC, okay_window_sec: float = MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec: float = MIN_RECOVERY_BUFFER_SEC,
@@ -195,7 +194,10 @@ class LateralLagEstimator:
 
     # 针对方向盘角度受限的车辆（如本田雅阁混动）进行特殊处理
     # 支持多种车辆指纹格式：HONDA ACCORD, HONDA_ACCORD, HONDA ACCORD,NNFF
-    self.steer_angle_limited = CP.carFingerprint in ["HONDA ACCORD", "HONDA_ACCORD"] and CP.steerControlType != car.CarParams.SteerControlType.angle
+    self.steer_angle_limited = CP.carFingerprint in ["HONDA ACCORD", "HONDA_ACCORD", "HONDA ACCORD,NNFF"] and CP.steerControlType != car.CarParams.SteerControlType.angle
+
+    # 添加低通滤波器用于平滑偏航率数据
+    self.yaw_rate_filter = FirstOrderFilter(0.0, 50.0, dt)  # 使用50Hz的截止频率
 
     self.reset(self.initial_lag, 0)
 
@@ -254,6 +256,8 @@ class LateralLagEstimator:
       self.yaw_rate_std = msg.angularVelocityCalibrated.std[2]
       self.pose_valid = msg.angularVelocityCalibrated.valid and msg.posenetOK and msg.inputsOK
       self.calib_valid = msg.status == log.LiveLocationKalman.Status.valid
+      # 对偏航率进行低通滤波
+      self.yaw_rate = self.yaw_rate_filter.update(self.yaw_rate)
     self.t = t
 
   def points_enough(self):
@@ -294,7 +298,7 @@ class LateralLagEstimator:
         angle_diff = abs(getattr(self.controlsState.lateralControlState,
                                 self.controlsState.lateralControlState.which()).steeringAngleDesiredDeg -
                         self.controlsState.lateralControlState.steeringAngleDeg)
-        if angle_diff < 10.0:  # 如果期望角度和实际角度差值较小，则不认为饱和
+        if angle_diff < 15.0:  # 将阈值从10.0提高到15.0，允许更大的角度差
           steering_saturated = False
 
     okay = self.lat_active and not self.steering_pressed and not steering_saturated and \
