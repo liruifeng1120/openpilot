@@ -105,7 +105,8 @@ void OnroadWindow::createMapWidget() {
   QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
   QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::onroadSettingsPanelNotRequested);
   QObject::connect(nvg->map_settings_btn, &MapSettingsButton::clicked, m, &MapPanel::toggleMapSettings);
-  nvg->map_settings_btn->setEnabled(true);
+  //nvg->map_settings_btn->setEnabled(true);
+  nvg->map_settings_btn->setEnabled(false);
 
   m->setFixedWidth(uiState()->scene.mapbox_fullscreen ? topWidget(this)->width() :
                                                         topWidget(this)->width() / 2 - UI_BORDER_SIZE);
