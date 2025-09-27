@@ -18,7 +18,7 @@ from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.system import sentry
-from openpilot.selfdrive.car.car_helpers import get_demo_car_params
+#from openpilot.selfdrive.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.modeld.model_capabilities import ModelCapabilities
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
@@ -166,6 +166,7 @@ class ModelState:
       self.inputs['prev_desired_curv'][-ModelConstants.PREV_DESIRED_CURV_LEN:] = outputs['desired_curvature'][0, :]
     return outputs
 
+#DH = DesireHelper()
 
 def main(demo=False):
   cloudlog.warning("modeld init")
@@ -213,7 +214,7 @@ def main(demo=False):
   if custom_model and model_capabilities & ModelCapabilities.NoO:
     extended_svs += ["navModelDEPRECATED", "navInstruction"]
   pm = PubMaster(["modelV2", "modelV2SP", "cameraOdometry"])
-  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl"] + extended_svs)
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "carrotMan", "radarState"] + extended_svs)
 
   publish_state = PublishState()
 
@@ -237,6 +238,7 @@ def main(demo=False):
 
 
   if demo:
+    from openpilot.selfdrive.car.car_helpers import get_demo_car_params
     CP = get_demo_car_params()
   else:
     with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
@@ -380,12 +382,30 @@ def main(demo=False):
 
       if not (custom_model and model_capabilities & ModelCapabilities.LateralPlannerSolution):
         desire_state = modelv2_send.modelV2.meta.desireState
-        l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
-        r_lane_change_prob = desire_state[log.Desire.laneChangeRight]
+        l_lane_change_prob = desire_state[log.Desire.laneChangeLeft] #变道意图
+        r_lane_change_prob = desire_state[log.Desire.laneChangeRight] #变道意图
         lane_change_prob = l_lane_change_prob + r_lane_change_prob
-        DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, lat_plan_sp=lat_plan_sp)
+        DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, sm['carrotMan'], sm['radarState'], modelv2_send.modelV2, lat_plan_sp)
         modelv2_send.modelV2.meta.laneChangeState = DH.lane_change_state
         modelv2_send.modelV2.meta.laneChangeDirection = DH.lane_change_direction
+        modelv2_send.modelV2.meta.desireLog = DH.desireLog  # carrot
+
+        modelv2_send.modelV2.meta.laneWidthLeft = float(DH.lane_width_left)
+        modelv2_send.modelV2.meta.laneWidthRight = float(DH.lane_width_right)
+        modelv2_send.modelV2.meta.distanceToRoadEdgeLeft = float(DH.distance_to_road_edge_left)
+        modelv2_send.modelV2.meta.distanceToRoadEdgeRight = float(DH.distance_to_road_edge_right)
+        modelv2_send.modelV2.meta.desire = DH.desire
+        modelv2_send.modelV2.meta.laneChangeProb = DH.lane_change_ll_prob
+
+        # new
+        modelv2_send.modelV2.meta.eventType = int(DH.event_type + DH.event_type_id * 256)
+        modelv2_send.modelV2.meta.leftSec = int(DH.dh_left_sec)
+        modelv2_send.modelV2.meta.blinker = DH.blinker
+        modelv2_send.modelV2.meta.leftFrontBlind = int(DH.leftFrontBlind)
+        modelv2_send.modelV2.meta.rightFrontBlind = int(DH.rightFrontBlind)
+        if DH.event_test_frame > 0:
+          modelv2_send.modelV2.meta.laneChangeState = LaneChangeState.preLaneChange
+          modelv2_send.modelV2.meta.laneChangeDirection = LaneChangeDirection.left
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)

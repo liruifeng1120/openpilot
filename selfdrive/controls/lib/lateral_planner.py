@@ -14,6 +14,8 @@ from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 import cereal.messaging as messaging
 from cereal import log
 
+#from selfdrive.modeld.modeld import DH
+
 LaneChangeState = log.LaneChangeState
 
 
@@ -116,7 +118,8 @@ class LateralPlanner:
 
       # Lane change logic
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
-      self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, model_data=md)
+      #self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, model_data=md)
+      self.DH.update(sm['carState'], sm['carControl'].latActive, lane_change_prob, sm['carrotMan'], sm['radarState'], md)
 
       # Turn off lanes during lane change
       if self.DH.desire == log.Desire.laneChangeRight or self.DH.desire == log.Desire.laneChangeLeft:
@@ -231,7 +234,7 @@ class LateralPlanner:
     pm.send('lateralPlanDEPRECATED', plan_send)
 
     plan_sp_send = messaging.new_message('lateralPlanSPDEPRECATED')
-    plan_sp_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2'])
+    plan_sp_send.valid = sm.all_checks(service_list=['carState', 'controlsState', 'modelV2', 'carrotMan', 'radarState'])
 
     lateralPlanSPDEPRECATED = plan_sp_send.lateralPlanSPDEPRECATED
 
