@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import importlib
 import math
+import numpy as np
 from collections import deque
 from typing import Any
 
@@ -8,7 +9,7 @@ import capnp
 from cereal import messaging, log, car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_realtime_process
+from openpilot.common.realtime import DT_MDL, DT_CTRL, Ratekeeper, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlagsSP
 
@@ -59,21 +60,33 @@ class Track:
     self.K_C = kalman_params.C
     self.K_K = kalman_params.K
     self.kf = KF1D([[v_lead], [0.0]], self.K_A, self.K_C, self.K_K)
+    self.dPath = 0
 
-  def update(self, d_rel: float, y_rel: float, v_rel: float, v_lead: float, measured: float):
+  def update(self, md, ready, d_rel: float, y_rel: float, v_rel: float, v_lead: float, measured: float, yv_rel: float):
     # relative values, copy
     self.dRel = d_rel   # LONG_DIST
     self.yRel = y_rel   # -LAT_DIST
     self.vRel = v_rel   # REL_SPEED
     self.vLead = v_lead
     self.measured = measured   # measured or estimate
+    self.yvLead = yv_rel
 
     # computed velocity and accelerations
     if self.cnt > 0:
       self.kf.update(self.vLead)
 
+    if self.cnt == 0:
+      self.yRel_filtered = self.yRel
+      self.yvLead_filtered = self.yvLead
+    else:
+      self.yRel_filtered = self.yRel_filtered * 0.95 + self.yRel * 0.05
+      self.yvLead_filtered = self.yvLead_filtered * 0.95 + self.yvLead * 0.05
+
     self.vLeadK = float(self.kf.x[SPEED][0])
     self.aLeadK = float(self.kf.x[ACCEL][0])
+
+    if ready:
+      self.dPath = self.yRel + np.interp(self.dRel, md.position.x, md.position.y)
 
     # Learn if constant acceleration
     if abs(self.aLeadK) < 0.5:
@@ -97,6 +110,7 @@ class Track:
     return {
       "dRel": float(self.dRel),
       "yRel": float(-lead_msg_y) if y_rel_vision else float(self.yRel),
+      "dPath": float(self.dPath),
       "vRel": float(self.vRel),
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
@@ -150,11 +164,15 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     return None
 
 
-def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
+def get_RadarState_from_vision(md, lead_msg: capnp._DynamicStructReader, v_ego: float, model_v_ego: float):
   lead_v_rel_pred = lead_msg.v[0] - model_v_ego
+  dRel = float(lead_msg.x[0] - RADAR_TO_CAMERA)
+  yRel = float(-lead_msg.y[0])
+  dPath = yRel + np.interp(dRel, md.position.x, md.position.y)
   return {
-    "dRel": float(lead_msg.x[0] - RADAR_TO_CAMERA),
-    "yRel": float(-lead_msg.y[0]),
+    "dRel": float(dRel),
+    "yRel": yRel,
+    "dPath" : float(dPath),
     "vRel": float(lead_v_rel_pred),
     "vLead": float(v_ego + lead_v_rel_pred),
     "vLeadK": float(v_ego + lead_v_rel_pred),
@@ -168,7 +186,83 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
   }
 
 
-def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
+def get_lead_side(min_dist, v_ego, tracks, md, lane_width, model_v_ego, CP: car.CarParams, radar_lat_factor=0.0):
+  lead_msg = md.leadsV3[0]
+  leadCenter = {'status': False}
+  leadLeft = {'status': False}
+  leadRight = {'status': False}
+  leadCutIn = {'status': False}
+
+  ## SCC雷达先保存起来，然后从列表中删除...
+  track_scc = tracks.get(0)
+  # if track_scc is not None:
+  #  del tracks[0]
+
+  # if len(tracks) == 0:
+  #  return [[],[],[],leadLeft,leadRight]
+  if md is not None and len(md.position.x) == 33:  # ModelConstants.IDX_N:
+    md_y = md.position.y
+    md_x = md.position.x
+  else:
+    return [[], [], [], leadCenter, leadLeft, leadRight, leadCutIn]
+
+  leads_center = {}
+  leads_left = {}
+  leads_right = {}
+  next_lane_y = 1e6  # lane_width / 2 + lane_width * 0.8
+  for c in tracks.values():
+    # d_y : path_y - tracks_y 的差值
+    # yRel值左侧为+值，lead.y[0]值左侧为-值
+    d_y = c.yRel_filtered + np.interp(c.dRel, md_x, md_y) + c.yvLead_filtered * radar_lat_factor
+    if abs(d_y) < lane_width / 2 * 0.8:
+      if c.cnt > 6:
+        # ld = c.get_RadarState(lead_msg.prob, float(-lead_msg.y[0]))
+        ld = c.get_RadarState(CP, lead_msg.y[0], lead_msg.prob)
+        leads_center[c.dRel] = ld
+    elif -next_lane_y < d_y < 0:
+      ld = c.get_RadarState(CP, 0, 0)
+      leads_right[c.dRel] = ld
+    elif 0 < d_y < next_lane_y:
+      ld = c.get_RadarState(CP, 0, 0)
+      leads_left[c.dRel] = ld
+
+      # 如果雷达距离小于3.4m车宽，
+    if abs(d_y) < 3.4 / 2 and 4 < c.dRel < 20.0 and c.vLead > 4.0 and c.cnt > int(2.0 / DT_MDL) and d_y * c.yvLead_filtered < 0:
+      if leadCutIn['status'] is False or c.dRel < leadCutIn['dRel']:
+        leadCutIn = c.get_RadarState(CP, lead_msg.prob, 0)
+
+        # ll,lr = [[l[k] for k in sorted(list(l.keys()))] for l in [leads_left,leads_right]]
+  # lc = sorted(leads_center.values(), key=lambda c:c["dRel"])
+  ll = list(leads_left.values())
+  lr = list(leads_right.values())
+  lc = list(leads_center.values())
+
+  # if leads_center:
+  #  dRel_min = min(leads_center.keys())
+  #  lc = [leads_center[dRel_min]]
+  # else:
+  #  lc = {}
+
+  # leadLeft = min((lead for dRel, lead in leads_left.items() if lead['dRel'] > 5.0 and abs(lead['dPath']) < 3.5), key=lambda x: x['dRel'], default=leadLeft)
+  # leadRight = min((lead for dRel, lead in leads_right.items() if lead['dRel'] > 5.0 and abs(lead['dPath']) < 3.5), key=lambda x: x['dRel'], default=leadRight)
+  # 修改为不要求相对距离大于5米，2025.9.3
+  leadLeft = min((lead for dRel, lead in leads_left.items() if lead['dRel'] > min_dist and abs(lead['dPath']) < 3.5 and abs(lead['vLead']) > 2.8), key=lambda x: x['dRel'], default=leadLeft)
+  leadRight = min((lead for dRel, lead in leads_right.items() if lead['dRel'] > min_dist and abs(lead['dPath']) < 3.5 and abs(lead['vLead']) > 2.8), key=lambda x: x['dRel'], default=leadRight)
+  leadCenter = min((lead for dRel, lead in leads_center.items() if lead['vLead'] > 5 and lead['radar']), key=lambda x: x['dRel'], default=leadCenter)
+
+  # filtered_leads_left = {dRel: lead for dRel, lead in leads_left.items() if lead['dRel'] > 5.0}
+  # if filtered_leads_left:
+  #  dRel_min = min(filtered_leads_left.keys())
+  #  leadLeft = filtered_leads_left[dRel_min]
+
+  # filtered_leads_right = {dRel: lead for dRel, lead in leads_right.items() if lead['dRel'] > 5.0}
+  # if filtered_leads_right:
+  #  dRel_min = min(filtered_leads_right.keys())
+  #  leadRight = filtered_leads_right[dRel_min]
+
+  return [ll, lc, lr, leadCenter, leadLeft, leadRight, leadCutIn]
+
+def get_lead(md, v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
              model_v_ego: float, CP: car.CarParams, low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
   if len(tracks) > 0 and ready and lead_msg.prob > .5:
@@ -180,7 +274,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
   if track is not None:
     lead_dict = track.get_RadarState(CP, lead_msg.y[0], lead_msg.prob)
   elif (track is None) and ready and (lead_msg.prob > .5):
-    lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
+    lead_dict = get_RadarState_from_vision(md, lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
     low_speed_tracks = [c for c in tracks.values() if c.potential_low_speed_lead(v_ego)]
@@ -212,6 +306,11 @@ class RadarD:
 
     self.CP = CP
 
+    #new
+    self.params = Params()
+    self.sideRadarMinDist = self.params.get_float("SideRadarMinDist") * 0.1
+    self.radar_lat_factor = 0.0
+
   def update(self, sm: messaging.SubMaster, rr):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
@@ -229,7 +328,7 @@ class RadarD:
 
     ar_pts = {}
     for pt in radar_points:
-      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
+      ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured, 0 if math.isnan(pt.yvRel) else pt.yvRel]
 
     # *** remove missing points from meta data ***
     for ids in list(self.tracks.keys()):
@@ -246,7 +345,7 @@ class RadarD:
       # create the track if it doesn't exist or it's a new track
       if ids not in self.tracks:
         self.tracks[ids] = Track(ids, v_lead, self.kalman_params)
-      self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
+      self.tracks[ids].update(sm['modelV2'], self.ready, rpt[0], rpt[1], rpt[2], v_lead, rpt[3], rpt[4])
 
     # *** publish radarState ***
     self.radar_state_valid = sm.all_checks() and len(radar_errors) == 0
@@ -261,8 +360,15 @@ class RadarD:
       model_v_ego = self.v_ego
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
-      self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.CP, low_speed_override=True)
-      self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.CP, low_speed_override=False)
+      self.radar_state.leadOne = get_lead(sm['modelV2'], self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, self.CP, low_speed_override=True)
+      self.radar_state.leadTwo = get_lead(sm['modelV2'], self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, self.CP, low_speed_override=False)
+
+      ll, lc, lr, leadCenter, self.radar_state.leadLeft, self.radar_state.leadRight, leadCutIn = get_lead_side(
+        self.sideRadarMinDist, self.v_ego, self.tracks, sm['modelV2'], 3.2, model_v_ego, self.CP, self.radar_lat_factor)
+
+      self.radar_state.leadsLeft = list(ll)
+      self.radar_state.leadsCenter = list(lc)
+      self.radar_state.leadsRight = list(lr)
 
   def publish(self, pm: messaging.PubMaster, lag_ms: float):
     assert self.radar_state is not None
