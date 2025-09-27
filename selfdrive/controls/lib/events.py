@@ -1136,6 +1136,118 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: torque_nn_load_alert,
   },
 
+  #new
+  EventName.softHold: {
+    ET.WARNING: Alert(
+      "SoftHold",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  EventName.trafficStopping: {
+    ET.WARNING: EngagementAlert(AudibleAlert.stopping),
+  },
+  EventName.audioPrompt: {
+    ET.WARNING: EngagementAlert(AudibleAlert.prompt),
+  },
+  EventName.audioRefuse: {
+    ET.WARNING: EngagementAlert(AudibleAlert.refuse),
+  },
+  EventName.stopStop: {
+    ET.WARNING: EngagementAlert(AudibleAlert.stopStop),
+  },
+  EventName.audioLaneChange: {
+    ET.WARNING: EngagementAlert(AudibleAlert.laneChange),
+  },
+  EventName.audioPreLaneChange: {
+    ET.WARNING: EngagementAlert(AudibleAlert.preLaneChange),
+  },
+  #
+  EventName.audioPreLaneChangeLeft: {
+    ET.WARNING: EngagementAlert(AudibleAlert.preLaneChangeLeft),
+  },
+  EventName.audioPreLaneChangeRight: {
+    ET.WARNING: EngagementAlert(AudibleAlert.preLaneChangeRight),
+  },
+  EventName.audioLaneChangeOk: {
+    ET.WARNING: EngagementAlert(AudibleAlert.laneChangeOk),
+  },
+  EventName.audioLastLane: {
+    ET.WARNING: EngagementAlert(AudibleAlert.lastLane),
+  },
+  EventName.audioNewLane: {
+    ET.WARNING: EngagementAlert(AudibleAlert.newLane),
+  },
+  EventName.audioLaneChangeEnd: {
+    ET.WARNING: EngagementAlert(AudibleAlert.laneChangeEnd),
+  },
+  #
+  EventName.audioAtcCancel: {
+    ET.WARNING: EngagementAlert(AudibleAlert.atcCancel),
+  },
+  EventName.audioAtcResume: {
+    ET.WARNING: EngagementAlert(AudibleAlert.atcResume),
+  },
+  EventName.audioTurn: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audioTurn),
+  },
+  EventName.trafficSignGreen: {
+    ET.WARNING: EngagementAlert(AudibleAlert.trafficSignGreen),
+  },
+  EventName.trafficSignChanged: {
+    ET.WARNING: Alert(
+      "信号变了",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.trafficSignChanged, 1.),
+  },
+  EventName.turningLeft: {
+    ET.WARNING: Alert(
+      "Turning Left",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  EventName.turningRight: {
+    ET.WARNING: Alert(
+      "Turning Right",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
+  },
+  EventName.audio1: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio1),
+  },
+  EventName.audio2: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio2),
+  },
+  EventName.audio3: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio3),
+  },
+  EventName.audio4: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio4),
+  },
+  EventName.audio5: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio5),
+  },
+  EventName.audio6: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio6),
+  },
+  EventName.audio7: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio7),
+  },
+  EventName.audio8: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio8),
+  },
+  EventName.audio9: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio9),
+  },
+  EventName.audio10: {
+    ET.WARNING: EngagementAlert(AudibleAlert.audio10),
+  },
+  EventName.audio0: {
+    ET.WARNING: EngagementAlert(AudibleAlert.longDisengaged),
+  },
 }
 
 
