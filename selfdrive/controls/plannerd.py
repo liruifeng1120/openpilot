@@ -57,7 +57,7 @@ def plannerd_thread():
   pm = messaging.PubMaster(['longitudinalPlan', 'uiPlan', 'longitudinalPlanSP'] + lateral_planner_svs)
   sm = messaging.SubMaster(['carOutput', 'carControl', 'carState', 'controlsState', 'radarState', 'modelV2',
                             'longitudinalPlan', 'navInstruction', 'longitudinalPlanSP',
-                            'liveMapDataSP', 'e2eLongStateSP', 'controlsStateSP'] + lateral_planner_svs,
+                            'liveMapDataSP', 'e2eLongStateSP', 'controlsStateSP', 'carrotMan'] + lateral_planner_svs,
                            poll='modelV2', ignore_avg_freq=['radarState'])
   carrot = CarrotPlanner()
 
@@ -67,7 +67,7 @@ def plannerd_thread():
       lateral_planner.update(sm)
       lateral_planner.publish(sm, pm)
       longitudinal_planner.update(sm, carrot)
-      longitudinal_planner.publish(sm, pm)
+      longitudinal_planner.publish(sm, pm, carrot)
       publish_ui_plan(sm, pm, lateral_planner, longitudinal_planner, model_use_lateral_planner)
 
 def main():

@@ -119,8 +119,11 @@ class LongitudinalPlanner:
     self.accel_personality = int(val) if val and val.isdigit() else AccelPersonality.stock
     self.max_stop_accel = 0.
     self.dynamic_personality = self.params.get_bool("DynamicPersonality")
+    self.showDebugLog = self.params.get_int("ShowDebugLog")
+    self.vtc_source = ""
 
   def read_param(self):
+    self.showDebugLog = self.params.get_int("ShowDebugLog")
     self.dynamic_personality = self.params.get_bool("DynamicPersonality")
     self.enhance_traffic = self.params.get_bool("EnhanceTrafficLight")
     self.turn_enable = self.params.get_bool("DisEnhTrafficLightTurn")
@@ -382,7 +385,7 @@ class LongitudinalPlanner:
 
     self.frame += 1
 
-  def publish(self, sm, pm):
+  def publish(self, sm, pm, carrot):
     plan_send = messaging.new_message('longitudinalPlan')
 
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
@@ -417,6 +420,7 @@ class LongitudinalPlanner:
     longitudinalPlanSP.visionTurnSpeed = float(self.vision_turn_controller.v_target)
     longitudinalPlanSP.visionCurrentLatAcc = float(self.vision_turn_controller.current_lat_acc)
     longitudinalPlanSP.visionMaxPredLatAcc = float(self.vision_turn_controller.max_pred_lat_acc)
+    longitudinalPlanSP.vtcSource = self.vtc_source
 
     longitudinalPlanSP.speedLimitControlState = self.speed_limit_controller.state
     longitudinalPlanSP.speedLimit = float(self.speed_limit_controller.speed_limit)
@@ -429,6 +433,9 @@ class LongitudinalPlanner:
     longitudinalPlanSP.turnSpeed = float(self.turn_speed_controller.v_target)
 
     longitudinalPlanSP.e2eBlended = self.mpc.mode
+
+    longitudinalPlanSP.xState = carrot.xState.value
+    longitudinalPlanSP.trafficState = carrot.trafficState.value
 
     pm.send('longitudinalPlanSP', plan_sp_send)
 
@@ -443,8 +450,17 @@ class LongitudinalPlanner:
     slc_target = self.speed_limit_controller.speed_limit_offseted if self.speed_limit_controller.is_active else 255
     m_tsc_target = self.turn_speed_controller.v_target if self.turn_speed_controller.is_active else 255
 
+    self.vtc_source = self.vision_turn_controller.v_source if self.vision_turn_controller.is_active else ""
+
     # Pick solution with the lowest velocity target.
     v_solutions = min(v_cruise, v_tsc_target, slc_target, m_tsc_target)
+
+    if (self.showDebugLog & 1) > 0 and (self.frame % 20 == 0):
+      print(f"***v_cruise={v_cruise*CV.MS_TO_KPH:.0f},enabled={enabled},"
+            f"v_tsc_target={self.vision_turn_controller.v_target*CV.MS_TO_KPH:.0f}'{self.vision_turn_controller.is_active}' "
+            f"state={self.vision_turn_controller.state} cp={self.vision_turn_controller.carrot} cp_kph={self.vision_turn_controller.cp_kph} cp_ms={self.vision_turn_controller.cp_ms},"
+            f"slc_target={self.speed_limit_controller.speed_limit_offseted*CV.MS_TO_KPH:.0f}'{self.speed_limit_controller.is_active}' state={self.speed_limit_controller.state},"
+            f"m_tsc_target={self.turn_speed_controller.v_target*CV.MS_TO_KPH:.0f}'{self.turn_speed_controller.is_active}' state={self.turn_speed_controller.state}")
 
     return v_solutions
 

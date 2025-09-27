@@ -4,7 +4,7 @@ import numpy as np
 from openpilot.selfdrive.controls.lib.drive_helpers import LIMIT_MAX_MAP_DATA_AGE, LIMIT_ADAPT_ACC
 from openpilot.selfdrive.controls.lib.sunnypilot.common import Source, Policy
 from openpilot.selfdrive.controls.lib.sunnypilot.helpers import debug
-
+from openpilot.common.conversions import Conversions as CV
 
 class SpeedLimitResolver:
   def __init__(self, policy=Policy.nav_priority):
@@ -58,25 +58,56 @@ class SpeedLimitResolver:
     self._distance_solutions[Source.car_state] = 0.
 
   def _get_from_nav(self):
-    if not self._is_sock_updated('navInstruction'):
+    if not self._is_sock_updated('carrotMan'):
       debug('SL: No nav instruction for speed limit')
       return
 
-    # Load limits from nav instruction
+    xSpdType = self._sm['carrotMan'].xSpdType
+    xSpdLimit = self._sm['carrotMan'].xSpdLimit
+    xSpdDist = self._sm['carrotMan'].xSpdDist
+    xSdiSpeed = self._sm['carrotMan'].xSdiSpeed
+    xSdiSpeedName = self._sm['carrotMan'].xSdiSpeedName
+
+    # Load limits from carrotMan
     self._reset_limit_sources(Source.nav)
-    self._limit_solutions[Source.nav] = self._sm['navInstruction'].speedLimit
-    self._distance_solutions[Source.nav] = 0.
+    if xSpdType >= 0 and xSpdLimit > 0:
+      #self._limit_solutions[Source.nav] = xSpdLimit * CV.KPH_TO_MS
+      self._limit_solutions[Source.nav] = xSdiSpeed * CV.KPH_TO_MS #xSdiSpeed是在carrotMan里把xSpdLimit经过计算后的速度
+      self._distance_solutions[Source.nav] = xSpdDist
 
   def _get_from_map_data(self):
-    sock = 'liveMapDataSP'
-
-    if not self._is_sock_updated(sock):
+    if not self._is_sock_updated('carrotMan'):
       debug('SL: No map data for speed limit')
       return
 
     # Load limits from map_data
     self._reset_limit_sources(Source.map_data)
-    self._process_map_data(self._sm[sock])
+
+    nRoadLimitSpeed = self._sm['carrotMan'].nRoadLimitSpeed
+    xSpdType = self._sm['carrotMan'].xSpdType
+    xSpdLimit = self._sm['carrotMan'].xSpdLimit
+    xSpdDist = self._sm['carrotMan'].xSpdDist
+    xSdiSpeed = self._sm['carrotMan'].xSdiSpeed
+    xSdiSpeedName = self._sm['carrotMan'].xSdiSpeedName
+
+    if nRoadLimitSpeed <= 140:
+      #先设置为默认的道路限速
+      self._limit_solutions[Source.map_data] = nRoadLimitSpeed * CV.KPH_TO_MS
+      self._distance_solutions[Source.map_data] = 0.
+
+      if xSpdType >= 0 and xSpdLimit > 0:
+        next_speed_limit = xSpdLimit * CV.KPH_TO_MS
+        distance_to_speed_limit_ahead = xSpdDist #到测速摄像头剩余的距离
+
+        if 0. < next_speed_limit < self._v_ego:
+          adapt_time = (next_speed_limit - self._v_ego) / LIMIT_ADAPT_ACC #计算减速需要的时间
+          adapt_time += 6 #额外再加6秒
+          adapt_distance = self._v_ego * adapt_time + 0.5 * LIMIT_ADAPT_ACC * adapt_time ** 2 #计算需要减速的距离
+          if distance_to_speed_limit_ahead <= adapt_distance: #剩余距离小于减速距离
+            self._limit_solutions[Source.map_data] = next_speed_limit
+            self._distance_solutions[Source.map_data] = distance_to_speed_limit_ahead
+
+    #self._process_map_data(self._sm[sock])
 
   def _process_map_data(self, map_data):
     gps_fix_age = time.time() - map_data.lastGpsTimestamp * 1e-3

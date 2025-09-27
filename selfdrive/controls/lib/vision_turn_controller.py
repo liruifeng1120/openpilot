@@ -52,6 +52,7 @@ class VisionTurnController:
     self._is_enabled = self._params.get_bool("TurnVisionControl")
     self._is_turn_vision_cruise = self._params.get_bool("TurnVisionCruise")
     self._is_steer_cruise_tune = self._params.get_bool("SteerCruiseTune")
+    self._is_slc_enabled = self._params.get_bool("EnableSlc")
     #new
     try:
       val = Params().get("StartTurnLatA")
@@ -91,13 +92,30 @@ class VisionTurnController:
     self._soft_v_target_filtered_kmh = 255.
     self.margin_factor = 0.0
     self.frame = 0
+    self._desired_speed = 255
+    self._desired_source = "none"
+    self._desired_speed_kph = 255
+    self._is_carrotman = False
     #new
     self._current_lat_acc = 0.
     self._max_pred_lat_acc = 0.
     self._v_cruise = 0.
     self._state = VisionTurnControllerState.disabled
+    self.v_source = ""
 
     self._reset()
+
+  @property
+  def cp_kph(self):
+    return self._desired_speed_kph
+
+  @property
+  def cp_ms(self):
+    return self._desired_speed
+
+  @property
+  def carrot(self):
+    return self._is_carrotman
 
   @property
   def state(self):
@@ -125,7 +143,7 @@ class VisionTurnController:
 
   @property
   def is_active(self):
-    return self._state != VisionTurnControllerState.disabled and self._is_enabled
+    return self._state != VisionTurnControllerState.disabled and (self._is_enabled or self._is_carrotman)
 
   @property
   def current_lat_acc(self):
@@ -148,6 +166,7 @@ class VisionTurnController:
       self._is_enabled = self._params.get_bool("TurnVisionControl")
       self._is_turn_vision_cruise = self._params.get_bool("TurnVisionCruise")
       self._is_steer_cruise_tune = self._params.get_bool("SteerCruiseTune")
+      self._is_slc_enabled = self._params.get_bool("EnableSlc")
       try:
         val = Params().get("StartTurnLatA")
         self.start_turn_lat_accel = float(val) / 10 if val is not None and val != b'' else 1.5
@@ -398,7 +417,7 @@ class VisionTurnController:
     #    print(f"[WARN] Exception in print VTC information: {e}")
 
   def _state_transition(self):
-    if not self._op_enabled or not self._is_enabled or self._gas_pressed: # or self._v_ego < MIN_TARGET_V:
+    if not self._op_enabled or (not self._is_enabled and not self._is_carrotman) or self._gas_pressed: # or self._v_ego < MIN_TARGET_V:
       self.state = VisionTurnControllerState.disabled
       return
 
@@ -413,14 +432,38 @@ class VisionTurnController:
       if self._v_target >= self._v_cruise and (self._soft_v_target >= self._v_cruise or self.margin_factor < 0.01):
         self.state = VisionTurnControllerState.disabled
 
+    #使用CP时强制显示右上角速度
+    if self._is_carrotman:
+      self.state = VisionTurnControllerState.turning
+
   def update(self, enabled, v_ego, v_cruise, sm):
     self._op_enabled = enabled
     self._gas_pressed = sm['carState'].gasPressed
     self._v_ego = v_ego
     self._v_cruise = v_cruise
 
+    if sm.alive['carrotMan'] and self._is_slc_enabled:
+      carrot_man = sm['carrotMan']
+      self._desired_speed_kph = carrot_man.desiredSpeed
+      self._desired_source = carrot_man.desiredSource
+      self._desired_speed = self._desired_speed_kph * CV.KPH_TO_MS
+      self._is_carrotman = True
+    else:
+      self._is_carrotman = False
+
     self._update_params()
     self._update_calculations(sm)
+    if self.state == VisionTurnControllerState.disabled:
+      self.v_source = ""
+    else:
+      if self._v_target < self._desired_speed:
+        self.v_source = "vtsc"
+      else:
+        self.v_source = self._desired_source
+    self._v_target = min(self._v_target, self._desired_speed)
     self._state_transition()
+
+    self._v_target = min(self._v_target, self._v_cruise)
+    self._soft_v_target = min(self._soft_v_target, self._v_cruise)
 
     self.frame += 1
