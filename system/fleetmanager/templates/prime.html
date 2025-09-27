@@ -1,11 +1,9 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Error
+    Driving Directions
 {% endblock %}
 
 {% block main %}
-    <br> Oops
-    <br><br><br><br>
-    {{ error | safe }}
+{% include "nav_directions.html" %}
 {% endblock %}
