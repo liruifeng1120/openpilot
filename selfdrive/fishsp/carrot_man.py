@@ -458,8 +458,6 @@ class CarrotMan:
                       self.ext_blinker = BLINKER_RIGHT
                     else:
                       self.ext_blinker = BLINKER_NONE
-                  else:
-                    self.ext_blinker = BLINKER_NONE
 
                   if (self.carrot_serv.showDebugLog & 32) > 0:
                     print(json_obj)
