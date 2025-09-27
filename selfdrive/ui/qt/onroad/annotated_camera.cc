@@ -640,7 +640,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
         p.setFont(InterFont(e_icon_size * 0.5, QFont::Bold)); // 字体占圆形约 60%
         p.setPen(Qt::white);
         p.setBrush(Qt::NoBrush);
-        p.drawText(e_rect, Qt::AlignCenter, "E");
+        p.drawText(e_rect, Qt::AlignCenter, QString::number(ext_state));
     }
   }
 
