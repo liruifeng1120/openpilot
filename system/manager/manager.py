@@ -133,6 +133,7 @@ def get_default_params():
     ("SteerMaxFactor", "30"),
     ("DynamicPersonality", "0"),
     ("DisableDM", "1"),
+    ("DriverCameraHardwareMissing", "1"),
     ("AChangeCost", "250"),
     ("AChangeCostStart", "100"),
     ("JEgoCost", "50"),
