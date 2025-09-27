@@ -31,6 +31,7 @@ struct ControlsStateSP @0x81c2f05a394cf4af {
   dynamicPersonality @9 :Bool;
   accelPersonality @10 :AccelerationPersonality;
   overtakingAccelerationAssist @11 :Bool;
+  distanceTraveled @12 :Float32;
 
   lateralControlState :union {
     indiState @1 :LateralINDIState;
@@ -94,6 +95,10 @@ struct LongitudinalPlanSP @0xaedffd8f31e7b55d {
   longitudinalPlanSource @20 :LongitudinalPlanSource;
 
   personalityDEPRECATED @21 :LongitudinalPersonalitySP;
+
+  xState @23: Int32;
+  trafficState @24: Int32;
+  vtcSource @25: Text;
 
   enum SpeedLimitControlState {
     inactive @0; # No speed limit set or not enabled by parameter.
@@ -192,7 +197,51 @@ struct ModelDataV2SP @0xf98d843bfd7004a3 {
   laneChangeEdgeBlock @1 :Bool;
 }
 
-struct CustomReserved7 @0xb86e6369214c01c8 {
+# DO rename the structs
+# DON'T change the identifier (e.g. @0xb86e6369214c01c8)
+
+# you can rename the struct, but don't change the identifier
+struct CarrotMan @0xb86e6369214c01c8 {
+	activeCarrot @0 : Int32;
+	nRoadLimitSpeed @1 : Int32;
+	remote @2 : Text;
+	xSpdType @3 : Int32;
+	xSpdLimit @4 : Int32;
+	xSpdDist @5 : Int32;
+	xSpdCountDown @6 : Int32;
+	xTurnInfo @7 : Int32;
+	xDistToTurn @8 : Int32;
+	xTurnCountDown @9 : Int32;
+	atcType @10 : Text;
+	vTurnSpeed @11 : Int32;
+	szPosRoadName @12 : Text;
+	szTBTMainText @13 : Text;
+	desiredSpeed @14 : Int32;
+	desiredSource @15 : Text;
+	carrotCmdIndex @16 : Int32;
+	carrotCmd @17 : Text;
+	carrotArg @18 : Text;
+	xPosLat @19 : Float32;
+	xPosLon @20 : Float32;
+	xPosAngle @21 : Float32;
+	xPosSpeed @22 : Float32;
+	trafficState @23 : Int32;
+	nGoPosDist @24 : Int32;
+	nGoPosTime @25 : Int32;
+	szSdiDescr @26 : Text;
+	naviPaths @27 : Text;
+	leftSec @28 : Int32;
+
+	xDistToTurnNav @29 : Int32;
+	xDistToTurnNavLast @30 : Int32;
+	xDistToTurnMax @31 : Int32;
+	xDistToTurnMaxCnt @32 : Int32;
+	xLeftTurnSec @33 : Int32;
+	roadCate @34 : Int32;
+	xSdiSpeed @35 : Int32;
+	xSdiSpeedName @36 : Text;
+  extBlinker @37 : Int32;
+  extState @38 : Int32;
 }
 
 struct CustomReserved8 @0xf416ec09499d9d19 {

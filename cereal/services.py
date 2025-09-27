@@ -73,6 +73,7 @@ _services: dict[str, tuple] = {
   "qRoadEncodeIdx": (False, 20.),
   "userFlag": (True, 0., 1),
   "microphone": (True, 10., 10),
+  "carrotMan": (True, 0.),
 
   "controlsStateSP": (True, 100., 10),
   "longitudinalPlanSP": (True, 20., 5),

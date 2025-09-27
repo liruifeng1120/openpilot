@@ -615,6 +615,12 @@ struct RadarState @0x9a185389d6fdd05f {
   leadTwo @4 :LeadData;
   cumLagMs @5 :Float32;
 
+  leadLeft @13 :LeadData;
+  leadRight @14 :LeadData;
+  leadsCenter @15 : List(LeadData);
+  leadsLeft @16 : List(LeadData);
+  leadsRight @17 : List(LeadData);
+
   struct LeadData {
     dRel @0 :Float32;
     yRel @1 :Float32;
@@ -960,6 +966,19 @@ struct ModelDataV2 {
     laneChangeState @8 :LaneChangeState;
     laneChangeDirection @9 :LaneChangeDirection;
 
+    laneWidthLeft @10 :Float32;
+    laneWidthRight @11 :Float32;
+    distanceToRoadEdgeLeft @12 :Float32;
+    distanceToRoadEdgeRight @13 :Float32;
+    desire @14 :Desire;
+    laneChangeProb @15 :Float32;
+    desireLog @16 : Text;
+    #new
+    eventType @17 :Int32;
+    leftSec @18 :Int32;
+    blinker @19 :Text;
+    leftFrontBlind @20 :Int32;
+    rightFrontBlind @21 :Int32;
 
     # deprecated
     brakeDisengageProbDEPRECATED @2 :Float32;
@@ -2322,7 +2341,7 @@ struct Event {
     liveMapDataSP @111 :Custom.LiveMapDataSP;
     e2eLongStateSP @112 :Custom.E2eLongStateSP;
     modelV2SP @113 :Custom.ModelDataV2SP;
-    customReserved7 @114 :Custom.CustomReserved7;
+    carrotMan @114 :Custom.CarrotMan;
     customReserved8 @115 :Custom.CustomReserved8;
     customReserved9 @116 :Custom.CustomReserved9;
 
