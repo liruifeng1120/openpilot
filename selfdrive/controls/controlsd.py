@@ -112,7 +112,7 @@ class Controls:
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'testJoystick', 'longitudinalPlanSP', 'modelV2SP'] + self.camera_packets + self.sensor_packets + lateral_plan_svs,
+                                   'testJoystick', 'longitudinalPlanSP', 'modelV2SP', 'carrotMan'] + self.camera_packets + self.sensor_packets + lateral_plan_svs,
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
                                   frequency=int(1/DT_CTRL))
 
@@ -192,6 +192,8 @@ class Controls:
     val = self.params.get("LongPressInc")
     self.long_press_inc = int(val) if val and val.isdigit() else 10
     #2025.6.25 add
+    self.atc_type_last = ""
+    self.model_event_type = 0
     #new
     self.personality = self.read_personality_param()
     self.v_cruise_helper = VCruiseHelper(self.CP)
@@ -346,6 +348,87 @@ class Controls:
                                              LaneChangeState.laneChangeFinishing):
       self.events.add(EventName.laneChange)
 
+    # New: Handle lane change
+    laneChangeBlocked = False
+    preLaneChangeLeft = False
+    preLaneChangeRight = False
+    laneChange = False
+    if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
+      direction = self.sm['modelV2'].meta.laneChangeDirection
+      if (CS.leftBlindspot and direction == LaneChangeDirection.left) or \
+        (CS.rightBlindspot and direction == LaneChangeDirection.right):
+        self.events.add(EventName.laneChangeBlocked)
+        laneChangeBlocked = True
+      else:
+        if direction == LaneChangeDirection.left:
+          self.events.add(EventName.preLaneChangeLeft)
+          preLaneChangeLeft = True
+        else:
+          self.events.add(EventName.preLaneChangeRight)
+          preLaneChangeRight = True
+    elif self.sm['modelV2'].meta.laneChangeState in (LaneChangeState.laneChangeStarting,
+                                                     LaneChangeState.laneChangeFinishing):
+      self.events.add(EventName.laneChange)
+      laneChange = True
+
+    # new 添加来自modelV2的events
+    model_event_type = self.sm['modelV2'].meta.eventType
+    if model_event_type > 0 and model_event_type != self.model_event_type:
+      event_type_val = model_event_type & 255
+      event_type_id = int((model_event_type - event_type_val) / 256)
+      if event_type_val == 1:  # 准备变道
+        self.events.add(EventName.audioPreLaneChange)
+        print(
+          f"Event: audioPreLaneChange, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 2:  # 变道
+        self.events.add(EventName.audioLaneChange)
+        print(
+          f"Event: audioLaneChange, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 3:  # 转弯
+        self.events.add(EventName.audioTurn)
+        print(
+          f"Event: audioTurn, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 4:  # 领航已退出
+        self.events.add(EventName.audioAtcCancel)
+        print(
+          f"Event: audioAtcCancel, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 5:  # 领航已恢复
+        self.events.add(EventName.audioAtcResume)
+        print(
+          f"Event: audioAtcResume, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 6:  # 盲区有车
+        self.events.add(EventName.laneChangeBlocked)
+        print(
+          f"Event: laneChangeBlocked, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 7:  # 准备左变道
+        self.events.add(EventName.audioPreLaneChangeLeft)
+        print(f"Event: audioPreLaneChangeLeft, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 8:  # 准备右变道
+        self.events.add(EventName.audioPreLaneChangeRight)
+        print(f"Event: audioPreLaneChangeRight, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 9:  # 变道已完成
+        self.events.add(EventName.audioLaneChangeOk)
+        print(f"Event: audioLaneChangeOk, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 10:  # 车辆已靠边
+        self.events.add(EventName.audioLastLane)
+        print(f"Event: audioLastLane, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 11:  # 出现新车道
+        self.events.add(EventName.audioNewLane)
+        print(f"Event: audioNewLane, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+      elif event_type_val == 12:  # 变道已结束
+        self.events.add(EventName.audioLaneChangeEnd)
+        print(f"Event: audioLaneChangeEnd, laneChangeBlocked={laneChangeBlocked},preLaneChangeLeft={preLaneChangeLeft},preLaneChangeRight={preLaneChangeRight},laneChange={laneChange}")
+
+      self.model_event_type = model_event_type
+      print(f"val={model_event_type},id={event_type_id},event_type={event_type_val}")
+
+      # 添加调试信息
+      #print(f"Current alert types: {self.state_machine.current_alert_types}")
+      # print(f"Clear event types: {clear_event_types}")
+      #print(f"System state: {self.state_machine.state}")
+      print(f"System enabled: {self.enabled}")
+      print(f"System active: {self.active}")
+
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
       if i < len(self.CP.safetyConfigs):
@@ -425,8 +508,8 @@ class Controls:
         self.events.add(EventName.posenetInvalid)
       if not self.sm['liveLocationKalman'].deviceStable:
         self.events.add(EventName.deviceFalling)
-      if not self.sm['liveLocationKalman'].inputsOK:
-        self.events.add(EventName.locationdTemporaryError)
+      #if not self.sm['liveLocationKalman'].inputsOK:
+      #  self.events.add(EventName.locationdTemporaryError)
       if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY) and not self.disable_dm: #modify
         self.events.add(EventName.paramsdTemporaryError)
 
@@ -873,6 +956,9 @@ class Controls:
     if hudControl.rightLaneDepart or hudControl.leftLaneDepart:
       self.events.add(EventName.ldw)
 
+    meta = self.sm['modelV2'].meta
+    #hudControl.modelDesire = 1 if meta.desire == log.Desire.turnLeft else 2 if meta.desire == log.Desire.turnRight else 0
+
     clear_event_types = set()
     if ET.WARNING not in self.current_alert_types:
       clear_event_types.add(ET.WARNING)
@@ -955,6 +1041,9 @@ class Controls:
     controlsStateSP.lateralState = lat_tuning
     controlsStateSP.personality = self.personality
     controlsStateSP.accelPersonality = self.accel_personality
+    #new
+    controlsStateSP.distanceTraveled = float(self.distance_traveled)
+
 
     if self.enable_nnff and lat_tuning == 'torque':
       controlsStateSP.lateralControlState.torqueState = self.LaC.pid_long_sp
