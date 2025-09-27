@@ -132,7 +132,7 @@ def get_default_params():
     ("SteerTurnThr", "60"),
     ("SteerMaxFactor", "30"),
     ("DynamicPersonality", "0"),
-    ("DisableDM", "0"),
+    ("DisableDM", "1"),
     ("AChangeCost", "250"),
     ("AChangeCostStart", "100"),
     ("JEgoCost", "50"),
@@ -381,6 +381,7 @@ def manager_thread() -> None:
 
   started_prev = False
 
+  frame = 0
   while True:
     sm.update(1000)
 
@@ -401,7 +402,9 @@ def manager_thread() -> None:
 
     running = ' '.join("{}{}\u001b[0m".format("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)
-    print(running)
+    frame += 1
+    if 0 == frame % 60:
+      print(running)
     cloudlog.debug(running)
 
     # send managerState

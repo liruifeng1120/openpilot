@@ -123,12 +123,12 @@ if os.path.exists("./gitlab_runner.sh") and not PC:
     NativeProcess("gitlab_runner_stop", "system/manager", ["./gitlab_runner.sh", "stop"], only_onroad, sigkill=False)
   ]
 
-if not Params().get_bool("DisableDM"):
-  procs += [
-    PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
-    PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
-    NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging)
-  ]
+#if not Params().get_bool("DisableDM"):
+#  procs += [
+#    PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
+#    PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
+#    NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging)
+#  ]
 
 if Params().get_bool("MapdProcessEn"):
   procs += [

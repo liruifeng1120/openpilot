@@ -181,7 +181,8 @@ class Controls:
     self.experimental_mode_speed = 0
     self.experimental_mode_and_speed = 0
     self.experimental_mode_angle = 0
-    self.disable_dm = self.params.get_bool("DisableDM")
+    #self.disable_dm = self.params.get_bool("DisableDM")
+    self.disable_dm = True
     if self.disable_dm:
       self.params.put_bool_nonblocking("DriverCameraHardwareMissing", True)
     else:
@@ -451,7 +452,7 @@ class Controls:
     num_events = len(self.events)
 
     not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
-    if self.sm.recv_frame['managerState'] and (not_running - IGNORE_PROCESSES) and not self.disable_dm: #modify
+    if self.sm.recv_frame['managerState'] and (not_running - IGNORE_PROCESSES):# and not self.disable_dm: #modify
       self.events.add(EventName.processNotRunning)
       self.process_not_running = True
       if not_running != self.not_running_prev:

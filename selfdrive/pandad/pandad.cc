@@ -499,7 +499,7 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
 
   //new
   Params params;
-  bool disable_dm = false;
+  bool disable_dm = true;
   uint64_t last_param_check_ms = millis_since_boot();
   float max_ir_power = MAX_IR_POWER;
   //new
@@ -519,7 +519,8 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
     //new
     uint64_t now_ms = millis_since_boot();
     if (now_ms - last_param_check_ms >= 1000) {  // 每秒
-      disable_dm = params.getBool("DisableDM");
+      //disable_dm = params.getBool("DisableDM");
+      disable_dm = true;
       last_param_check_ms = now_ms;
       if(disable_dm){
         max_ir_power = 0;

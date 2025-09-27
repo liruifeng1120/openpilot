@@ -147,6 +147,7 @@ UserFuncPanel::UserFuncPanel(QWidget *parent) : QFrame(parent) {
 
   //============================================================
   //驾驶员监控
+  /*
   toggle_dm = new ParamControl(
     "DisableDM",
     tr("Disable DM"),
@@ -156,6 +157,7 @@ UserFuncPanel::UserFuncPanel(QWidget *parent) : QFrame(parent) {
   );
   list->addItem(toggle_dm);
   toggles["DisableDM"] = toggle_dm;
+  */
 
   auto toggle_reg = new ParamControl(
     "DisableRegister",
@@ -530,7 +532,7 @@ UserFuncPanel::UserFuncPanel(QWidget *parent) : QFrame(parent) {
     start_accel->setEnabled(offroad);
     stop_accel->setEnabled(offroad);
     vego_stopping->setEnabled(offroad);
-    toggle_dm->setEnabled(offroad);
+    //toggle_dm->setEnabled(offroad);
 
     j_ego_cost->setEnabled(offroad);
     a_change_cost_start->setEnabled(offroad);
