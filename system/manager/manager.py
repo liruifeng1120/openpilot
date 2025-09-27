@@ -150,7 +150,7 @@ def get_default_params():
     ("TurnToLaneChange", "0"),
 
     ("SameSpiCamFilter", "1"),#
-    ("ExtBlinkerCtrlTest", "1"),  #
+    ("ExtBlinkerCtrlTest", "0"),  #
     ("AutoTurnInNotRoadEdge", "1"),#
     ("AutoTurnLeft", "1"),  #
     ("ContinuousLaneChange", "1"),#
