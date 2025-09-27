@@ -163,6 +163,39 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     brakeUnavailableDEPRECATED @2;
     plannerErrorDEPRECATED @32;
     gpsMalfunctionDEPRECATED @94;
+
+    softHold @141;
+    trafficStopping @142;
+    audioPrompt @143;
+    audioRefuse @144;
+    stopStop @145;
+    audioLaneChange @146;
+    audioTurn @147;
+    trafficSignGreen @148;
+    trafficSignChanged @149;
+    turningLeft @150;
+    turningRight @151;
+    audio1 @152;
+    audio2 @153;
+    audio3 @154;
+    audio4 @155;
+    audio5 @156;
+    audio6 @157;
+    audio7 @158;
+    audio8 @159;
+    audio9 @160;
+    audio10 @161;
+    audio0 @162;
+    audioPreLaneChange @163;
+    audioAtcCancel @164;
+    audioAtcResume @165;
+
+    audioPreLaneChangeLeft @166;
+    audioPreLaneChangeRight @167;
+    audioLaneChangeOk @168;
+    audioLastLane @169;
+    audioNewLane @170;
+    audioLaneChangeEnd @171;
   }
 }
 
@@ -461,6 +494,45 @@ struct CarControl {
       promptStarting @9;
       promptSingleLow @10;
       promptSingleHigh @11;
+
+      trafficSignGreen @12;
+      trafficSignChanged @13;
+      laneChange @14;
+      stopping @15;
+      autoHold @16;
+      engage2 @17;
+      disengage2 @18;
+      trafficError @19;
+      bsdWarning @20;
+      speedDown @21;
+      stopStop @22;
+      reverseGear @23;
+      audio1 @24;
+      audio2 @25;
+      audio3 @26;
+      audio4 @27;
+      audio5 @28;
+      audio6 @29;
+      audio7 @30;
+      audio8 @31;
+      audio9 @32;
+      audio10 @33;
+
+      nnff @34;
+      preLaneChange @35;
+      atcCancel @36;
+      atcResume @37;
+
+      audioTurn @38;
+      longEngaged @39;
+      longDisengaged @40;
+
+      preLaneChangeLeft @41;
+      preLaneChangeRight @42;
+      laneChangeOk @43;
+      lastLane @44;
+      newLane @45;
+      laneChangeEnd @46;
     }
   }
 
