@@ -139,6 +139,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const auto gpsLocation = is_gps_location_external ? sm["gpsLocationExternal"].getGpsLocationExternal() : sm["gpsLocation"].getGpsLocation();
   const auto ltp = sm["liveTorqueParameters"].getLiveTorqueParameters();
   const auto lateral_plan_sp = sm["lateralPlanSPDEPRECATED"].getLateralPlanSPDEPRECATED();
+  const auto carrot_man = sm["carrotMan"].getCarrotMan();
+  const auto meta = sm["modelV2"].getModelV2().getMeta();
   car_params = sm["carParams"].getCarParams();
 
   // Handle older routes where vCruiseCluster is not set
@@ -170,6 +172,9 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   // TODO: Add minimum speed?
   left_blindspot = cs_alive && car_state.getLeftBlindspot();
   right_blindspot = cs_alive && car_state.getRightBlindspot();
+
+  left_front_blind = meta.getLeftFrontBlind();
+  right_front_blind = meta.getRightFrontBlind();
 
   steerOverride = car_state.getSteeringPressed();
   gasOverride = car_state.getGasPressed();
@@ -212,8 +217,13 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   btnPerc = s.scene.sleep_btn_opacity * 0.05;
 
-  left_blinker = car_state.getLeftBlinker();
-  right_blinker = car_state.getRightBlinker();
+  //left_blinker = car_state.getLeftBlinker();
+  //right_blinker = car_state.getRightBlinker();
+  QString atc_type = QString::fromStdString(carrot_man.getAtcType());
+  ext_blinker = carrot_man.getExtBlinker();
+  ext_state = carrot_man.getExtState();
+  left_blinker = car_state.getLeftBlinker()  || atc_type=="fork left" || atc_type=="fork left now" || atc_type =="turn left" || atc_type == "atc left";
+  right_blinker = car_state.getRightBlinker()  || atc_type=="fork right" || atc_type=="fork right now" || atc_type =="turn right" || atc_type == "atc right";
   lane_change_edge_block = lateral_plan_sp.getLaneChangeEdgeBlockDEPRECATED();
 
   // update engageability/experimental mode button
@@ -265,12 +275,14 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const auto vtcState = lp_sp.getVisionTurnControllerState();
   const float vtc_speed = lp_sp.getVisionTurnSpeed() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH);
   const auto lpSoruce = lp_sp.getLongitudinalPlanSource();
-  QColor vtc_color = tcs_colors[int(vtcState)];
+  //QColor vtc_color = tcs_colors[int(vtcState)];
+  QColor vtc_color = tcs_colors[2];
   vtc_color.setAlpha(lpSoruce == cereal::LongitudinalPlanSP::LongitudinalPlanSource::TURN ? 255 : 100);
 
   showVTC = vtcState > cereal::LongitudinalPlanSP::VisionTurnControllerState::DISABLED;
   vtcSpeed = QString::number(std::nearbyint(vtc_speed));
   vtcColor = vtc_color;
+  vtcSource =  QString::fromUtf8(lp_sp.getVtcSource().cStr()); //lp_sp.getVtcSource();
   showDebugUI = s.scene.show_debug_ui;
 
   const auto lmd_sp = sm["liveMapDataSP"].getLiveMapDataSP();
@@ -407,7 +419,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   featureStatusToggle = s.scene.feature_status_toggle;
 
-  experimental_btn->setVisible(!(showDebugUI && showVTC));
+  //experimental_btn->setVisible(!showVTC);
+  experimental_btn->setVisible(true);
   drivingModelGen = s.scene.driving_model_gen;
 }
 
@@ -559,11 +572,6 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
       drawStandstillTimer(p, rect().right() - 650, 30 + 160 + 250);
     }
 
-    // V-TSC
-    if (showDebugUI && showVTC) {
-      drawVisionTurnControllerUI(p, rect().right() - 184 - (UI_BORDER_SIZE * 1.5), int(UI_BORDER_SIZE * 1.5), 184, vtcColor, vtcSpeed, 100);
-    }
-
     // Bottom bar road name
     if (showDebugUI && !roadName.isEmpty()) {
       int font_size = splitPanelVisible ? 38 : 50;
@@ -572,11 +580,67 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
       drawRoadNameText(p, rect().center().x(), h, roadName, QColor(255, 255, 255, 255));
     }
 
-    // Turn Speed Sign
+    // ---- SpeedLimit sign_rect 已经在前面算好 ----
+    QRect speedRect = sign_rect;
+
+    // ---- V-TSC ----
+    int extra_offset = UI_BORDER_SIZE; // 与 SpeedLimit 间距
+    int vtc_w = speedRect.width();
+    int vtc_x = speedRect.center().x() - vtc_w / 2;
+    int vtc_y = speedRect.bottom() + extra_offset;
+
+    // 最小底部边距保护
+    const int MIN_BOTTOM_MARGIN = UI_BORDER_SIZE * 2;
+    int screen_bottom = rect().bottom();
+    if (vtc_y + vtc_w > screen_bottom - MIN_BOTTOM_MARGIN) {
+      vtc_y = screen_bottom - MIN_BOTTOM_MARGIN - vtc_w;
+    }
+
+    // 绘制 V-TSC
+    //showVTC = true; //TEST
+    if(showVTC){
+      drawVisionTurnControllerUI(p, vtc_x, vtc_y, vtc_w, vtcColor, vtcSpeed, vtcSource, 100);
+    }
+    else{
+      vtc_y = speedRect.bottom() + extra_offset;
+    }
+
+    // ---- Turn Speed Sign ----
     if (showTurnSpeedLimit) {
-      QRect rc = sign_rect;
-      rc.moveTop(sign_rect.bottom() + UI_BORDER_SIZE);
+      QRect rc = QRect(vtc_x, vtc_y + vtc_w + extra_offset, vtc_w, vtc_w);
       drawTrunSpeedSign(p, rc, turnSpeedLimit, tscSubText, curveSign, tscActive);
+    }
+    else {
+        // ---- 绘制外接控制器状态圆形 ----
+
+        // 圆形大小和位置，可以参考 V-TSC 宽度
+        int e_icon_size = vtc_w - 40;               // 圆形直径
+        int e_icon_x = vtc_x + 20;
+        int e_icon_y = vtc_y + extra_offset;   // 圆形放在 V-TSC 下方
+
+        QRect e_rect(e_icon_x, e_icon_y, e_icon_size, e_icon_size);
+
+        // 根据 ext_state 设置圆形背景颜色
+        QColor e_bg_color = (ext_state > 0) ? QColor(30, 215, 96)   // 绿色
+                                            : QColor(204, 0, 1); // 红色
+
+        // 先绘制圆形背景
+        p.setPen(Qt::NoPen);
+        p.setBrush(e_bg_color);
+        p.drawEllipse(e_rect);
+
+        // 绘制黑色边框（约 0.8mm，对应 Comma 3 屏幕像素约 3px）
+        QPen border_pen(Qt::white);
+        border_pen.setWidthF(10.0);
+        p.setPen(border_pen);
+        p.setBrush(Qt::NoBrush);
+        p.drawEllipse(e_rect);
+
+        // 绘制白色粗体 E
+        p.setFont(InterFont(e_icon_size * 0.5, QFont::Bold)); // 字体占圆形约 60%
+        p.setPen(Qt::white);
+        p.setBrush(Qt::NoBrush);
+        p.drawText(e_rect, Qt::AlignCenter, "E");
     }
   }
 
@@ -631,7 +695,7 @@ void AnnotatedCameraWidget::drawRoadNameText(QPainter &p, int x, int y, const QS
   p.setPen(color);
   p.drawText(real_rect, Qt::AlignCenter, text);
 }
-
+/*
 void AnnotatedCameraWidget::drawVisionTurnControllerUI(QPainter &p, int x, int y, int size, const QColor &color,
                                                        const QString &vision_speed, int alpha) {
   QRect rvtc(x, y, size, size);
@@ -642,6 +706,29 @@ void AnnotatedCameraWidget::drawVisionTurnControllerUI(QPainter &p, int x, int y
 
   p.setFont(InterFont(56, QFont::DemiBold));
   drawCenteredText(p, rvtc.center().x(), rvtc.center().y(), vision_speed, color);
+}
+*/
+void AnnotatedCameraWidget::drawVisionTurnControllerUI(QPainter &p, int x, int y, int size,
+                                                       const QColor &color, const QString &vision_speed,
+                                                       const QString &vtc_source, int alpha_unused) {
+  QRect rvtc(x, y, size, size);
+
+  // 背景：黑色，10%透明
+  p.setBrush(blackColor(166)); // 255*0.1 ≈ 25
+  // 边框：灰白色细线
+  p.setPen(QPen(QColor(200, 200, 200, 255), 2));
+  p.drawRoundedRect(rvtc, 20, 20);
+
+  // 速度文字（上排），颜色保持传入的 color
+  p.setFont(InterFont(65, QFont::DemiBold));
+  int center_x = rvtc.center().x();
+  int center_y = rvtc.center().y() - 20;  // 上偏一点
+  drawCenteredText(p, center_x, center_y, vision_speed, QColor(0xFF, 0, 0, 0xFF));
+
+  // 来源文字（下排），颜色保持红色
+  p.setFont(InterFont(40, QFont::Normal));
+  int source_y = rvtc.center().y() + 45;  // 下偏一点
+  drawCenteredText(p, center_x, source_y, vtc_source, QColor(0xFF, 0, 0, 0xFF));
 }
 
 void AnnotatedCameraWidget::drawStandstillTimer(QPainter &p, int x, int y) {
@@ -1073,16 +1160,26 @@ void AnnotatedCameraWidget::drawLeftTurnSignal(QPainter &painter, int x, int y, 
 
   QColor circle_color, circle_color_0, circle_color_1;
   QColor arrow_color, arrow_color_0, arrow_color_1;
-  if ((left_blindspot || lane_change_edge_block) && !(left_blinker && right_blinker)) {
+  if ((left_blindspot || left_front_blind || lane_change_edge_block) && !(left_blinker && right_blinker)) {
     circle_color_0 = QColor(164, 0, 1);
     circle_color_1 = QColor(204, 0, 1);
     arrow_color_0 = QColor(72, 1, 1);
     arrow_color_1 = QColor(255, 255, 255);
   } else {
-    circle_color_0 = QColor(22, 156, 69);
-    circle_color_1 = QColor(30, 215, 96);
-    arrow_color_0 = QColor(9, 56, 27);
-    arrow_color_1 = QColor(255, 255, 255);
+    if(ext_blinker != 1)
+    {
+      circle_color_0 = QColor(22, 156, 69);
+      circle_color_1 = QColor(30, 215, 96);
+      arrow_color_0 = QColor(9, 56, 27);
+      arrow_color_1 = QColor(255, 255, 255);
+    }
+    else
+    {
+      circle_color_0 = QColor(200, 160, 0);   // 深黄
+      circle_color_1 = QColor(255, 210, 0);   // 亮黄
+      arrow_color_0  = QColor(90, 70, 0);     // 箭头暗黄
+      arrow_color_1  = QColor(255, 255, 255); // 箭头白色
+    }
   }
 
   if (state == 1) {
@@ -1129,16 +1226,26 @@ void AnnotatedCameraWidget::drawRightTurnSignal(QPainter &painter, int x, int y,
 
   QColor circle_color, circle_color_0, circle_color_1;
   QColor arrow_color, arrow_color_0, arrow_color_1;
-  if ((right_blindspot || lane_change_edge_block) && !(left_blinker && right_blinker)) {
+  if ((right_blindspot || right_front_blind || lane_change_edge_block) && !(left_blinker && right_blinker)) {
     circle_color_0 = QColor(164, 0, 1);
     circle_color_1 = QColor(204, 0, 1);
     arrow_color_0 = QColor(72, 1, 1);
     arrow_color_1 = QColor(255, 255, 255);
   } else {
-    circle_color_0 = QColor(22, 156, 69);
-    circle_color_1 = QColor(30, 215, 96);
-    arrow_color_0 = QColor(9, 56, 27);
-    arrow_color_1 = QColor(255, 255, 255);
+    if(ext_blinker != 2)
+    {
+      circle_color_0 = QColor(22, 156, 69);
+      circle_color_1 = QColor(30, 215, 96);
+      arrow_color_0 = QColor(9, 56, 27);
+      arrow_color_1 = QColor(255, 255, 255);
+    }
+    else
+    {
+      circle_color_0 = QColor(200, 160, 0);   // 深黄
+      circle_color_1 = QColor(255, 210, 0);   // 亮黄
+      arrow_color_0  = QColor(90, 70, 0);     // 箭头暗黄
+      arrow_color_1  = QColor(255, 255, 255); // 箭头白色
+    }
   }
 
   if (state == 1) {
@@ -1359,9 +1466,14 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   }
 
   // TODO: Fix empty spaces when curiving back on itself
-  painter.setBrush(QColor::fromRgbF(1.0, 0.0, 0.0, 0.2));
-  if (left_blindspot) painter.drawPolygon(scene.lane_barrier_vertices[0]);
-  if (right_blindspot) painter.drawPolygon(scene.lane_barrier_vertices[1]);
+  if (left_blindspot || right_blindspot) {
+    painter.setBrush(QColor::fromRgbF(1.0, 0.0, 0.0, 0.2));
+  }
+  else if(left_front_blind || right_front_blind) {
+    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 0.0, 0.2));
+  }
+  if (left_blindspot || left_front_blind) painter.drawPolygon(scene.lane_barrier_vertices[0]);
+  if (right_blindspot || right_front_blind) painter.drawPolygon(scene.lane_barrier_vertices[1]);
 
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
@@ -1746,15 +1858,15 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
 
   drawHud(painter);
 
-  if (left_blinker || right_blinker) {
+  if (left_blinker || right_blinker || ext_blinker) {
     blinker_frame++;
     int state = blinkerPulse(blinker_frame);
     int blinker_x = splitPanelVisible ? 150 : 180;
     int blinker_y = splitPanelVisible ? 220 : 90;
-    if (left_blinker) {
+    if (left_blinker || ext_blinker == 1) {
       drawLeftTurnSignal(painter, rect().center().x() - (blinker_x + blinker_size), blinker_y, blinker_size, state);
     }
-    if (right_blinker) {
+    if (right_blinker || ext_blinker == 2) {
       drawRightTurnSignal(painter, rect().center().x() + blinker_x, blinker_y, blinker_size, state);
     }
   } else {
@@ -1779,6 +1891,10 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
   auto e2eLongStatus = e2e_long_msg.initEvent().initE2eLongStateSP();
   e2eLongStatus.setStatus(e2eStatus);
   e2e_state->send("e2eLongStateSP", e2e_long_msg);
+
+  // new
+  turn_info.update(sm);
+  turn_info.draw(painter, s);
 }
 
 void AnnotatedCameraWidget::showEvent(QShowEvent *event) {

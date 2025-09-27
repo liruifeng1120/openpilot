@@ -667,6 +667,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     PanelInfo("   " + tr("Software"), new SoftwarePanelSP(this), "../assets/offroad/icon_software.png"),
     PanelInfo("   " + tr("sunnypilot"), new SunnypilotPanel(this), "../assets/offroad/icon_openpilot.png"),
     PanelInfo("   " + tr("UserFunc"), new UserFuncPanel(this), "../assets/offroad/icon_openpilot.png"),
+    PanelInfo("   " + tr("Navigation"), new NavPanel(this), "../assets/offroad/icon_openpilot.png"),
     PanelInfo("   " + tr("OSM"), new OsmPanel(this), "../assets/offroad/icon_map.png"),
     PanelInfo("   " + tr("Monitoring"), new MonitoringPanel(this), "../assets/offroad/icon_monitoring.png"),
     PanelInfo("   " + tr("Visuals"), new VisualsPanel(this), "../assets/offroad/icon_visuals.png"),

@@ -1417,6 +1417,10 @@ This may take up to a minute.</source>
         <translation>用户设置</translation>
     </message>
     <message>
+        <source>Navigation</source>
+        <translation>导航设置</translation>
+    </message>
+    <message>
         <source>OSM</source>
         <translation>OSM</translation>
     </message>
@@ -2459,6 +2463,169 @@ This may take up to a minute.</source>
     </message>
 </context>
 <context>
+    <name>NavPanel</name>
+    <message>
+        <source>RoadType description</source>
+        <translation>巡航设定速度小于85为公路,大于等于85快速路,大于等于100高速</translation>
+    </message>
+    <message>
+        <source>RoadType</source>
+        <translation>道路类型:-2 导航获取, -1 定速速度判断, 大于等于0 手动选择</translation>
+    </message>
+    <message>
+        <source>SameSpiCamFilter</source>
+        <translation>过滤重复的测速摄像头数据</translation>
+    </message>
+    <message>
+        <source>ContinuousLaneChange</source>
+        <translation>允许连续变道</translation>
+    </message>
+    <message>
+        <source>ContinuousLaneChangeCnt</source>
+        <translation>允许连续变道次数</translation>
+    </message>
+    <message>
+        <source>ContinuousLaneChangeInterval</source>
+        <translation>连续变道间隔(秒)</translation>
+    </message>
+    <message>
+        <source>AutoTurnInNotRoadEdge</source>
+        <translation>允许自动变道至侧边车道</translation>
+    </message>
+    <message>
+        <source>AutoTurnLeft</source>
+        <translation>允许自动向左变道</translation>
+    </message>
+    <message>
+        <source>LaneStabTime</source>
+        <translation>检测车道数稳定时间(秒)</translation>
+    </message>
+    <message>
+        <source>BsdDelayTime</source>
+        <translation>盲区有车延迟变道时间(秒)</translation>
+    </message>
+    <message>
+        <source>SideBsdDelayTime</source>
+        <translation>侧前方有车延迟变道时间(秒)</translation>
+    </message>
+    <message>
+        <source>SideRelDistTime</source>
+        <translation>侧前方有车允许变道相对距离(秒)</translation>
+    </message>
+    <message>
+        <source>SidevRelDistTime</source>
+        <translation>侧前方有车允许变道等效距离(秒)</translation>
+    </message>
+    <message>
+        <source>SideRadarMinDist</source>
+        <translation>侧面车道可探测最小距离(米)</translation>
+    </message>
+    <message>
+        <source>AutoForkDistOffsetH</source>
+        <translation>提前变道靠边的距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoForkDistOffset</source>
+        <translation>提前变道靠边的距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoDoForkDecalDistH</source>
+        <translation>进叉道提前减速距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoDoForkDecalDist</source>
+        <translation>进叉道提前减速距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoDoForkNavDistH</source>
+        <translation>进叉道打方向盘的距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoDoForkNavDist</source>
+        <translation>进叉道打方向盘的距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoDoForkBlinkerDistH</source>
+        <translation>进叉道提前打灯的距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoDoForkBlinkerDist</source>
+        <translation>进叉道提前打灯的距离(m)</translation>
+    </message>
+    <message>
+        <source>AutoUpHighwayRoadLimit</source>
+        <translation>自动提高低于60的限速</translation>
+    </message>
+    <message>
+        <source>AutoUpRoadLimit</source>
+        <translation>自动提高低于60的限速</translation>
+    </message>
+    <message>
+        <source>AutoEnTurnNewLaneTimeH</source>
+        <translation>出现新车道可再次变道的持续时间(秒)</translation>
+    </message>
+    <message>
+        <source>AutoEnTurnNewLaneTime</source>
+        <translation>出现新车道可再次变道的持续时间(秒)</translation>
+    </message>
+    <message>
+        <source>AutoForkDecalRateH</source>
+        <translation>提前减速的比例(%)</translation>
+    </message>
+    <message>
+        <source>AutoForkDecalRate</source>
+        <translation>提前减速的比例(%)</translation>
+    </message>
+    <message>
+        <source>AutoForkSpeedMinH</source>
+        <translation>允许减至的最小速度</translation>
+    </message>
+    <message>
+        <source>AutoForkSpeedMin</source>
+        <translation>允许减至的最小速度</translation>
+    </message>
+    <message>
+        <source>AutoKeepForkSpeedH</source>
+        <translation>进叉道后保持速度的时间(秒)</translation>
+    </message>
+    <message>
+        <source>AutoKeepForkSpeed</source>
+        <translation>进叉道后保持速度的时间</translation>
+    </message>
+    <message>
+        <source>HighWay Setting</source>
+        <translation>高速公路设置</translation>
+    </message>
+    <message>
+        <source>Road Setting</source>
+        <translation>普通公路设置</translation>
+    </message>
+    <message>
+        <source>AutoCurveSpeedFactorH</source>
+        <translation>高速AutoCurveSpeedFactor</translation>
+    </message>
+    <message>
+        <source>AutoCurveSpeedAggressivenessH</source>
+        <translation>高速AutoCurveSpeedAggressiveness</translation>
+    </message>
+    <message>
+        <source>AutoCurveSpeedFactor</source>
+        <translation>公路AutoCurveSpeedFactor</translation>
+    </message>
+    <message>
+        <source>AutoCurveSpeedAggressiveness</source>
+        <translation>公路AutoCurveSpeedAggressiveness</translation>
+    </message>
+    <message>
+        <source>CpSpdAndRoadLimit</source>
+        <translation>CP测速和道路限速模式(0:关闭,1:+测速,2:+道路限速)</translation>
+    </message>
+    <message>
+        <source>TurnToLaneChange</source>
+        <translation>使用变道控制转弯</translation>
+    </message>
+</context>
+<context>
     <name>UserFuncPanel</name>
     <message>
         <source>Turn Configuration</source>
@@ -2539,6 +2706,10 @@ This may take up to a minute.</source>
     <message>
         <source>Disable DM</source>
         <translation>关闭驾驶员监控(重启后生效)</translation>
+    </message>
+    <message>
+        <source>Disable Register</source>
+        <translation>关闭注册功能</translation>
     </message>
     <message>
         <source>Disable driver monitoring</source>

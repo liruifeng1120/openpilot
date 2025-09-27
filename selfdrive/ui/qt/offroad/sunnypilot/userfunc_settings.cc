@@ -157,6 +157,16 @@ UserFuncPanel::UserFuncPanel(QWidget *parent) : QFrame(parent) {
   list->addItem(toggle_dm);
   toggles["DisableDM"] = toggle_dm;
 
+  auto toggle_reg = new ParamControl(
+    "DisableRegister",
+    tr("Disable Register"),
+    tr("Disable Register"),
+    "../assets/offroad/icon_blank.png",
+    this
+  );
+  list->addItem(toggle_reg);
+  toggles["DisableRegister"] = toggle_reg;
+
   list->addItem(horizontal_line()); // 添加分割线
   //============================================================
   //自定义ACC步进量

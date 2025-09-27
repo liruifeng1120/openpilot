@@ -23,7 +23,8 @@ widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/wifi.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
-               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc"]
+               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc",
+               "qt/widgets/turn_info_drawer.cc"]
 
 widgets_src += ["qt/offroad/sunnypilot/display_settings.cc", "qt/offroad/sunnypilot/sunnypilot_settings.cc",
                 "qt/offroad/sunnypilot/vehicle_settings.cc", "qt/offroad/sunnypilot/visuals_settings.cc",
@@ -33,7 +34,8 @@ widgets_src += ["qt/offroad/sunnypilot/display_settings.cc", "qt/offroad/sunnypi
                 "qt/offroad/sunnypilot/custom_offsets_settings.cc", "qt/widgets/sunnypilot/drive_stats.cc",
                 "qt/offroad/sunnypilot/software_settings_sp.cc", "qt/offroad/sunnypilot/models_fetcher.cc",
                 "qt/offroad/sunnypilot/speed_limit_warning_settings.cc", "qt/offroad/sunnypilot/speed_limit_policy_settings.cc",
-                "qt/offroad/sunnypilot/sunnylink_settings.cc", "qt/offroad/sunnypilot/userfunc_settings.cc"]
+                "qt/offroad/sunnypilot/sunnylink_settings.cc", "qt/offroad/sunnypilot/userfunc_settings.cc",
+                "qt/offroad/sunnypilot/nav_settings.cc"]
 
 widgets_src += ["qt/network/sunnylink/sunnylink_client.cc", "qt/network/sunnylink/services/base_device_service.cc",
                 "qt/network/sunnylink/services/role_service.cc", "qt/network/sunnylink/services/user_service.cc"]

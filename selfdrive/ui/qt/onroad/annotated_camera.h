@@ -10,6 +10,7 @@
 #ifdef ENABLE_DASHCAM
 #include "selfdrive/ui/qt/screenrecorder/screenrecorder.h"
 #endif
+#include "selfdrive/ui/qt/widgets/turn_info_drawer.h"
 
 const int subsign_img_size = 35;
 const int blinker_size = 120;
@@ -25,10 +26,12 @@ public:
   OnroadSettingsButton *onroad_settings_btn;
 
 private:
+  TurnInfoDrawer turn_info;   // 新增成员
+
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
   void drawCenteredText(QPainter &p, int x, int y, const QString &text, QColor color);
   void drawVisionTurnControllerUI(QPainter &p, int x, int y, int size, const QColor &color, const QString &speed,
-                                  int alpha);
+                                  const QString &vtc_source, int alpha);
   void drawCircle(QPainter &p, int x, int y, int r, QBrush bg);
   void drawSpeedSign(QPainter &p, QRect rc, const QString &speed, const QString &sub_text, int subtext_size,
                      bool is_map_sourced, bool is_active);
@@ -113,6 +116,8 @@ private:
   QPixmap right_img;
   bool left_blindspot = false;
   bool right_blindspot = false;
+  bool left_front_blind = false;
+  bool right_front_blind = false;
   std::unique_ptr<PubMaster> e2e_state;
 
   bool steerOverride = false;
@@ -129,6 +134,7 @@ private:
   bool showVTC = false;
   QString vtcSpeed;
   QColor vtcColor;
+  QString vtcSource;
 
   bool showDebugUI = false;
 
@@ -188,6 +194,8 @@ private:
   bool left_blinker, right_blinker, lane_change_edge_block;
   int blinker_frame;
   int blinker_state = 0;
+  int ext_blinker = 0;
+  int ext_state = 0;
 
   cereal::LongitudinalPlanSP::SpeedLimitControlState slcState;
   int longitudinalPersonality;
