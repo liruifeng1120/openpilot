@@ -20,19 +20,7 @@ from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_build_metadata, terms_version, terms_version_sp, training_version
 
-
-def manager_init() -> None:
-  save_bootlog()
-
-  build_metadata = get_build_metadata()
-
-  params = Params()
-  params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
-  params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
-  params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
-  if build_metadata.release_channel:
-    params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
-
+def get_default_params():
   default_params: list[tuple[str, str | bytes]] = [
     ("CompletedTrainingVersion", "0"),
     ("DisengageOnAccelerator", "0"),
@@ -87,7 +75,7 @@ def manager_init() -> None:
     ("PauseLateralSpeed", "0"),
     ("ReverseAccChange", "0"),
     ("ScreenRecorder", "1"),
-    ("ShowDebugUI", "1"),
+    ("ShowDebugUI", "0"),
     ("SpeedLimitControlPolicy", "3"),
     ("SpeedLimitEngageType", "0"),
     ("SpeedLimitValueOffset", "0"),
@@ -115,7 +103,7 @@ def manager_init() -> None:
     ("DrivingModelGeneration", "4"),
     ("LastSunnylinkPingTime", "0"),
 
-    ("TurnVisionCruise", "1"),
+    ("TurnVisionCruise", "0"),
     ("SteerCruiseTune", "1"),
     ("StopDistance", "60"),
     ("ComfortBrake", "24"),
@@ -135,7 +123,7 @@ def manager_init() -> None:
     ("ExperimentalModeSpeed", "0"),
     ("ExperimentalModeAngle", "0"),
     ("ExperimentalModeAndSpeed", "0"),
-    ("StartTurnLatA", "15"),
+    ("StartTurnLatA", "19"),
     ("TargetTurnLatA", "19"),
     ("TurnSteepNess", "80"),
     ("TurnLatAccel", "13"),
@@ -155,7 +143,129 @@ def manager_init() -> None:
     ("CustomAccInc", "1"),
     ("ShortPressInc", "1"),
     ("LongPressInc", "10"),
+
+    # new
+    ("ShowDebugLog", "0"),
+    ("CpSpdAndRoadLimit", "3"),
+    ("TurnToLaneChange", "0"),
+
+    ("SameSpiCamFilter", "1"),#
+    ("ExtBlinkerCtrlTest", "1"),  #
+    ("AutoTurnInNotRoadEdge", "1"),#
+    ("AutoTurnLeft", "1"),  #
+    ("ContinuousLaneChange", "1"),#
+    ("ContinuousLaneChangeCnt", "3"),
+    ("ContinuousLaneChangeInterval", "5"),
+
+    ("LaneStabTime", "50"),
+    ("BsdDelayTime", "20"),
+    ("SideBsdDelayTime", "20"),
+    ("SideRelDistTime", "10"),
+    ("SidevRelDistTime", "10"),
+    ("SideRadarMinDist", "50"),
+
+    ("AutoTurnDistOffset", "0"),
+
+    ("AutoForkDistOffsetH", "1000"),
+    ("AutoDoForkDecalDistH", "50"),
+    ("AutoForkDecalRateH", "75"),
+    ("AutoForkSpeedMinH", "60"),
+    #("AutoDoForkCheckDistH", "20"),
+    ("AutoDoForkBlinkerDistH", "30"),
+    ("AutoDoForkNavDistH", "50"),
+    ("AutoKeepForkSpeedH", "5"),
+    ("AutoEnTurnNewLaneTimeH", "20"),
+    ("AutoUpHighwayRoadLimit", "1"),
+    ("AutoUpHighwayRoadLimit40KMH", "20"),
+
+    ("AutoForkDistOffset", "30"),
+    ("AutoDoForkDecalDist", "20"),
+    ("AutoForkDecalRate", "80"),
+    ("AutoForkSpeedMin", "45"),
+    #("AutoDoForkCheckDist", "10"),
+    ("AutoDoForkBlinkerDist", "15"),
+    ("AutoDoForkNavDist", "15"),
+    ("AutoKeepForkSpeed", "5"),
+    ("AutoEnTurnNewLaneTime", "0"),
+    ("AutoUpRoadLimit", "1"),
+    ("AutoUpRoadLimit40KMH", "15"),
+
+    ("RoadType", "-1"),
+    ("NewLaneWidthDiff", "8"),
+
+    ("AutoCurveSpeedFactorH", "80"),
+    ("AutoCurveSpeedAggressivenessH", "120"),
+    ("AutoCurveSpeedFactor", "100"),
+    ("AutoCurveSpeedAggressiveness", "100"),
+
+    ("AutoNaviSpeedBumpSpeed", "35"),
+    ("AutoNaviSpeedBumpTime", "1"),
+    ("AutoNaviSpeedCtrlEnd", "7"),
+    ("AutoNaviSpeedCtrlMode", "3"),
+    ("AutoNaviSpeedSafetyFactor", "105"),
+    ("AutoNaviSpeedDecelRate", "80"),
+    ("AutoNaviCountDownMode", "0"),
+    ("TurnSpeedControlMode", "2"),
+    ("MapTurnSpeedFactor", "100"),
+    ("AutoTurnControlSpeedTurn", "20"),
+    ("AutoTurnMapChange", "0"),
+    ("AutoTurnControl", "2"),
+    ("AutoTurnControlTurnEnd", "6"),
+    ("AutoCurveSpeedLowerLimit", "30"),
+    ("AutoRoadSpeedLimitOffset", "0"),
+
+    ("LaneChangeNeedTorque", "0"),
+    ("LaneChangeBsd", "0"),
+    ("LaneChangeDelay", "0"),
+    ("DisableMinSteerSpeed", "0"),
+
+    ("DisableRegister", "0"),
+
+    ("UseLaneLineSpeed", "40"),
+    ("PathOffset", "0"),
+    ("UseLaneLineCurveSpeed", "20"),
+    ("AdjustLaneOffset", "0"),
+    ("LatMpcPathCost", "200"),
+    ("LatMpcMotionCost", "7"),
+    ("LatMpcAccelCost", "120"),
+    ("LatMpcJerkCost", "4"),
+    ("LatMpcSteeringRateCost", "7"),
+    ("LatMpcInputOffset", "4"),
   ]
+  return default_params
+
+def set_default_params():
+  params = Params()
+  default_params = get_default_params()
+  try:
+    default_params.remove(("CompletedTrainingVersion", "0"))
+    default_params.remove(("LanguageSetting", "main_en"))
+    default_params.remove(("GsmMetered", "1"))
+  except ValueError:
+    pass
+  for k, v in default_params:
+    params.put(k, v)
+    print(f"SetToDefault[{k}]={v}")
+
+def get_default_params_key():
+  default_params = get_default_params()
+  all_keys = [key for key, _ in default_params]
+  return all_keys
+
+def manager_init() -> None:
+  save_bootlog()
+
+  build_metadata = get_build_metadata()
+
+  params = Params()
+  params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
+  params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+  params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+  if build_metadata.release_channel:
+    params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
+
+  default_params = get_default_params()
+
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
 
@@ -291,7 +401,7 @@ def manager_thread() -> None:
 
     running = ' '.join("{}{}\u001b[0m".format("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
                        for p in managed_processes.values() if p.proc)
-    #print(running)
+    print(running)
     cloudlog.debug(running)
 
     # send managerState
