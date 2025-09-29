@@ -600,6 +600,7 @@ void AnnotatedCameraWidget::drawHud(QPainter &p) {
     //showVTC = true; //TEST
     if(showVTC){
       drawVisionTurnControllerUI(p, vtc_x, vtc_y, vtc_w, vtcColor, vtcSpeed, vtcSource, 100);
+      vtc_y = speedRect.bottom() + vtc_w + extra_offset;
     }
     else{
       vtc_y = speedRect.bottom() + extra_offset;
