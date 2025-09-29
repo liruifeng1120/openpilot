@@ -54,7 +54,7 @@ procs = [
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
-  PythonProcess("micd", "system.micd", iscar),
+  #PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   #PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
@@ -66,7 +66,7 @@ procs = [
   PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", model_use_nav),
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
-  PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
+  #PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"], only_onroad),
   NativeProcess("pandad", "selfdrive/pandad", ["./pandad"], always_run, enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
@@ -127,7 +127,9 @@ if os.path.exists("./gitlab_runner.sh") and not PC:
 #  procs += [
 #    PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
 #    PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
-#    NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging)
+#    NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
+#    PythonProcess("micd", "system.micd", iscar),
+#    PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad)
 #  ]
 
 if Params().get_bool("MapdProcessEn"):
