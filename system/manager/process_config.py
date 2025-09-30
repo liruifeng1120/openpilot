@@ -131,6 +131,12 @@ if os.path.exists("./gitlab_runner.sh") and not PC:
 #    PythonProcess("micd", "system.micd", iscar),
 #    PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad)
 #  ]
+if not Params().get_bool("DisableDM"):
+  procs += [
+    NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
+    PythonProcess("micd", "system.micd", iscar),
+    PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad)
+  ]
 
 if Params().get_bool("MapdProcessEn"):
   procs += [

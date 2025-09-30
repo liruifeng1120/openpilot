@@ -147,7 +147,6 @@ UserFuncPanel::UserFuncPanel(QWidget *parent) : QFrame(parent) {
 
   //============================================================
   //驾驶员监控
-  /*
   toggle_dm = new ParamControl(
     "DisableDM",
     tr("Disable DM"),
@@ -157,7 +156,6 @@ UserFuncPanel::UserFuncPanel(QWidget *parent) : QFrame(parent) {
   );
   list->addItem(toggle_dm);
   toggles["DisableDM"] = toggle_dm;
-  */
 
   auto toggle_reg = new ParamControl(
     "DisableRegister",
