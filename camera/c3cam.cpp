@@ -19,6 +19,11 @@
 #include <condition_variable>
 #include <deque>
 #include <algorithm>
+#include <vector>
+#include <queue>
+#include <mutex>
+#include <condition_variable>
+#include <memory>
 
 struct FrameData {
     cv::Mat frame;
@@ -31,11 +36,24 @@ std::vector<cv::Mat> shared_images;
 std::atomic<bool> running(true);
 
 // 每个摄像头一个队列
+int cam_max_num = 2;
+/*
 constexpr int MAX_CAM = 2;
 std::queue<FrameData> frame_queues[MAX_CAM];
 std::mutex queue_mutexes[MAX_CAM];
 std::condition_variable queue_conds[MAX_CAM];
+*/
+/*
+std::vector<std::queue<FrameData>> frame_queues;
+std::vector<std::mutex> queue_mutexes;
+std::vector<std::condition_variable> queue_conds;
+*/
 
+constexpr int MAX_CAM = 8;
+std::vector<std::queue<FrameData>> frame_queues(MAX_CAM);
+// mutex 和 condition_variable 用 unique_ptr 包裹
+std::vector<std::unique_ptr<std::mutex>> queue_mutexes(MAX_CAM);
+std::vector<std::unique_ptr<std::condition_variable>> queue_conds(MAX_CAM);
 
 #define YOLO_PIX 416
 
@@ -44,10 +62,10 @@ struct CameraROI {
     std::vector<cv::Point> polygon;
     int selected_idx = -1; // 拖动顶点索引
 };
-std::vector<CameraROI> camera_rois(MAX_CAM);
-std::vector<int> camera_sign(MAX_CAM, 0);
-std::vector<int> camera_car(MAX_CAM, 0);
-std::vector<int> lane_safe(MAX_CAM, 0);
+std::vector<CameraROI> camera_rois;
+std::vector<int> camera_sign;
+std::vector<int> camera_car;
+std::vector<int> lane_safe(2,-1);
 
 // ---------------- ONNX Runtime ----------------
 Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "YOLO");
@@ -486,10 +504,10 @@ void capture_from_camera(const std::string& device, int cam_id) {
         if (img.empty()) continue;
 
         {
-            std::lock_guard<std::mutex> lock(queue_mutexes[cam_id]);
+            std::lock_guard<std::mutex> lock(*queue_mutexes[cam_id]);
             frame_queues[cam_id].push({img, cam_id});
         }
-        queue_conds[cam_id].notify_one();
+        queue_conds[cam_id]->notify_one();
     }
     
     ioctl(fd, VIDIOC_STREAMOFF, &buf.type);
@@ -502,8 +520,8 @@ void inference_thread(int cam_id) {
     while (running) {
         FrameData data;
         {
-            std::unique_lock<std::mutex> lock(queue_mutexes[cam_id]);
-            queue_conds[cam_id].wait(lock, [&] { return !frame_queues[cam_id].empty() || !running; });
+            std::unique_lock<std::mutex> lock(*queue_mutexes[cam_id]);
+            queue_conds[cam_id]->wait(lock, [&] { return !frame_queues[cam_id].empty() || !running; });
             if (!running) break;
             data = frame_queues[cam_id].back();   // 只取最新帧
             while (!frame_queues[cam_id].empty()) frame_queues[cam_id].pop();
@@ -744,33 +762,40 @@ int main(){
     //std::vector<std::string> devices={"/dev/video5","/dev/video8"};
     std::vector<std::string> devices={"/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.1:1.0-video-index0",
                                       "/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.4.1:1.0-video-index0"};
-                                      
+    cam_max_num = devices.size();
+    
+    // 初始化指针
+    for (size_t i = 0; i < cam_max_num; i++) {
+        queue_mutexes[i] = std::make_unique<std::mutex>();
+        queue_conds[i] = std::make_unique<std::condition_variable>();
+    }
+    
     //摄像头方向，0为左边，1为右边
-    //camera_sign.resize(devices.size());
+    camera_sign.resize(cam_max_num);
     camera_sign[0] = 0;
     camera_sign[1] = 1;
     
     //摄像头车辆状态，0无车，1有车
-    //camera_car.resize(devices.size());
+    camera_car.resize(cam_max_num);
     for(int i=0; i<camera_car.size();i++){
       camera_car[i] = 0;
     }
     
     //车道是否安全，0不安全，1安全
-    lane_safe.resize(2);
+    //lane_safe.resize(2);
     lane_safe[0] = -1;
     lane_safe[1] = -1;
     
     // 初始化 ROI
-    //camera_rois.resize(devices.size());
-    for(int i=0; i<devices.size();i++){
+    camera_rois.resize(cam_max_num);
+    for(int i=0; i<cam_max_num;i++){
       camera_rois[i].polygon = {cv::Point(100,50),cv::Point(540,50),cv::Point(540,430),cv::Point(100,430)};
     }
 
     load_rois("rois.txt");
 
     std::vector<std::thread> threads;
-    for (int i = 0; i < MAX_CAM; i++) {
+    for (int i = 0; i < cam_max_num; i++) {
         threads.emplace_back(capture_from_camera, devices[i], i);
         threads.emplace_back(inference_thread, i);
     }
@@ -785,7 +810,7 @@ int main(){
 
     // 通知所有等待条件变量的推理线程
     for(int i=0; i<MAX_CAM; i++)
-        queue_conds[i].notify_all();
+        queue_conds[i]->notify_all();
         
     std::cout << "queue_conds notify_all" << std::endl;
 
