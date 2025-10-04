@@ -1,0 +1,13 @@
+{
+    "cameras": [
+        {
+            "device": "/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.1:1.0-video-index0",
+            "sign": 0
+        },
+        {
+            "device": "/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.4.1:1.0-video-index0",
+            "sign": 1
+        }
+    ]
+}
+

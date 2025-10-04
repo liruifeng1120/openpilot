@@ -24,6 +24,14 @@
 #include <mutex>
 #include <condition_variable>
 #include <memory>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include "../third_party/json11/json11.hpp"
+
+std::vector<std::string> devices;
+std::vector<int> camera_sign;
 
 struct FrameData {
     cv::Mat frame;
@@ -63,7 +71,7 @@ struct CameraROI {
     int selected_idx = -1; // 拖动顶点索引
 };
 std::vector<CameraROI> camera_rois;
-std::vector<int> camera_sign;
+//std::vector<int> camera_sign;
 std::vector<int> camera_car;
 std::vector<int> lane_safe(2,-1);
 
@@ -755,13 +763,56 @@ void lane_check_thread() {
     }
 }
 
+bool load_camera_config(const std::string &filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open config file: " << filename << std::endl;
+        return false;
+    }
+
+    std::string content((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+    
+    std::string err;
+    auto json = json11::Json::parse(content, err);
+    if (!err.empty()) {
+        std::cerr << "JSON parse error: " << err << std::endl;
+        return false;
+    }
+
+    if (!json["cameras"].is_array()) {
+        std::cerr << "Invalid config: 'cameras' must be an array" << std::endl;
+        return false;
+    }
+
+    devices.clear();
+    camera_sign.clear();
+
+    for (const auto &cam : json["cameras"].array_items()) {
+        devices.push_back(cam["device"].string_value());
+        camera_sign.push_back(cam["sign"].int_value());
+    }
+
+    return true;
+}
+
 // ---------------- main ----------------
 int main(){
     initialize_yolo();
 
     //std::vector<std::string> devices={"/dev/video5","/dev/video8"};
-    std::vector<std::string> devices={"/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.1:1.0-video-index0",
-                                      "/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.4.1:1.0-video-index0"};
+    //std::vector<std::string> devices={"/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.1:1.0-video-index0",
+    //                                  "/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.4.1:1.0-video-index0"};
+    if (!load_camera_config("camera_config.json")) {
+        return -1;
+    }
+
+    std::cout << "Loaded " << devices.size() << " cameras" << std::endl;
+    for (size_t i = 0; i < devices.size(); i++) {
+        std::cout << "Camera " << i << ": " << devices[i]
+                  << ", sign=" << camera_sign[i] << std::endl;
+    }
+    
     cam_max_num = devices.size();
     
     // 初始化指针
@@ -771,9 +822,9 @@ int main(){
     }
     
     //摄像头方向，0为左边，1为右边
-    camera_sign.resize(cam_max_num);
-    camera_sign[0] = 0;
-    camera_sign[1] = 1;
+    //camera_sign.resize(cam_max_num);
+    //camera_sign[0] = 0;
+    //camera_sign[1] = 1;
     
     //摄像头车辆状态，0无车，1有车
     camera_car.resize(cam_max_num);

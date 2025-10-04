@@ -13,7 +13,7 @@ onnx_lib = '/data/openpilot/third_party/onnxruntime/lib'
 
 env.Program(
     target='c3cam',
-    source=['c3cam.cpp'],
+    source=['c3cam.cpp','json11.cpp'],
     CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + opencv_cflags,
     LIBS=['onnxruntime'] + opencv_libs,
     LIBPATH=[onnx_lib],
