@@ -25,6 +25,9 @@ git clone -b cpv9-pc https://jihulab.com/fishop/openpilot.git
 备份原始源文件
 sudo mv /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources.bak
 
+如果要恢复
+sudo cp -f /etc/apt/sources.list.d/ubuntu.sources.bak /etc/apt/sources.list.d/ubuntu.sources
+
 以下为1条命令，全部一起复制粘贴到终端运行，该命令会提示输入当前用户的密码并确认用户有sudo权限和密码正确，否则会提示无权限
 sudo bash -c 'cat <<EOF > /etc/apt/sources.list.d/ubuntu.sources
 Types: deb
@@ -52,11 +55,27 @@ GPU驱动安装
 安装和编译Openpilot
 cd openpilot
 tools/op.sh setup
+uv sync --all-extras #强制安装
 
-python3 -m venv venv #创建虚拟环境
-source venv/bin/activate #激活虚拟环境
+如果出现下面的报错：
+下列软件包有未满足的依赖关系：libglib2.0-0t64 : 破坏: libglib2.0-0 (< 2.80.0-6ubuntu3~) libncurses5-dev : 依赖: libtinfo6 (= 6.2-0ubuntu2) 但是 6.4+20240113-1ubuntu2 正要被安装依赖: libncurses-dev (= 6.2-0ubuntu2) 但是 6.4+20240113-1ubuntu2 正要被安装 E: 无法修正错误，因为您要求某些软件包保持现状，就是它们破坏了软件包间的依赖关系。↳ [✗] Dependencies installation failed!
 
-tools/op.sh build  #编译op
+则执行下面命令清理一下
+sudo sed -i '/focal/d' /etc/apt/sources.list
+sudo rm -f /etc/apt/sources.list.d/*focal*.list
+sudo apt update
+
+#创建虚拟环境 #激活虚拟环境
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip setuptools wheel --break-system-packages
+pip install xattr flask --break-system-packages
+
+# 或使用下面命令进入OP虚拟环境
+tools/op.sh venv
+
+#编译op
+tools/op.sh build
 
 # 启动OP,ROAD_CAM指定摄像头,NO_DM驾驶监控开关(注意安全驾驶，关闭驾驶监控仅用测试，正常驾驶请打开驾驶监控功能)
 USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 system/manager/manager.py
