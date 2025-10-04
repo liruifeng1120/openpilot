@@ -192,9 +192,9 @@ class LateralLagEstimator:
 
     self.calib_valid = False
 
-    # 针对方向盘角度受限的车辆（如本田雅阁混动）进行特殊处理
+    # 针对方向盘角度受限的车辆（如本田车型）进行特殊处理
     # 支持多种车辆指纹格式：HONDA ACCORD, HONDA_ACCORD, HONDA ACCORD,NNFF
-    self.steer_angle_limited = CP.carFingerprint in ["HONDA ACCORD", "HONDA_ACCORD", "HONDA ACCORD,NNFF"] and CP.steerControlType != car.CarParams.SteerControlType.angle
+    self.steer_angle_limited = CP.carFingerprint.startswith('HONDA ') and CP.steerControlType != car.CarParams.SteerControlType.angle
 
     # 添加低通滤波器用于平滑偏航率数据
     self.yaw_rate_filter = FirstOrderFilter(0.0, 50.0, dt)  # 使用50Hz的截止频率
