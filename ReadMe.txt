@@ -89,7 +89,7 @@ https://huggingface.co/amd/yolov5s/tree/main
 sudo cp -r /data/onnxruntime/lib/* /usr/lib
 
 编译代码
-g++ -std=c++17 c3cam.cpp -o c3cam   -I/data/onnxruntime/include   -L/data/onnxruntime/lib -lonnxruntime   `pkg-config --cflags --libs opencv4`
+g++ -std=c++17 c3cam.cpp -o c3cam -I/data/openpilot/third_party/onnxruntime/include -L/data/openpilot/third_party/onnxruntime/lib -lonnxruntime `pkg-config --cflags --libs opencv4`
 
 列出摄像头和摄像头支持的格式
 v4l2-ctl --list-devices
