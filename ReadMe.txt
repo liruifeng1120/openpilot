@@ -65,7 +65,7 @@ sudo sed -i '/focal/d' /etc/apt/sources.list
 sudo rm -f /etc/apt/sources.list.d/*focal*.list
 sudo apt update
 
-#创建虚拟环境 #激活虚拟环境
+#创建虚拟环境 #激活虚拟环境(不再使用，改用tools/op.sh venv)
 python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel --break-system-packages
