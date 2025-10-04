@@ -83,10 +83,10 @@ python3 yolov5/export.py --weights yolov5s.pt --img-size 640 --batch-size 1 --in
 https://huggingface.co/amd/yolov5s/tree/main
 
 安装onnxruntime
-下载onnxruntime-linux-x64-1.23.0.tgz并解压至/data，并改文件夹名称为onnxruntime
+下载onnxruntime-linux-x64-1.23.0.tgz并解压至/data/openpilot/third_party/，并改文件夹名称为onnxruntime
 
 把/data/onnxruntime/lib目录下文件全部拷贝到/usr/lib中
-sudo cp -r /data/onnxruntime/lib/* /usr/lib
+sudo cp -r /data/openpilot/third_party/onnxruntime/lib/* /usr/lib
 
 编译代码
 g++ -std=c++17 c3cam.cpp -o c3cam -I/data/openpilot/third_party/onnxruntime/include -L/data/openpilot/third_party/onnxruntime/lib -lonnxruntime `pkg-config --cflags --libs opencv4`
