@@ -28,7 +28,32 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include "../third_party/json11/json11.hpp"
+#include <iostream>
+#include <string>
+#include <thread>
+#include <atomic>
+#include <chrono>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include "json11.hpp"
+#include <arpa/inet.h>
+#include <chrono>
+#include <cstring>
+#include <iostream>
+#include <mutex>
+#include <netinet/in.h>
+#include <string>
+#include <sys/socket.h>
+#include <thread>
+#include <unistd.h>
+#include "json11.hpp"
+#include <iostream>
+#include <sstream>
+
+using namespace std;
+using namespace json11;
+using namespace chrono;
 
 std::vector<std::string> devices;
 std::vector<int> camera_sign;
@@ -38,6 +63,11 @@ struct FrameData {
     int cam_id;
 };
 
+bool debug_mode = false;
+float raw_conf_threshold = 0.1f;   // 宽松阈值 → 保证画框尽量多
+float nms_conf_threshold = 0.1f;   // 严格阈值 → 用于NMS
+float nms_threshold      = 0.5f;
+
 std::mutex frame_mutex;
 std::mutex lane_mutex;
 std::vector<cv::Mat> shared_images;
@@ -45,23 +75,48 @@ std::atomic<bool> running(true);
 
 // 每个摄像头一个队列
 int cam_max_num = 2;
-/*
-constexpr int MAX_CAM = 2;
-std::queue<FrameData> frame_queues[MAX_CAM];
-std::mutex queue_mutexes[MAX_CAM];
-std::condition_variable queue_conds[MAX_CAM];
-*/
-/*
-std::vector<std::queue<FrameData>> frame_queues;
-std::vector<std::mutex> queue_mutexes;
-std::vector<std::condition_variable> queue_conds;
-*/
-
 constexpr int MAX_CAM = 8;
 std::vector<std::queue<FrameData>> frame_queues(MAX_CAM);
 // mutex 和 condition_variable 用 unique_ptr 包裹
 std::vector<std::unique_ptr<std::mutex>> queue_mutexes(MAX_CAM);
 std::vector<std::unique_ptr<std::condition_variable>> queue_conds(MAX_CAM);
+
+// 配置端口
+const int LOCAL_SEND_PORT = 4120;
+const int LOCAL_RECV_PORT = 4210;
+const int REMOTE_PORT = 4211;
+
+struct UDPComm {
+    int recv_sock = -1;
+    int send_sock = -1;
+    sockaddr_in remote_addr{};
+    string last_ip;
+    int last_port = 0;
+    steady_clock::time_point last_recv_time;
+    bool running = true;
+};
+
+class DebugStream {
+public:
+    DebugStream(bool enabled = false) : enabled_(enabled) {}
+    void set_enabled(bool e) { enabled_ = e; }
+
+    template<typename T>
+    DebugStream& operator<<(const T& value) {
+        if (enabled_) std::cout << value;
+        return *this;
+    }
+
+    DebugStream& operator<<(std::ostream& (*manip)(std::ostream&)) {
+        if (enabled_) std::cout << manip;
+        return *this;
+    }
+
+private:
+    bool enabled_;
+};
+
+DebugStream dcout;
 
 #define YOLO_PIX 416
 
@@ -86,7 +141,7 @@ void initialize_yolo() {
         session_options.SetIntraOpNumThreads(1);
         const char* model_path = "yolov5s.onnx";
         session = new Ort::Session(env, model_path, session_options);
-        std::cout << "YOLO model loaded successfully!" << std::endl;
+        dcout << "YOLO model loaded successfully!" << std::endl;
     } catch (const Ort::Exception& e) {
         std::cerr << "Failed to load YOLO model: " << e.what() << std::endl;
         running = false;
@@ -131,123 +186,6 @@ LaneDebouncerSingleDirection left_checker(12);
 LaneDebouncerSingleDirection right_checker(12);
 
 // ---------------- YOLO 检测 ----------------
-/*
-std::vector<cv::Rect> detect_cars(cv::Mat& frame) {
-    std::vector<cv::Rect> cars;
-
-    int orig_w = frame.cols;
-    int orig_h = frame.rows;
-
-    // ---------------- Resize + letterbox + normalize ----------------
-    float scale = std::min(float(YOLO_PIX) / orig_w, float(YOLO_PIX) / orig_h);
-    int new_w = int(orig_w * scale);
-    int new_h = int(orig_h * scale);
-    int pad_x = (YOLO_PIX - new_w) / 2;
-    int pad_y = (YOLO_PIX - new_h) / 2;
-
-    cv::Mat resized_image;
-    cv::resize(frame, resized_image, cv::Size(new_w, new_h));
-    cv::Mat input_blob = cv::Mat::zeros(YOLO_PIX, YOLO_PIX, frame.type());
-    resized_image.copyTo(input_blob(cv::Rect(pad_x, pad_y, new_w, new_h)));
-    cv::cvtColor(input_blob, input_blob, cv::COLOR_BGR2RGB);
-    input_blob.convertTo(input_blob, CV_32F, 1.0 / 255.0);
-
-    // ---------------- ONNX Runtime ----------------
-    std::vector<int64_t> input_shape = {1, 3, YOLO_PIX, YOLO_PIX}; // NCHW
-    Ort::MemoryInfo memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-
-    // HWC -> CHW
-    std::vector<float> blob_data(1*3*YOLO_PIX*YOLO_PIX);
-    for(int c = 0; c < 3; c++)
-        for(int y = 0; y < YOLO_PIX; y++)
-            for(int x = 0; x < YOLO_PIX; x++)
-                blob_data[c*YOLO_PIX*YOLO_PIX + y*YOLO_PIX + x] = input_blob.at<cv::Vec3f>(y, x)[c];
-
-    Ort::Value input_tensor = Ort::Value::CreateTensor<float>(
-        memory_info,
-        blob_data.data(),
-        blob_data.size(),
-        input_shape.data(),
-        input_shape.size()
-    );
-
-    static std::vector<Ort::AllocatedStringPtr> input_names_ptrs;
-    static std::vector<const char*> input_names;
-    if(input_names.empty()) {
-        size_t num_input_nodes = session->GetInputCount();
-        for(size_t i=0;i<num_input_nodes;i++){
-            auto name_ptr = session->GetInputNameAllocated(i, Ort::AllocatorWithDefaultOptions());
-            input_names_ptrs.push_back(std::move(name_ptr));
-            input_names.push_back(input_names_ptrs.back().get());
-        }
-    }
-
-    static std::vector<Ort::AllocatedStringPtr> output_names_ptrs;
-    static std::vector<const char*> output_names;
-    if(output_names.empty()){
-        size_t num_output_nodes = session->GetOutputCount();
-        for(size_t i=0;i<num_output_nodes;i++){
-            auto name_ptr = session->GetOutputNameAllocated(i, Ort::AllocatorWithDefaultOptions());
-            output_names_ptrs.push_back(std::move(name_ptr));
-            output_names.push_back(output_names_ptrs.back().get());
-        }
-    }
-
-    auto output_tensors = session->Run(Ort::RunOptions{nullptr},
-                                       input_names.data(), &input_tensor, 1,
-                                       output_names.data(), output_names.size());
-
-    float* output_data = output_tensors[0].GetTensorMutableData<float>();
-    auto shape = output_tensors[0].GetTensorTypeAndShapeInfo().GetShape();
-    int num_boxes = shape[1]; // 25200 for yolov5s 640, 10647 for yolov5s 416
-
-    std::vector<cv::Rect> all_boxes;
-    std::vector<float> scores;
-    float conf_threshold = 0.1f;
-
-    for(int i=0;i<num_boxes;i++){
-        float x = output_data[i*85 + 0];
-        float y = output_data[i*85 + 1];
-        float w = output_data[i*85 + 2];
-        float h = output_data[i*85 + 3];
-        float conf = output_data[i*85 + 4];
-
-        int best_class = -1;
-        float best_prob = 0.0f;
-        for(int c=0;c<80;c++){
-            float prob = output_data[i*85 + 5 + c];
-            if(prob > best_prob){
-                best_prob = prob;
-                best_class = c;
-            }
-        }
-
-        float score = conf * best_prob;
-        if(score > conf_threshold){ // 可调阈值
-            if(best_class==0 || best_class==1 || best_class==2 || best_class==3 || best_class==5 || best_class==7){
-                int left   = std::max(0, int((x - w/2 - pad_x)/scale));
-                int top    = std::max(0, int((y - h/2 - pad_y)/scale));
-                int right  = std::min(orig_w, int((x + w/2 - pad_x)/scale));
-                int bottom = std::min(orig_h, int((y + h/2 - pad_y)/scale));
-
-                all_boxes.push_back(cv::Rect(left, top, right-left, bottom-top));
-                scores.push_back(score);
-            }
-        }
-    }
-
-    // ---------------- NMS ----------------
-    std::vector<int> indices;
-    float nms_threshold = 0.5f;
-    cv::dnn::NMSBoxes(all_boxes, scores, conf_threshold, nms_threshold, indices);
-
-    for(auto idx : indices)
-        cars.push_back(all_boxes[idx]);
-
-    return cars;
-}
-*/
-
 struct DetectionResult {
     std::vector<cv::Rect> raw_boxes;   // 原始候选框（只经过 score 阈值过滤）
     std::vector<cv::Rect> final_boxes; // NMS 过滤后的框（更严格，用于判断）
@@ -325,10 +263,6 @@ DetectionResult detect_cars(cv::Mat& frame) {
     std::vector<cv::Rect> all_boxes;
     std::vector<float> scores;
 
-    float raw_conf_threshold = 0.1f;   // 宽松阈值 → 保证画框尽量多
-    float nms_conf_threshold = 0.1f;   // 严格阈值 → 用于NMS
-    float nms_threshold      = 0.5f;
-
     for(int i=0;i<num_boxes;i++){
         float x = output_data[i*85 + 0];
         float y = output_data[i*85 + 1];
@@ -384,96 +318,6 @@ bool is_in_roi(const cv::Rect& box, const std::vector<cv::Point>& polygon) {
 }
 
 // ---------------- 摄像头捕获线程 ----------------
-#if 0
-void capture_from_camera(const std::string& device, int cam_id) {
-    int fd = open(device.c_str(), O_RDWR);
-    if (fd == -1) { std::cerr << "Failed to open " << device << std::endl; return; }
-
-    struct v4l2_format fmt;
-    memset(&fmt, 0, sizeof(fmt));
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width = 640;
-    fmt.fmt.pix.height = 480;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
-    fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-    if (ioctl(fd, VIDIOC_S_FMT, &fmt) == -1) { std::cerr << "Failed set fmt " << device << std::endl; close(fd); return; }
-
-    struct v4l2_requestbuffers req;
-    memset(&req, 0, sizeof(req));
-    req.count = 4; req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; req.memory = V4L2_MEMORY_MMAP;
-    if (ioctl(fd, VIDIOC_REQBUFS, &req) == -1) { std::cerr << "Reqbuf failed " << device << std::endl; close(fd); return; }
-
-    struct v4l2_buffer buf;
-    memset(&buf, 0, sizeof(buf));
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; buf.memory = V4L2_MEMORY_MMAP; buf.index = 0;
-    if (ioctl(fd, VIDIOC_QUERYBUF, &buf) == -1) { std::cerr << "Querybuf failed " << device << std::endl; close(fd); return; }
-
-    void* buffer = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
-    if (buffer == MAP_FAILED) { std::cerr << "mmap failed " << device << std::endl; close(fd); return; }
-
-    if (ioctl(fd, VIDIOC_STREAMON, &buf.type) == -1) { std::cerr << "streamon failed " << device << std::endl; close(fd); return; }
-
-    while (running) {
-        if (ioctl(fd, VIDIOC_QBUF, &buf) == -1 || ioctl(fd, VIDIOC_DQBUF, &buf) == -1) continue;
-        unsigned char* data = (unsigned char*)buffer;
-        if (data[0] != 0xFF || data[1] != 0xD8) continue;
-
-        std::vector<uchar> jpeg_data(data, data + buf.bytesused);
-        cv::Mat img = cv::imdecode(jpeg_data, cv::IMREAD_COLOR);
-        if (img.empty()) continue;
-        
-        // ---------------- YOLO 推理 + ROI ----------------
-        //detect_objects_debug(img); //TEST
-        std::vector<cv::Rect> cars = detect_cars(img);
-        std::vector<cv::Rect> cars_in_roi;
-#if 1
-        if(cam_id < camera_rois.size()){
-            for(auto& car : cars)
-                if(is_in_roi(car, camera_rois[cam_id].polygon)){
-                    cars_in_roi.push_back(car);
-                }
-                
-            //判断摄像头框选范围是否有车
-            if(cars_in_roi.size() > 0){
-                if(camera_car[cam_id] == 0){
-                    std::cout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
-                }
-                camera_car[cam_id] = 1;
-            }
-            else{
-                if(camera_car[cam_id] == 1){
-                    std::cout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
-                }
-                camera_car[cam_id] = 0;
-            }
-        } else {
-            cars_in_roi = cars;
-        }
-#else
-        cars_in_roi = cars;
-#endif
-
-        // 绘制 ROI
-        if(cam_id < camera_rois.size() && !camera_rois[cam_id].polygon.empty())
-            cv::polylines(img, std::vector<std::vector<cv::Point>>{camera_rois[cam_id].polygon}, true, cv::Scalar(0,255,0), 2);
-
-        // 绘制检测框
-        for(auto& car : cars_in_roi)
-            cv::rectangle(img, car, cv::Scalar(0,0,255), 2);
-
-        // 更新共享图像
-        {
-            std::lock_guard<std::mutex> lock(frame_mutex);
-            if (cam_id >= shared_images.size()) shared_images.resize(cam_id + 1);
-            shared_images[cam_id] = img.clone();
-        }
-    }
-    ioctl(fd, VIDIOC_STREAMOFF, &buf.type);
-    munmap(buffer, buf.length);
-    close(fd);
-}
-#endif
-
 void capture_from_camera(const std::string& device, int cam_id) {
     int fd = open(device.c_str(), O_RDWR);
     if (fd == -1) { std::cerr << "Failed to open " << device << std::endl; return; }
@@ -555,13 +399,13 @@ void inference_thread(int cam_id) {
             if(!cars_in_roi.empty()) {
                 std::lock_guard<std::mutex> lock(lane_mutex);
                 if(camera_car[cam_id] == 0){
-                    //std::cout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
+                    //dcout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
                 }
                 camera_car[cam_id] = 1;
             } else {
                 std::lock_guard<std::mutex> lock(lane_mutex);
                 if(camera_car[cam_id] == 1){
-                    //std::cout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
+                    //dcout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
                 }
                 camera_car[cam_id] = 0;
             }
@@ -706,7 +550,7 @@ void display_loop() {
         }
 
         if (cv::waitKey(1) == 27) { // ESC
-            std::cout << "display_loop end" << std::endl;
+            dcout << "display_loop end" << std::endl;
             running = false;
         }
     }
@@ -764,6 +608,8 @@ void lane_check_thread() {
 }
 
 bool load_camera_config(const std::string &filename) {
+    dcout.set_enabled(debug_mode);
+
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Failed to open config file: " << filename << std::endl;
@@ -772,7 +618,7 @@ bool load_camera_config(const std::string &filename) {
 
     std::string content((std::istreambuf_iterator<char>(file)),
                          std::istreambuf_iterator<char>());
-    
+
     std::string err;
     auto json = json11::Json::parse(content, err);
     if (!err.empty()) {
@@ -780,6 +626,34 @@ bool load_camera_config(const std::string &filename) {
         return false;
     }
 
+    // -------------------------------
+    // 新增: 通用配置字段
+    // -------------------------------
+    if (json["debug"].is_bool()) {
+        debug_mode = json["debug"].bool_value();
+        std::cout << "[CFG] debug_mode = " << (debug_mode ? "true" : "false") << std::endl;
+    }
+    
+    dcout.set_enabled(debug_mode);
+
+    auto limit01 = [](float v) {
+        return std::max(0.0f, std::min(1.0f, v));
+    };
+
+    if (json["raw_conf_threshold"].is_number())
+        raw_conf_threshold = limit01(json["raw_conf_threshold"].number_value());
+    if (json["nms_conf_threshold"].is_number())
+        nms_conf_threshold = limit01(json["nms_conf_threshold"].number_value());
+    if (json["nms_threshold"].is_number())
+        nms_threshold = limit01(json["nms_threshold"].number_value());
+
+    std::cout << "[CFG] raw_conf_threshold = " << raw_conf_threshold
+              << ", nms_conf_threshold = " << nms_conf_threshold
+              << ", nms_threshold = " << nms_threshold << std::endl;
+
+    // -------------------------------
+    // 摄像头配置
+    // -------------------------------
     if (!json["cameras"].is_array()) {
         std::cerr << "Invalid config: 'cameras' must be an array" << std::endl;
         return false;
@@ -793,58 +667,208 @@ bool load_camera_config(const std::string &filename) {
         camera_sign.push_back(cam["sign"].int_value());
     }
 
+    std::cout << "[CFG] Loaded " << devices.size() << " cameras" << std::endl;
+    for (size_t i = 0; i < devices.size(); ++i) {
+        std::cout << "  Camera[" << i << "]: " << devices[i]
+                  << ", sign=" << camera_sign[i] << std::endl;
+    }
+
     return true;
 }
 
+// 获取本机真实 IP
+inline string get_local_ip() {
+    string local_ip = "0.0.0.0";
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock >= 0) {
+        sockaddr_in serv{};
+        serv.sin_family = AF_INET;
+        serv.sin_addr.s_addr = inet_addr("8.8.8.8"); // 任意公网IP
+        serv.sin_port = htons(53);
+        if (connect(sock, (sockaddr*)&serv, sizeof(serv)) == 0) {
+            sockaddr_in name{};
+            socklen_t namelen = sizeof(name);
+            if (getsockname(sock, (sockaddr*)&name, &namelen) == 0) {
+                local_ip = inet_ntoa(name.sin_addr);
+            }
+        }
+        close(sock);
+    }
+    return local_ip;
+}
+
+bool udp_comm_init(UDPComm &comm) {
+    // 创建接收 socket
+    comm.recv_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (comm.recv_sock < 0) { perror("recv socket"); return false; }
+
+    int opt = 1;
+    if (setsockopt(comm.recv_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt SO_REUSEADDR");
+    }
+
+    if (setsockopt(comm.recv_sock, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt SO_BROADCAST");
+    }
+
+    sockaddr_in recv_addr{};
+    recv_addr.sin_family = AF_INET;
+    recv_addr.sin_port = htons(LOCAL_RECV_PORT);
+    recv_addr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(comm.recv_sock, (sockaddr*)&recv_addr, sizeof(recv_addr)) < 0) {
+        perror("bind"); return false;
+    }
+
+    // 创建发送 socket
+    comm.send_sock = socket(AF_INET, SOCK_DGRAM, 0);
+    if (comm.send_sock < 0) { perror("send socket"); return false; }
+
+    opt = 1;
+    if (setsockopt(comm.send_sock, SOL_SOCKET, SO_BROADCAST, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt send SO_BROADCAST");
+    }
+
+    comm.last_recv_time = steady_clock::now();
+    return true;
+}
+
+void udp_comm_thread(UDPComm &comm) {
+    std::cout << "[UDP] Thread started" << endl;
+    string local_ip = get_local_ip();
+    std::cout << "[UDP] local IP: " << local_ip << endl;
+
+    while (comm.running) {
+        char buffer[4096] = {0};
+        sockaddr_in sender_addr{};
+        socklen_t sender_len = sizeof(sender_addr);
+
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(comm.recv_sock, &readfds);
+        timeval tv{};
+        tv.tv_sec = 1; // 1秒超时检查
+        tv.tv_usec = 0;
+
+        int ret = select(comm.recv_sock + 1, &readfds, nullptr, nullptr, &tv);
+        if (ret < 0) {
+            perror("[UDP] select error");
+            continue;
+        }
+
+        if (ret > 0 && FD_ISSET(comm.recv_sock, &readfds)) {
+            int n = recvfrom(comm.recv_sock, buffer, sizeof(buffer)-1, 0,
+                             (sockaddr*)&sender_addr, &sender_len);
+            if (n > 0) {
+                buffer[n] = '\0';
+                comm.last_recv_time = chrono::steady_clock::now();
+
+                dcout << "[UDP] Received packet from "
+                     << inet_ntoa(sender_addr.sin_addr) << ":"
+                     << ntohs(sender_addr.sin_port)
+                     << " -> " << buffer << endl;
+
+                string err;
+                Json j = Json::parse(buffer, err);
+                if (!err.empty()) { 
+                    cerr << "[UDP] JSON parse error: " << err << endl; 
+                    continue; 
+                }
+
+                if (j["ip"].is_string() && j["port"].is_number()) {
+                    comm.last_ip = j["ip"].string_value();
+                    comm.last_port = j["port"].int_value();
+
+                    comm.remote_addr.sin_family = AF_INET;
+                    comm.remote_addr.sin_addr.s_addr = inet_addr(comm.last_ip.c_str());
+                    comm.remote_addr.sin_port = htons(comm.last_port);
+
+                    Json resp = Json::object{
+                        {"resp", "ok"},
+                        {"timeout", false},
+                        {"ip", local_ip},
+                        {"port", LOCAL_RECV_PORT},
+                        {"left_blind", lane_safe[0]?false:true},
+                        {"right_blind", lane_safe[1]?false:true}
+                    };
+                    string out = resp.dump();
+                    sendto(comm.send_sock, out.c_str(), out.size(), 0,
+                           (sockaddr*)&comm.remote_addr, sizeof(comm.remote_addr));
+
+                    dcout << "[UDP] Sent response to " << comm.last_ip
+                         << ":" << comm.last_port 
+                         << " -> " << out << endl;
+                }
+            }
+        }
+
+        // 超过5秒没有收到数据，广播 timeout
+        auto now = chrono::steady_clock::now();
+        if (chrono::duration_cast<chrono::seconds>(now - comm.last_recv_time).count() > 5) {
+
+            sockaddr_in bcast_addr{};
+            bcast_addr.sin_family = AF_INET;
+            bcast_addr.sin_port = htons(REMOTE_PORT);
+            bcast_addr.sin_addr.s_addr = INADDR_BROADCAST;
+
+            Json timeout_resp = Json::object{
+                {"resp", "ok"},
+                {"timeout", true},
+                {"ip", local_ip},
+                {"port", LOCAL_RECV_PORT},
+                {"left_blind", lane_safe[0]?false:true},
+                {"right_blind", lane_safe[1]?false:true}
+            };
+            string out = timeout_resp.dump();
+            sendto(comm.send_sock, out.c_str(), out.size(), 0,
+                   (sockaddr*)&bcast_addr, sizeof(bcast_addr));
+
+            dcout << "[UDP] Broadcast timeout -> " << out << endl;
+
+            comm.last_recv_time = now; // 避免重复广播
+        }
+    }
+
+    std::cout << "[UDP] Thread exiting" << endl;
+    shutdown(comm.recv_sock, SHUT_RD);
+    close(comm.recv_sock);
+    close(comm.send_sock);
+}
+
+
 // ---------------- main ----------------
-int main(){
+int main() {
     initialize_yolo();
 
-    //std::vector<std::string> devices={"/dev/video5","/dev/video8"};
-    //std::vector<std::string> devices={"/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.1:1.0-video-index0",
-    //                                  "/dev/v4l/by-path/pci-0000:00:14.0-usbv2-0:7.4.1:1.0-video-index0"};
+    UDPComm comm;
+    if (!udp_comm_init(comm)) {
+        std::cerr << "UDP init failed" << endl;
+        return 1;
+    }
+
     if (!load_camera_config("camera_config.json")) {
         return -1;
     }
 
     std::cout << "Loaded " << devices.size() << " cameras" << std::endl;
-    for (size_t i = 0; i < devices.size(); i++) {
-        std::cout << "Camera " << i << ": " << devices[i]
-                  << ", sign=" << camera_sign[i] << std::endl;
-    }
-    
     cam_max_num = devices.size();
-    
-    // 初始化指针
+
+    // 初始化 mutex / condition_variable
     for (size_t i = 0; i < cam_max_num; i++) {
         queue_mutexes[i] = std::make_unique<std::mutex>();
         queue_conds[i] = std::make_unique<std::condition_variable>();
     }
-    
-    //摄像头方向，0为左边，1为右边
-    //camera_sign.resize(cam_max_num);
-    //camera_sign[0] = 0;
-    //camera_sign[1] = 1;
-    
-    //摄像头车辆状态，0无车，1有车
-    camera_car.resize(cam_max_num);
-    for(int i=0; i<camera_car.size();i++){
-      camera_car[i] = 0;
-    }
-    
-    //车道是否安全，0不安全，1安全
-    //lane_safe.resize(2);
-    lane_safe[0] = -1;
-    lane_safe[1] = -1;
-    
-    // 初始化 ROI
-    camera_rois.resize(cam_max_num);
-    for(int i=0; i<cam_max_num;i++){
-      camera_rois[i].polygon = {cv::Point(100,50),cv::Point(540,50),cv::Point(540,430),cv::Point(100,430)};
-    }
 
+    camera_car.resize(cam_max_num, 0);
+    lane_safe[0] = lane_safe[1] = -1;
+
+    camera_rois.resize(cam_max_num);
+    for (int i = 0; i < cam_max_num; i++)
+        camera_rois[i].polygon = {cv::Point(100,50), cv::Point(540,50), cv::Point(540,430), cv::Point(100,430)};
+    
     load_rois("rois.txt");
 
+    // 创建摄像头采集和推理线程
     std::vector<std::thread> threads;
     for (int i = 0; i < cam_max_num; i++) {
         threads.emplace_back(capture_from_camera, devices[i], i);
@@ -853,30 +877,34 @@ int main(){
 
     std::thread lane_thread(lane_check_thread);
     std::thread display_thread(display_loop);
+    std::thread udp_thread(udp_comm_thread, std::ref(comm));
 
-    //for (auto& t : threads) t.join();
+    // 等待显示线程结束
     display_thread.join();
-    
     std::cout << "display_loop exit" << std::endl;
 
+    // 通知所有线程退出
+    comm.running = false;
+
     // 通知所有等待条件变量的推理线程
-    for(int i=0; i<MAX_CAM; i++)
+    for (int i = 0; i < cam_max_num; i++)
         queue_conds[i]->notify_all();
-        
-    std::cout << "queue_conds notify_all" << std::endl;
 
     // 等待摄像头采集 + 推理线程退出
-    for(auto& t : threads)
-        if(t.joinable()) t.join();
-        
-    std::cout << "camera thread exit" << std::endl;
+    for (auto &t : threads)
+        if (t.joinable())
+            t.join();
+    std::cout << "camera threads exit" << std::endl;
 
-    // 等待车道检查线程退出
-    if(lane_thread.joinable()) lane_thread.join();
-    
+    // 等待车道检测线程退出
+    if (lane_thread.joinable())
+        lane_thread.join();
     std::cout << "lane_thread exit" << std::endl;
 
-    //save_rois("rois.txt");
+    // 等待 UDP 线程退出
+    if (udp_thread.joinable())
+        udp_thread.join();
+    std::cout << "udp thread exit" << std::endl;
 
     return 0;
 }
