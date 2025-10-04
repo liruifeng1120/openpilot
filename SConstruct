@@ -350,6 +350,8 @@ Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
 
+# Build other submodules
+SConscript(['camera/SConscript'])
 
 # Build other submodules
 SConscript(['panda/SConscript'])
