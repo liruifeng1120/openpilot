@@ -14,41 +14,19 @@
 #include <cmath>
 #include <chrono>
 #include <queue>
-#include <thread>
-#include <mutex>
 #include <condition_variable>
 #include <deque>
 #include <algorithm>
-#include <vector>
-#include <queue>
-#include <mutex>
-#include <condition_variable>
 #include <memory>
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <string>
-#include <iostream>
-#include <string>
-#include <thread>
-#include <atomic>
-#include <chrono>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "json11.hpp"
-#include <arpa/inet.h>
-#include <chrono>
-#include <cstring>
-#include <iostream>
-#include <mutex>
 #include <netinet/in.h>
-#include <string>
-#include <sys/socket.h>
-#include <thread>
-#include <unistd.h>
 #include "json11.hpp"
-#include <iostream>
+#include <cstring>
 #include <sstream>
 
 using namespace std;
@@ -64,6 +42,7 @@ struct FrameData {
 };
 
 bool debug_mode = false;
+bool show_video = true;
 float raw_conf_threshold = 0.1f;   // 宽松阈值 → 保证画框尽量多
 float nms_conf_threshold = 0.1f;   // 严格阈值 → 用于NMS
 float nms_threshold      = 0.5f;
@@ -533,6 +512,7 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
 // ---------------- 显示线程 ----------------
 void display_loop() {
     while (running) {
+        if(show_video)
         {
             std::lock_guard<std::mutex> lock(frame_mutex);
             for (int i = 0; i < shared_images.size(); ++i) {
@@ -635,6 +615,11 @@ bool load_camera_config(const std::string &filename) {
     }
     
     dcout.set_enabled(debug_mode);
+    
+    if (json["show_video"].is_bool()) {
+        show_video = json["show_video"].bool_value();
+        std::cout << "[CFG] show_video = " << (show_video ? "true" : "false") << std::endl;
+    }   
 
     auto limit01 = [](float v) {
         return std::max(0.0f, std::min(1.0f, v));

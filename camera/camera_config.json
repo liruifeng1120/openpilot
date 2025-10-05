@@ -3,6 +3,7 @@
   "raw_conf_threshold": 0.1,
   "nms_conf_threshold": 0.1,
   "nms_threshold": 0.5,
+  "show_video":true,
 
   "cameras": [
     {

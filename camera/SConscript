@@ -11,11 +11,21 @@ opencv_libs = os.popen('pkg-config --libs opencv4').read().strip().split()
 onnx_include = '/data/openpilot/third_party/onnxruntime/include'
 onnx_lib = '/data/openpilot/third_party/onnxruntime/lib'
 
+# 使用 -rpath 指定库路径
 env.Program(
     target='c3cam',
-    source=['c3cam.cpp','json11.cpp'],
+    source=['c3cam.cpp', 'json11.cpp'],
     CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + opencv_cflags,
     LIBS=['onnxruntime'] + opencv_libs,
     LIBPATH=[onnx_lib],
+    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']  # 添加 rpath 配置
 )
 
+env.Program(
+    target='c3cam_8845',
+    source=['c3cam_8845.cpp', 'json11.cpp'],
+    CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + opencv_cflags,
+    LIBS=['onnxruntime'] + opencv_libs,
+    LIBPATH=[onnx_lib],
+    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']  # 添加 rpath 配置
+)
