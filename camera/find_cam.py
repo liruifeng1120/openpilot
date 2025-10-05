@@ -9,7 +9,7 @@ common_resolutions = [
     (320, 240)
 ]
 
-for i in range(10):
+for i in range(20):
     # Ubuntu 下使用 V4L2 或默认即可
     cap = cv2.VideoCapture(i, cv2.CAP_V4L2)  # 或直接 cap = cv2.VideoCapture(i)
     if cap.isOpened():
