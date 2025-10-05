@@ -74,6 +74,14 @@ pip install xattr flask --break-system-packages
 # 或使用下面命令进入OP虚拟环境
 tools/op.sh venv
 
+#安装opencv开发库
+sudo apt update
+sudo apt install libopencv-dev
+sudo apt install libicu-dev
+
+把openpilot/lib目录下的文件全部拷贝到/usr/lib/x86_64-linux-gnu下
+
+
 #编译op
 tools/op.sh build
 
