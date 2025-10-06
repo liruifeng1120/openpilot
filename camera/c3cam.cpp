@@ -367,6 +367,8 @@ void inference_thread(int cam_id) {
         std::vector<cv::Rect> cars_box = result.final_boxes;
         std::vector<cv::Rect> cars_in_roi;
         std::vector<cv::Rect> cars_box_in_roi;
+        
+        //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars.size()) + " car!" << std::endl;
 
         if(cam_id < camera_rois.size()){
             for(auto& car : cars) {
@@ -374,17 +376,19 @@ void inference_thread(int cam_id) {
                     cars_in_roi.push_back(car);
                 }
             }
+            
+            //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars_in_roi.size()) + " car in roi!" << std::endl;
 
             if(!cars_in_roi.empty()) {
                 std::lock_guard<std::mutex> lock(lane_mutex);
                 if(camera_car[cam_id] == 0){
-                    //dcout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
+                    //std::cout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
                 }
                 camera_car[cam_id] = 1;
             } else {
                 std::lock_guard<std::mutex> lock(lane_mutex);
                 if(camera_car[cam_id] == 1){
-                    //dcout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
+                    //std::cout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
                 }
                 camera_car[cam_id] = 0;
             }
@@ -540,7 +544,8 @@ void display_loop() {
 // 线程函数
 void lane_check_thread() {
     while (running) {
-        std::vector<int> lane_safe_tmp(2, 1); // 2 个元素，初始值都是 1
+        std::vector<int> lane_unsafe_tmp(2, 0); // 2 个元素，初始值都是 0
+        std::vector<int> lane_safe_tmp(2, 0);
 
         int land_id = 0;
 
@@ -549,13 +554,22 @@ void lane_check_thread() {
             std::lock_guard<std::mutex> lock(lane_mutex);
 
             for(int cam_id = 0; cam_id < camera_car.size(); cam_id++){
-                if(camera_sign[cam_id] >= lane_safe_tmp.size()){
-                    break;
+                if(camera_sign[cam_id] >= lane_unsafe_tmp.size()){
+                    continue;
                 }
                 land_id = camera_sign[cam_id];
 
-                if(camera_car[land_id] > 0){
-                    lane_safe_tmp[land_id] = 0;
+                if(camera_car[cam_id] > 0){
+                    lane_unsafe_tmp[land_id] |= 1<<cam_id;
+                }
+            }
+            
+            for(int i=0; i<lane_unsafe_tmp.size(); i++){
+                if(lane_unsafe_tmp[i] > 0){
+                    lane_safe_tmp[i] = false;
+                }
+                else{
+                    lane_safe_tmp[i] = true;
                 }
             }
         }

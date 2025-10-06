@@ -1,7 +1,7 @@
 {
   "debug": false,
-  "raw_conf_threshold": 0.1,
-  "nms_conf_threshold": 0.1,
+  "raw_conf_threshold": 0.5,
+  "nms_conf_threshold": 0.5,
   "nms_threshold": 0.5,
   "show_video":true,
 
