@@ -235,6 +235,7 @@ class DesireHelper:
     self.autoLaneChangeMinSpeed = 0
     self.lane_change_state_last = LaneChangeState.off
     self.lane_change_state_prev = LaneChangeState.off
+    self.driver_lane_change_delay = 0.0
     #new
 
   def lane_change_audio(self, enable, turn_type, param=0):
@@ -409,6 +410,7 @@ class DesireHelper:
     self.carrot_lane_change_count = max(0, self.carrot_lane_change_count - 1)
     if carrot_lane_change_count != self.carrot_lane_change_count and carrot_lane_change_count == 0:
       print(f"---[{time.strftime("%H:%M:%S")}]carrot_lane_change_count=0")
+    self.driver_lane_change_delay = max(0, self.driver_lane_change_delay - DT_MDL)
     self.lane_change_delay = max(0, self.lane_change_delay - DT_MDL)
     self.lane_change_audio_delay = max(0, self.lane_change_audio_delay - DT_MDL)
     if self.lane_change_delay_start:
@@ -568,6 +570,10 @@ class DesireHelper:
       self.lane_appeared = self.lane_appeared or lane_exist_counter == int(0.2 / DT_MDL) #
       curr_lane_width_diff = self.lane_width_left_curr_diff if blinker_state == BLINKER_LEFT else self.lane_width_right_curr_diff #当前车道宽度和旁边车道宽度的差值
 
+      carrot_left_blind = carrotMan.leftBlind
+      carrot_right_blind = carrotMan.rightBlind
+      carrot_blind = carrot_left_blind if blinker_state == BLINKER_LEFT else carrot_right_blind
+
       radar = radarState.leadLeft if blinker_state == BLINKER_LEFT else radarState.leadRight
       side_object_dist = radar.dRel + radar.vLead * 3.0 if radar.status else 255
       if radar.status:
@@ -575,14 +581,14 @@ class DesireHelper:
       else:
         object_detected = False
       #self.object_detected_count = max(1, self.object_detected_count + 1) if object_detected else min(-1, self.object_detected_count - 1)
-      if object_detected: #检测到
+      if object_detected or carrot_blind: #检测到
         self.object_detected_count = 1
       else:
         self.object_detected_count -= 1
         if self.object_detected_count < self.min_object_detected_count:
           self.object_detected_count = self.min_object_detected_count
 
-      if object_detected:
+      if object_detected or carrot_blind:
         self.object_detected_count_new = 1
       else:
         self.object_detected_count_new -= 1
@@ -914,6 +920,7 @@ class DesireHelper:
                 trigger_type = -3
                 trigger_name = "no torque"
             elif ((driver_desire_enabled and  #驾驶员打灯变道
+                   self.driver_lane_change_delay == 0 and #没有命令打灯后的延时
                   (self.stockBlinkerCtrl == 0 or #未通过外挂控制原车Blinker
                     self.blinker_val == BLINKER_NONE or not atc_desire_enabled or #没有esp32打灯或不在自动变道情况下
                     (atc_desire_enabled and driver_blinker_state != atc_blinker_state)  #或者用户打的灯和自动变道的方向相反
@@ -1064,6 +1071,8 @@ class DesireHelper:
           self.lane_change_delay = self.laneChangeDelay #重置打灯延时
           self.lane_change_delay_start = False
           if self.carrot_lane_change_count > 0 or self.carrot_blinker_state != BLINKER_NONE:
+            if self.carrot_blinker_state != BLINKER_NONE and self.stockBlinkerCtrl == 1:
+              self.driver_lane_change_delay = int(2.0 / DT_MDL)
             print(f"---[{time.strftime("%H:%M:%S")}]Finishing: reset carrot_lane_change_count {self.carrot_lane_change_count}->0,"
                   f"carrot_blinker_state {self.carrot_blinker_state}->0")
             self.carrot_lane_change_count = 0
