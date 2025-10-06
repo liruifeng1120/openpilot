@@ -87,6 +87,10 @@ tools/op.sh build
 
 # 启动OP,ROAD_CAM指定摄像头,NO_DM驾驶监控开关(注意安全驾驶，关闭驾驶监控仅用测试，正常驾驶请打开驾驶监控功能)
 USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 system/manager/manager.py
+
+#如果只是测试一下摄像头显示，使用下面的命令
+USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 selfdrive/debug/uiview.py
+参数说明：USE_WEBCAM 使用USB摄像头，需要指定USE_WEBCAM为1，ROAD_CAM=0表示使用编号为0的摄像头（即/dev/video0）, NO_DM=0表示无驾驶员监控
 ------------------------------------------------------------
 
 git clone https://github.com/ultralytics/yolov5.git
