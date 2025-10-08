@@ -75,6 +75,18 @@ USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 system/manager/manager.py
 USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 selfdrive/debug/uiview.py
 参数说明：USE_WEBCAM 使用USB摄像头，需要指定USE_WEBCAM为1，ROAD_CAM=0表示使用编号为0的摄像头（即/dev/video0）, NO_DM=0表示无驾驶员监控
 
-
+#开机自动运行
+#增加快捷栏图标
+cp logo.ico /home/$LOGNAME/
+cp sunnypilot.desktop /usr/share/applications/
+chmod +x /usr/share/applications/sunnypilot.desktop
+#增加启动脚本
+cp lauch_pc.sh /home/$LOGNAME/
+chmod +x /home/$LOGNAME/lauch_pc.sh
+#增加开机启动脚本
+cp autostart_launch_pc.sh.desktop /home/$LOGNAME/.config/autostart/
+chmod +x /home/$LOGNAME/.config/autostart/autostart_lauch_pc.sh.desktop
+#去掉sudo密码认证
+echo "$LOGNAME ALL=NOPASSWD: ALL" |sudo tee -a /etc/sudoers
 
 
