@@ -35,6 +35,7 @@ using namespace chrono;
 
 std::vector<std::string> devices;
 std::vector<int> camera_sign;
+std::vector<int> car_detect;
 
 struct FrameData {
     cv::Mat frame;
@@ -105,7 +106,6 @@ struct CameraROI {
     int selected_idx = -1; // 拖动顶点索引
 };
 std::vector<CameraROI> camera_rois;
-//std::vector<int> camera_sign;
 std::vector<int> camera_car;
 std::vector<int> lane_safe(2,-1);
 
@@ -340,7 +340,7 @@ void capture_from_camera(const std::string& device, int cam_id) {
         }
         queue_conds[cam_id]->notify_one();
     }
-    
+
     ioctl(fd, VIDIOC_STREAMOFF, &buf.type);
     munmap(buffer, buf.length);
     close(fd);
@@ -360,57 +360,59 @@ void inference_thread(int cam_id) {
 
         cv::Mat img = data.frame;
 
-        // ---------------- YOLO 推理 + ROI ----------------
-        //std::vector<cv::Rect> cars = detect_cars(img);
-        auto result = detect_cars(img);
-        std::vector<cv::Rect> cars = result.raw_boxes;
-        std::vector<cv::Rect> cars_box = result.final_boxes;
-        std::vector<cv::Rect> cars_in_roi;
-        std::vector<cv::Rect> cars_box_in_roi;
-        
-        //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars.size()) + " car!" << std::endl;
+        if(car_detect[cam_id] > 0){
+            // ---------------- YOLO 推理 + ROI ----------------
+            //std::vector<cv::Rect> cars = detect_cars(img);
+            auto result = detect_cars(img);
+            std::vector<cv::Rect> cars = result.raw_boxes;
+            std::vector<cv::Rect> cars_box = result.final_boxes;
+            std::vector<cv::Rect> cars_in_roi;
+            std::vector<cv::Rect> cars_box_in_roi;
 
-        if(cam_id < camera_rois.size()){
-            for(auto& car : cars) {
-                if(is_in_roi(car, camera_rois[cam_id].polygon)) {
-                    cars_in_roi.push_back(car);
-                }
-            }
-            
-            //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars_in_roi.size()) + " car in roi!" << std::endl;
+            //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars.size()) + " car!" << std::endl;
 
-            if(!cars_in_roi.empty()) {
-                std::lock_guard<std::mutex> lock(lane_mutex);
-                if(camera_car[cam_id] == 0){
-                    //std::cout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
+            if(cam_id < camera_rois.size()){
+                for(auto& car : cars) {
+                    if(is_in_roi(car, camera_rois[cam_id].polygon)) {
+                        cars_in_roi.push_back(car);
+                    }
                 }
-                camera_car[cam_id] = 1;
+
+                //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars_in_roi.size()) + " car in roi!" << std::endl;
+
+                if(!cars_in_roi.empty()) {
+                    std::lock_guard<std::mutex> lock(lane_mutex);
+                    if(camera_car[cam_id] == 0){
+                        //std::cout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
+                    }
+                    camera_car[cam_id] = 1;
+                } else {
+                    std::lock_guard<std::mutex> lock(lane_mutex);
+                    if(camera_car[cam_id] == 1){
+                        //std::cout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
+                    }
+                    camera_car[cam_id] = 0;
+                }
             } else {
-                std::lock_guard<std::mutex> lock(lane_mutex);
-                if(camera_car[cam_id] == 1){
-                    //std::cout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
-                }
-                camera_car[cam_id] = 0;
+                cars_in_roi = cars;
             }
-        } else {
-            cars_in_roi = cars;
-        }
-        
-        if(cam_id < camera_rois.size()){
-            for(auto& car : cars_box) {
-                if(is_in_roi(car, camera_rois[cam_id].polygon)) {
-                    cars_box_in_roi.push_back(car);
+
+            if(cam_id < camera_rois.size()){
+                for(auto& car : cars_box) {
+                    if(is_in_roi(car, camera_rois[cam_id].polygon)) {
+                        cars_box_in_roi.push_back(car);
+                    }
                 }
             }
+
+            // 绘制 ROI
+            if(cam_id < camera_rois.size() && !camera_rois[cam_id].polygon.empty())
+                cv::polylines(img, std::vector<std::vector<cv::Point>>{camera_rois[cam_id].polygon}, true, cv::Scalar(0,255,0), 2);
+
+            // 绘制检测框
+            for(auto& car : cars_box_in_roi)
+                cv::rectangle(img, car, cv::Scalar(0,0,255), 2);
         }
-
-        // 绘制 ROI
-        if(cam_id < camera_rois.size() && !camera_rois[cam_id].polygon.empty())
-            cv::polylines(img, std::vector<std::vector<cv::Point>>{camera_rois[cam_id].polygon}, true, cv::Scalar(0,255,0), 2);
-
-        // 绘制检测框
-        for(auto& car : cars_box_in_roi)
-            cv::rectangle(img, car, cv::Scalar(0,0,255), 2);
 
         // 更新共享图像
         {
@@ -462,7 +464,7 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
 
     auto distance = [](cv::Point a, cv::Point b) { return std::sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)); };
     const int select_radius = 10;
-    
+
     static std::chrono::steady_clock::time_point last_save_time = std::chrono::steady_clock::now();
     bool changed = false;
 
@@ -500,7 +502,7 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
             changed = true;
         }
     }
-    
+
     // 如果有修改，实时保存
     //if (changed) save_rois_threadsafe("rois.txt");
     // 只每 0.5 秒保存一次
@@ -521,7 +523,7 @@ void display_loop() {
             std::lock_guard<std::mutex> lock(frame_mutex);
             for (int i = 0; i < shared_images.size(); ++i) {
                 if (shared_images[i].empty()) continue;
-                
+
                 std::string window_name = "Camera " + std::to_string(i);
                 cv::imshow(window_name, shared_images[i]);
 
@@ -563,7 +565,7 @@ void lane_check_thread() {
                     lane_unsafe_tmp[land_id] |= 1<<cam_id;
                 }
             }
-            
+
             for(int i=0; i<lane_unsafe_tmp.size(); i++){
                 if(lane_unsafe_tmp[i] > 0){
                     lane_safe_tmp[i] = false;
@@ -627,13 +629,13 @@ bool load_camera_config(const std::string &filename) {
         debug_mode = json["debug"].bool_value();
         std::cout << "[CFG] debug_mode = " << (debug_mode ? "true" : "false") << std::endl;
     }
-    
+
     dcout.set_enabled(debug_mode);
-    
+
     if (json["show_video"].is_bool()) {
         show_video = json["show_video"].bool_value();
         std::cout << "[CFG] show_video = " << (show_video ? "true" : "false") << std::endl;
-    }   
+    }
 
     auto limit01 = [](float v) {
         return std::max(0.0f, std::min(1.0f, v));
@@ -664,12 +666,14 @@ bool load_camera_config(const std::string &filename) {
     for (const auto &cam : json["cameras"].array_items()) {
         devices.push_back(cam["device"].string_value());
         camera_sign.push_back(cam["sign"].int_value());
+        car_detect.push_back(cam["car_detect"].int_value());
     }
 
     std::cout << "[CFG] Loaded " << devices.size() << " cameras" << std::endl;
     for (size_t i = 0; i < devices.size(); ++i) {
         std::cout << "  Camera[" << i << "]: " << devices[i]
-                  << ", sign=" << camera_sign[i] << std::endl;
+                  << ", sign=" << camera_sign[i]
+                  << ", car_detect=" << car_detect[i] << std::endl;
     }
 
     return true;
@@ -769,9 +773,9 @@ void udp_comm_thread(UDPComm &comm) {
 
                 string err;
                 Json j = Json::parse(buffer, err);
-                if (!err.empty()) { 
-                    cerr << "[UDP] JSON parse error: " << err << endl; 
-                    continue; 
+                if (!err.empty()) {
+                    cerr << "[UDP] JSON parse error: " << err << endl;
+                    continue;
                 }
 
                 if (j["ip"].is_string() && j["port"].is_number()) {
@@ -795,7 +799,7 @@ void udp_comm_thread(UDPComm &comm) {
                            (sockaddr*)&comm.remote_addr, sizeof(comm.remote_addr));
 
                     dcout << "[UDP] Sent response to " << comm.last_ip
-                         << ":" << comm.last_port 
+                         << ":" << comm.last_port
                          << " -> " << out << endl;
                 }
             }
@@ -835,7 +839,7 @@ void udp_comm_thread(UDPComm &comm) {
 }
 
 // === 新增：检测摄像头可用性，并移除无效项 ===
-int filter_unusable_cameras(std::vector<std::string> &devices, std::vector<int> &camera_sign) {
+int filter_unusable_cameras(std::vector<std::string> &devices, std::vector<int> &camera_sign, std::vector<int> &car_detect) {
     auto probe_device = [&](const std::string &dev)->bool {
         // 尝试用 OpenCV 打开
         cv::VideoCapture cap(dev);
@@ -863,6 +867,7 @@ int filter_unusable_cameras(std::vector<std::string> &devices, std::vector<int> 
             std::cerr << "[WARN] Cannot open camera: " << devices[i] << " — removing from list\n";
             devices.erase(devices.begin() + i);
             if (i < camera_sign.size()) camera_sign.erase(camera_sign.begin() + i);
+            if (i < car_detect.size()) car_detect.erase(car_detect.begin() + i);
             removed++;
         } else {
             ++i;
@@ -892,9 +897,9 @@ int main() {
     if (!load_camera_config("camera_config_8845hs.json")) {
         return -1;
     }
-    
+
     // === 新增：自动过滤无效摄像头 ===
-    if (filter_unusable_cameras(devices, camera_sign) == 0) {
+    if (filter_unusable_cameras(devices, camera_sign, car_detect) == 0) {
         return -1;  // 没有可用摄像头则退出
     }
 
@@ -913,7 +918,7 @@ int main() {
     camera_rois.resize(cam_max_num);
     for (int i = 0; i < cam_max_num; i++)
         camera_rois[i].polygon = {cv::Point(100,50), cv::Point(540,50), cv::Point(540,430), cv::Point(100,430)};
-    
+
     load_rois("rois.txt");
 
     // 创建摄像头采集和推理线程
