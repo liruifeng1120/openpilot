@@ -137,6 +137,7 @@ procs = [
   PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", check_fleet),
   PythonProcess("carrot_man", "selfdrive.carrot.carrot_man", always_run),#, enabled=not PC),
   PythonProcess("auto_overtake", "selfdrive.carrot.auto_overtake", always_run),#, enabled=not PC),
+  NativeProcess("c3cam_8845", "camera", ["./c3cam_8845"], always_run, enabled=PC),
 ]
 
 managed_processes = {p.name: p for p in procs}
