@@ -52,9 +52,29 @@ Platform #0: AMD Accelerated Parallel Processing
  -- Device #0: gfx90c:xnack+  #Device必须要看到有设备
 # 参考文档:https://amdgpu-install.readthedocs.io/en/latest/
 
-
+#激活虚拟环境
 tools/op.sh venv
+
+#编译
 tools/op.sh build
+
+#如果编译报错，则按下面步骤操作
+#拷贝libicu*.so.66库到编译器路径
+cd /data/openpilot/x86_64_linux_gnu_lib
+sudo cp * /usr/lib/x86_64-linux-gnu/
+
+#再次编译
+cd /data/openpilot
+tools/op.sh build
+
+#测试
+# 启动OP,ROAD_CAM指定摄像头,NO_DM驾驶监控开关(注意安全驾驶，关闭驾驶监控仅用测试，正常驾驶请打开驾驶监控功能)
+USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 system/manager/manager.py
+
+#如果只是测试一下摄像头显示，使用下面的命令
+USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 selfdrive/debug/uiview.py
+参数说明：USE_WEBCAM 使用USB摄像头，需要指定USE_WEBCAM为1，ROAD_CAM=0表示使用编号为0的摄像头（即/dev/video0）, NO_DM=0表示无驾驶员监控
+
 
 
 
