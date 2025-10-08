@@ -834,6 +834,50 @@ void udp_comm_thread(UDPComm &comm) {
     close(comm.send_sock);
 }
 
+// === 新增：检测摄像头可用性，并移除无效项 ===
+int filter_unusable_cameras(std::vector<std::string> &devices, std::vector<int> &camera_sign) {
+    auto probe_device = [&](const std::string &dev)->bool {
+        // 尝试用 OpenCV 打开
+        cv::VideoCapture cap(dev);
+        if (cap.isOpened()) {
+            cap.release();
+            return true;
+        }
+
+        // 尝试底层 /dev/video 设备
+        int fd = open(dev.c_str(), O_RDWR | O_NONBLOCK);
+        if (fd >= 0) {
+            struct v4l2_capability cap_info;
+            if (ioctl(fd, VIDIOC_QUERYCAP, &cap_info) != -1) {
+                close(fd);
+                return true;
+            }
+            close(fd);
+        }
+        return false;
+    };
+
+    int removed = 0;
+    for (size_t i = 0; i < devices.size(); ) {
+        if (!probe_device(devices[i])) {
+            std::cerr << "[WARN] Cannot open camera: " << devices[i] << " — removing from list\n";
+            devices.erase(devices.begin() + i);
+            if (i < camera_sign.size()) camera_sign.erase(camera_sign.begin() + i);
+            removed++;
+        } else {
+            ++i;
+        }
+    }
+
+    if (devices.empty()) {
+        std::cerr << "[ERROR] No usable camera devices found.\n";
+        return 0;
+    }
+
+    std::cout << "[INFO] " << devices.size() << " usable cameras detected." << std::endl;
+
+    return devices.size();
+}
 
 // ---------------- main ----------------
 int main() {
@@ -847,6 +891,11 @@ int main() {
 
     if (!load_camera_config("camera_config.json")) {
         return -1;
+    }
+    
+    // === 新增：自动过滤无效摄像头 ===
+    if (filter_unusable_cameras(devices, camera_sign) == 0) {
+        return -1;  // 没有可用摄像头则退出
     }
 
     std::cout << "Loaded " << devices.size() << " cameras" << std::endl;
