@@ -2125,6 +2125,7 @@ public:
             }
         }
 #endif
+        makeDeviceInfo(s);
         return true;
 	  }
     void drawRadarInfo(UIState* s) {
@@ -2705,17 +2706,18 @@ public:
         memoryUsage = deviceState.getMemoryUsagePercent();
         const auto cpuTempC = deviceState.getCpuTempC();
         const auto cpuUsagePercent = deviceState.getCpuUsagePercent();
-        int   size = sizeof(cpuTempC) / sizeof(cpuTempC[0]);
-        if (size > 0) {
-            for (int i = 0; i < size; i++) {
+        cpuTemp = 0.0f;
+        if (cpuTempC.size() > 0) {
+            for (int i = 0; i < cpuTempC.size(); i++) {
                 cpuTemp += cpuTempC[i];
             }
-            cpuTemp /= static_cast<float>(size);
+            cpuTemp /= static_cast<float>(cpuTempC.size());
         }
-        size = sizeof(cpuUsagePercent) / sizeof(cpuUsagePercent[0]);
-        if (size > 0) {
+
+        cpuUsage = 0.0f;
+        if (cpuUsagePercent.size() > 0) {
             int cpu_size = 0;
-            for (cpu_size = 0; cpu_size < size; cpu_size++) {
+            for (cpu_size = 0; cpu_size < cpuUsagePercent.size(); cpu_size++) {
                 if (cpuUsagePercent[cpu_size] <= 0) break;
                 cpuUsage += cpuUsagePercent[cpu_size];
             }
