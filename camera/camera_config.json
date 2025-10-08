@@ -7,20 +7,29 @@
 
   "cameras": [
     {
+      "device": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:4:1.0-video-index0",
+      "sign": 0,
+      "car_detect": 0
+    },
+    {
       "device": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:2.4:1.0-video-index0",
-      "sign": 0
+      "sign": 0,
+      "car_detect": 1
     },
     {
       "device": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:2.3:1.0-video-index0",
-      "sign": 0
+      "sign": 0,
+      "car_detect": 1
     },
     {
       "device": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:2.2:1.0-video-index0",
-      "sign": 1
+      "sign": 1,
+      "car_detect": 1
     },
     {
       "device": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:2.1:1.0-video-index0",
-      "sign": 1
+      "sign": 1,
+      "car_detect": 1
     }  
   ]
 }
