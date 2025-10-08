@@ -1,0 +1,60 @@
+sudo apt-get update
+sudo apt-get install libopencv-dev -y #以后集成到tools/op.sh setup里进行安装
+sudo apt install git -y
+
+#创建路径
+cd /
+sudo mkdir data
+sudo chmod 777 data
+cd /data
+
+git clone -b cpv9-pc --single-branch https://jihulab.com/fishop/openpilot.git
+cd /data/openpilot
+tools/op.sh setup
+
+＃安装显卡驱动
+#=============Intel==============
+cd /data/openpilot
+mkdir gpu && cd gpu
+mkdir intel && cd intel
+wget https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17537.20/intel-igc-core_1.0.17537.20_amd64.deb
+wget https://github.com/intel/intel-graphics-compiler/releases/download/igc-1.0.17537.20/intel-igc-opencl_1.0.17537.20_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-level-zero-gpu-legacy1_1.3.30872.22_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-level-zero-gpu_1.3.30872.22_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-opencl-icd-legacy1_24.35.30872.22_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/intel-opencl-icd_24.35.30872.22_amd64.deb
+wget https://github.com/intel/compute-runtime/releases/download/24.35.30872.22/libigdgmm12_22.5.0_amd64.deb
+#安装软件包：
+sudo dpkg -i *.deb
+sudo apt install ocl-icd-libopencl1 clinfo darktable
+#检查opencl是否正确
+#可通过clinfo或darktable-cltest检查opencl是否正常
+#参考文档
+#https://github.com/intel/compute-runtime/releases
+
+#=============AMD==============
+cd /data/openpilot
+mkdir gpu && cd gpu
+mkdir amd && cd amd
+# 下载安装包:
+wget https://repo.radeon.com/amdgpu-install/6.4.4/ubuntu/noble/amdgpu-install_6.4.60404-1_all.deb
+# 安装驱动:
+sudo dpkg -i amdgpu-install_6.4.60404-1_all.deb
+# usecase不要使用默认，避免导致显卡异常
+sudo amdgpu-install --usecase=opencl --accept-eula
+sudo apt install clinfo darktable
+# 增加当前用户到render和video组
+sudo usermod -a -G render $LOGNAME
+sudo usermod -a -G video $LOGNAME
+# 检查opencl是否正确
+clinfo -l
+Platform #0: AMD Accelerated Parallel Processing
+ -- Device #0: gfx90c:xnack+  #Device必须要看到有设备
+# 参考文档:https://amdgpu-install.readthedocs.io/en/latest/
+
+
+tools/op.sh venv
+tools/op.sh build
+
+
+
