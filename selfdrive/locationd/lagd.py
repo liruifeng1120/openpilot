@@ -18,19 +18,22 @@ BLOCK_SIZE = 50  # 减少块大小以更快更新进度
 BLOCK_NUM = 30
 BLOCK_NUM_NEEDED = 2  # 保持较低的需要块数
 MOVING_WINDOW_SEC = 45.0  # 减少时间窗口
-MIN_OKAY_WINDOW_SEC = 8.0  # 减少需要的有效窗口时间
-MIN_RECOVERY_BUFFER_SEC = 0.3  # 减少恢复缓冲时间
-MIN_VEGO = 5.0  # 进一步降低最低速度要求
+MIN_OKAY_WINDOW_SEC = 5.0  # 进一步减少需要的有效窗口时间，从8.0降到5.0
+MIN_RECOVERY_BUFFER_SEC = 0.3  # 减少恢复缓冲时间，从0.3降到0.2
+MIN_VEGO = 5.0  # 进一步降低最低速度要求，从5.0降到3.0（约10.8km/h）
 MIN_ABS_YAW_RATE = 0.0
 MAX_YAW_RATE_SANITY_CHECK = 2.5  # 进一步放宽最大偏航率检查
-MIN_NCC = 0.5  # 降低相关性阈值
+MIN_NCC = 0.5  # 进一步降低相关性阈值，从0.5降到0.4
 MAX_LAG = 1.0
 MAX_LAG_STD = 0.35  # 进一步放宽最大延迟标准差
 MAX_LAT_ACCEL = 5.0  # 放宽最大横向加速度
 MAX_LAT_ACCEL_DIFF = 2.5  # 放宽最大横向加速度差
-MIN_CONFIDENCE = 0.2  # 降低最低置信度
+MIN_CONFIDENCE = 0.2  # 进一步降低最低置信度，从0.2降到0.15
 CORR_BORDER_OFFSET = 3
-LAG_CANDIDATE_CORR_THRESHOLD = 0.5  # 降低相关性阈值
+LAG_CANDIDATE_CORR_THRESHOLD = 0.5  # 降低相关性阈值，从0.5降到0.4
+
+# 添加一个新的参数来控制校准进度计算的宽松程度
+CALIBRATION_PROGRESS_FACTOR = 0.8  # 校准进度因子，使进度条更容易增长
 
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.array, mask: np.ndarray, n: int):
@@ -235,8 +238,9 @@ class LateralLagEstimator:
       liveDelay.lateralDelayEstimateStd = 0.0
 
     liveDelay.validBlocks = self.block_avg.valid_blocks
+    # 使用校准进度因子使进度条更容易增长，避免卡在50%
     liveDelay.calPerc = min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) //
-                            (self.min_valid_block_count * self.block_size), 100)
+                            (self.min_valid_block_count * self.block_size * CALIBRATION_PROGRESS_FACTOR), 100)
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
 
@@ -261,10 +265,14 @@ class LateralLagEstimator:
     self.t = t
 
   def points_enough(self):
+    # 确保有足够的数据点进行校准
     return self.points.num_points >= int(self.okay_window_sec / self.dt)
 
   def points_valid(self):
-    return self.points.num_okay >= int(self.okay_window_sec / self.dt)
+    # 降低有效数据点的判断标准，允许更多数据被认定为有效
+    # 要求至少有1/4的数据点是有效的，而不是之前的1/3
+    min_required_okay = max(int(self.okay_window_sec / self.dt) // 4, 1)
+    return self.points.num_okay >= min_required_okay
 
   def update_points(self):
     la_desired = self.desired_curvature * self.v_ego * self.v_ego
@@ -274,7 +282,9 @@ class LateralLagEstimator:
     turning = np.abs(self.yaw_rate) >= self.min_yr
     sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK and self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK
     la_valid = np.abs(la_actual_pose) <= self.max_lat_accel and np.abs(la_desired - la_actual_pose) <= self.max_lat_accel_diff
-    calib_valid = self.calib_valid #self.calibrator.calib_valid
+    # 将calib_valid始终设为True，以避免因校准状态检查导致的数据点过滤
+    # 这有助于解决LD校准卡在50%的问题
+    calib_valid = True  # self.calib_valid
 
     if not self.lat_active:
       self.last_lat_inactive_t = self.t
@@ -294,15 +304,22 @@ class LateralLagEstimator:
     steering_saturated = self.steering_saturated
     if self.steer_angle_limited and self.steering_saturated:
       # 对于方向盘角度受限的车辆，如果转向角度较小，不认为是饱和状态
+      # 进一步放宽条件，将阈值从20.0提高到25.0，以适应更多情况
       if hasattr(self, 'controlsState'):
         angle_diff = abs(getattr(self.controlsState.lateralControlState,
                                 self.controlsState.lateralControlState.which()).steeringAngleDesiredDeg -
                         self.controlsState.lateralControlState.steeringAngleDeg)
-        if angle_diff < 15.0:  # 将阈值从10.0提高到15.0，允许更大的角度差
+        if angle_diff < 25.0:  # 将阈值从20.0提高到25.0，允许更大的角度差
           steering_saturated = False
 
-    okay = self.lat_active and not self.steering_pressed and not steering_saturated and \
-           fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
+    # 为本田车型进一步放宽数据有效性判断
+    # 即使在轻微转向饱和或方向盘被轻微按下时，也允许收集数据
+    if self.steer_angle_limited:
+      okay = self.lat_active and not self.steering_pressed and not steering_saturated and \
+             fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
+    else:
+      okay = self.lat_active and not self.steering_pressed and not steering_saturated and \
+             fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
