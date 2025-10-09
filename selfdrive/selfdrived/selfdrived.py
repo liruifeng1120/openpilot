@@ -416,7 +416,7 @@ class SelfdriveD:
     self.sm.update(0)
 
     if not self.initialized:
-      all_valid = CS.canValid and self.sm.all_checks()
+      all_valid = CS.canValid and self.sm.all_checks() and self.sm['controlsState'].initialized
       timed_out = self.sm.frame * DT_CTRL > 6.
       if all_valid or timed_out or (SIMULATION and not REPLAY):
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
@@ -504,8 +504,12 @@ class SelfdriveD:
   def step(self):
     CS = self.data_sample()
     self.update_events(CS)
-    if not self.CP.passive and self.initialized:
-      self.enabled, self.active = self.state_machine.update(self.events)
+    # 检查card进程是否初始化完成
+    # 如果系统在行车过程中启动，需要等待card完成初始化后再进行控制状态判断
+    controls_ready = self.params.get_bool("ControlsReady")
+    if not self.CP.passive or (self.CP.passive and controls_ready):
+      if self.initialized:
+        self.enabled, self.active = self.state_machine.update(self.events)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)
