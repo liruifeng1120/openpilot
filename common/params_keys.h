@@ -338,5 +338,6 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"AutoCurveSpeedAggressivenessH", PERSISTENT},
     {"NewLaneWidthDiff", PERSISTENT},
     {"ComputerType", PERSISTENT},
+    {"AutoOvertakeConfig", PERSISTENT},
     //new
 };

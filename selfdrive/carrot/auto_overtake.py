@@ -232,6 +232,7 @@ class AutoOvertakeController:
             return "none"
 
     def send_command(self, cmd_type, arg):
+        self.cmd_index += 1
         """发送控制命令"""
         command = {
             "index": self.cmd_index,
@@ -243,7 +244,6 @@ class AutoOvertakeController:
         try:
             message = json.dumps(command).encode('utf-8')
             self.udp_socket.sendto(message, (self.remote_ip, self.remote_port))
-            self.cmd_index += 1
             self.control_state['last_command'] = f"{cmd_type}: {arg}"
             self.last_command_time = time.time()
             print(f"📤 发送指令: {command}")
@@ -457,9 +457,9 @@ class AutoOvertakeController:
     def change_speed(self, direction):
         """改变速度"""
         if direction == "UP":
-            self.send_command("SPEED", "+5")
+            self.send_command("SPEED", direction)
         elif direction == "DOWN":
-            self.send_command("SPEED", "-5")
+            self.send_command("SPEED", direction)
 
     def run_data_loop(self):
         """数据循环"""
@@ -524,7 +524,8 @@ class AutoOvertakeController:
                 elif self.path == '/status':
                     self.send_json_status()
                 else:
-                    self.send_error(404, "页面未找到")
+                  print(f"page {self.path} not found!")
+                  # self.send_error(404, "页面未找到")
 
             def do_POST(self):
                 try:
