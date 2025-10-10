@@ -8,8 +8,10 @@ opencv_cflags = os.popen('pkg-config --cflags opencv4').read().strip().split()
 opencv_libs = os.popen('pkg-config --libs opencv4').read().strip().split()
 
 # ONNX Runtime 路径
-onnx_include = '/data/openpilot/third_party/onnxruntime/include'
-onnx_lib = '/data/openpilot/third_party/onnxruntime/lib'
+#onnx_include = '/data/openpilot/third_party/onnxruntime/include'
+#onnx_lib = '/data/openpilot/third_party/onnxruntime/lib'
+onnx_include = Dir('#/third_party/onnxruntime/include').abspath
+onnx_lib = Dir('#/third_party/onnxruntime/lib').abspath
 
 # 使用 -rpath 指定库路径
 env.Program(
