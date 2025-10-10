@@ -79,7 +79,9 @@ USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 selfdrive/debug/uiview.py
 参数说明：USE_WEBCAM 使用USB摄像头，需要指定USE_WEBCAM为1，ROAD_CAM=0表示使用编号为0的摄像头（即/dev/video0）, NO_DM=0表示无驾驶员监控
 
 #========================================================
-#开机自动运行
+#开机自动运行openpilot
+可执行一键配置脚本./config_autostart.sh 删除开机自动执行./remove_autostart.sh
+或手动分步执行下面的步骤
 #增加快捷栏图标
 cp logo.ico /home/$LOGNAME/
 sudo cp sunnypilot.desktop /usr/share/applications/
@@ -93,6 +95,16 @@ cp autostart_launch_pc.sh.desktop /home/$LOGNAME/.config/autostart/
 chmod +x /home/$LOGNAME/.config/autostart/autostart_launch_pc.sh.desktop
 #去掉sudo密码认证
 echo "$LOGNAME ALL=NOPASSWD: ALL" |sudo tee -a /etc/sudoers
+
+#========================================================
+#开机自动运行c3cam(适用thinkbook)
+执行一键配置脚本./config_autostart_cam.sh
+删除开机自动执行./remove_autostart_cam.sh
+
+#========================================================
+#开机自动运行c3cam_8845(适用8845小主机)
+执行一键配置脚本./config_autostart_cam_8845.sh
+删除开机自动执行./remove_autostart_cam_8845.sh
 
 #========================================================
 #通过监控检测panda来决定是否自动关机
