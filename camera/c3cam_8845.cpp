@@ -884,8 +884,21 @@ int filter_unusable_cameras(std::vector<std::string> &devices, std::vector<int> 
     return devices.size();
 }
 
+// === 新增：捕获 Ctrl+C / 系统关闭信号 ===
+#include <csignal>
+void signal_handler(int signo) {
+    if (signo == SIGINT || signo == SIGTERM) {
+        std::cout << "\n[Signal] Caught termination signal, stopping gracefully..." << std::endl;
+        running = false;
+    }
+}
+
 // ---------------- main ----------------
 int main() {
+    // 注册信号处理函数
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
+
     initialize_yolo();
 
     UDPComm comm;
@@ -937,6 +950,7 @@ int main() {
     std::cout << "display_loop exit" << std::endl;
 
     // 通知所有线程退出
+    running = false;
     comm.running = false;
 
     // 通知所有等待条件变量的推理线程
