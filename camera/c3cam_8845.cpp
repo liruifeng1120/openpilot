@@ -44,6 +44,7 @@ struct FrameData {
 
 bool debug_mode = false;
 bool show_video = true;
+bool single_window = true;
 float raw_conf_threshold = 0.1f;   // 宽松阈值 → 保证画框尽量多
 float nms_conf_threshold = 0.1f;   // 严格阈值 → 用于NMS
 float nms_threshold      = 0.5f;
@@ -521,17 +522,43 @@ void display_loop() {
         if(show_video)
         {
             std::lock_guard<std::mutex> lock(frame_mutex);
-            for (int i = 0; i < shared_images.size(); ++i) {
-                if (shared_images[i].empty()) continue;
 
-                std::string window_name = "Camera " + std::to_string(i);
-                cv::imshow(window_name, shared_images[i]);
+            if(single_window) {
+                int cam_count = shared_images.size();
+                if(cam_count == 0) continue;
 
-                static std::vector<int> cam_ids;
-                if(cam_ids.size() < shared_images.size()) cam_ids.resize(shared_images.size());
-                cam_ids[i] = i;
+                int width = shared_images[0].cols;
+                int height = shared_images[0].rows;
 
-                cv::setMouseCallback(window_name, mouse_callback, &cam_ids[i]);
+                // 动态列数
+                int cols = (cam_count > 4) ? 3 : 2;
+                int rows = (cam_count + cols - 1) / cols;
+
+                cv::Mat combined = cv::Mat::zeros(rows * height, cols * width, shared_images[0].type());
+
+                for(int i = 0; i < cam_count; ++i) {
+                    if(shared_images[i].empty()) continue;
+
+                    int r = i / cols;
+                    int c = i % cols;
+                    cv::Rect roi(c * width, r * height, width, height);
+                    shared_images[i].copyTo(combined(roi));
+                }
+
+                cv::imshow("All Cameras", combined);
+            } else {
+                for (int i = 0; i < shared_images.size(); ++i) {
+                    if (shared_images[i].empty()) continue;
+
+                    std::string window_name = "Camera " + std::to_string(i);
+                    cv::imshow(window_name, shared_images[i]);
+
+                    static std::vector<int> cam_ids;
+                    if(cam_ids.size() < shared_images.size()) cam_ids.resize(shared_images.size());
+                    cam_ids[i] = i;
+
+                    cv::setMouseCallback(window_name, mouse_callback, &cam_ids[i]);
+                }
             }
         }
 
@@ -635,6 +662,11 @@ bool load_camera_config(const std::string &filename) {
     if (json["show_video"].is_bool()) {
         show_video = json["show_video"].bool_value();
         std::cout << "[CFG] show_video = " << (show_video ? "true" : "false") << std::endl;
+    }
+    
+    if (json["single_window"].is_bool()) {
+        single_window = json["single_window"].bool_value();
+        std::cout << "[CFG] single_window = " << (single_window ? "true" : "false") << std::endl;
     }
 
     auto limit01 = [](float v) {
