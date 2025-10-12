@@ -146,6 +146,18 @@ echo "$LOGNAME ALL=NOPASSWD: ALL" |sudo tee -a /etc/sudoers
 手动启动进程
 /usr/bin/python3 /data/openpilot/panda_monitor.py
 
+另外发现开机的时候有报错
+systemd[1]: Failed to start bolt.service - Thunderbolt system service
+Ai给的建议是执行下面命令
+sudo systemctl stop bolt.service
+sudo systemctl disable bolt.service
+sudo systemctl mask bolt.service
+sudo sed -i '/bolt/d' /var/log/syslog
+说是禁用 bolt不会影响：
+USB4 / Thunderbolt-兼容设备（如 Type-C 显示器、硬盘、Dock）；
+DisplayPort over USB-C；
+USB-PD 充电；
+只会禁用 雷电设备授权与策略管理功能（AMD 平台本来也不支持）。
 
 
 

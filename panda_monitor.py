@@ -25,9 +25,9 @@ def main():
 						format='%(asctime)s [%(levelname)s] %(message)s')
     logging.info("Panda Monitor 启动")
 
-    offline_threshold = 300  # 离线阈值（秒），5分钟=300秒
+    offline_threshold = 180  # 离线阈值（秒），3分钟=300秒
     offline_seconds = 0      # 当前累计离线时间
-    check_interval = 60      # 检查间隔（秒）
+    check_interval = 30      # 检查间隔（秒）
 
     while True:
         if is_panda_connected():
