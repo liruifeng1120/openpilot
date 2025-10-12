@@ -1,33 +1,40 @@
 import os
-from SCons.Script import DefaultEnvironment
+from SCons.Script import DefaultEnvironment, Dir
 
 env = DefaultEnvironment()
 
-# OpenCV 配置
+# ---------------- OpenCV 配置 ----------------
 opencv_cflags = os.popen('pkg-config --cflags opencv4').read().strip().split()
 opencv_libs = os.popen('pkg-config --libs opencv4').read().strip().split()
 
-# ONNX Runtime 路径
-#onnx_include = '/data/openpilot/third_party/onnxruntime/include'
-#onnx_lib = '/data/openpilot/third_party/onnxruntime/lib'
+# ---------------- ONNX Runtime 路径 ----------------
 onnx_include = Dir('#/third_party/onnxruntime/include').abspath
 onnx_lib = Dir('#/third_party/onnxruntime/lib').abspath
 
-# 使用 -rpath 指定库路径
+# ---------------- FFmpeg 库 ----------------
+# 注意链接顺序：avdevice -> avformat -> avcodec -> avutil -> swscale
+ffmpeg_libs = ['avdevice', 'avformat', 'avcodec', 'avutil', 'swscale']
+
+# 添加系统库路径
+system_libs = ['pthread', 'm', 'dl', 'stdc++']  # 根据需要添加
+
+# ---------------- Program: c3cam ----------------
 env.Program(
     target='c3cam',
     source=['c3cam.cpp', 'json11.cpp'],
     CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + opencv_cflags,
-    LIBS=['onnxruntime'] + opencv_libs,
+    LIBS=ffmpeg_libs + opencv_libs + ['onnxruntime'] + system_libs,
     LIBPATH=[onnx_lib],
-    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']  # 添加 rpath 配置
+    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']
 )
 
+# ---------------- Program: c3cam_8845 ----------------
 env.Program(
     target='c3cam_8845',
     source=['c3cam_8845.cpp', 'json11.cpp'],
     CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + opencv_cflags,
-    LIBS=['onnxruntime'] + opencv_libs,
+    LIBS=ffmpeg_libs + opencv_libs + ['onnxruntime'] + system_libs,
     LIBPATH=[onnx_lib],
-    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']  # 添加 rpath 配置
+    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']
 )
+
