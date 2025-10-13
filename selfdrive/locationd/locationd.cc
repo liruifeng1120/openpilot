@@ -259,6 +259,8 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     auto v = log.getGyroUncalibrated().getV();
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
 
+    printf("Gyro: x=%.2f, y=%.2f, z=%.2f\n", meas[0], meas[1], meas[2]);
+
     VectorXd gyro_bias = this->kf->get_x().segment<STATE_GYRO_BIAS_LEN>(STATE_GYRO_BIAS_START);
     float gyro_camodo_yawrate_err = std::abs((meas[2] - gyro_bias[2]) - this->camodo_yawrate_distribution[0]);
     float gyro_camodo_yawrate_err_threshold = YAWRATE_CROSS_ERR_CHECK_FACTOR * this->camodo_yawrate_distribution[1];
@@ -282,6 +284,7 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
     // this->device_fell |= (floatlist2vector(v) - Vector3d(10.0, 0.0, 0.0)).norm() > 40.0;
 
     auto meas = Vector3d(-v[2], -v[1], -v[0]);
+    printf("Acc: x=%.2f, y=%.2f, z=%.2f\n", meas[0], meas[1], meas[2]);
     if (meas.norm() < ACCEL_SANITY_CHECK) {
       this->kf->predict_and_observe(sensor_time, OBSERVATION_PHONE_ACCEL, { meas });
       this->observation_values_invalid["accelerometer"] *= DECAY;
@@ -743,7 +746,7 @@ int Localizer::locationd_thread() {
       }
       printf("InputsOK: %d, SensorsOK: %d, GPSOK: %d, FilterInitialized: %d\n", inputsOK, sensorsOK, gpsOK, filterInitialized);
       */
-      
+
       // Log time to first fix
       if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_valid_log_time)) {
         this->ttff = std::max(1e-3, (sm[trigger_msg].getLogMonoTime() * 1e-9) - this->first_valid_log_time);
