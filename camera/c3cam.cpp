@@ -175,6 +175,11 @@ struct DetectionResult {
 DetectionResult detect_cars(cv::Mat& frame) {
     DetectionResult result;
 
+    if (frame.empty() || frame.channels() != 3) {
+        std::cerr << "[WARN] detect_cars: invalid or empty frame, skip" << std::endl;
+        return result;
+    }
+
     int orig_w = frame.cols;
     int orig_h = frame.rows;
 
@@ -326,14 +331,25 @@ void capture_from_camera(const std::string& device, int cam_id) {
 
     if (ioctl(fd, VIDIOC_STREAMON, &buf.type) == -1) { std::cerr << "streamon failed " << device << std::endl; close(fd); return; }
 
+    // ================== 新增：跳帧控制 ==================
+    auto last_time = std::chrono::steady_clock::now();
+    const double target_fps = 10.0;
+    const double frame_interval_ms = 1000.0 / target_fps;
+
     while (running) {
         if (ioctl(fd, VIDIOC_QBUF, &buf) == -1 || ioctl(fd, VIDIOC_DQBUF, &buf) == -1) continue;
+
+        // 跳帧逻辑
+        auto now = std::chrono::steady_clock::now();
+        double elapsed = std::chrono::duration<double, std::milli>(now - last_time).count();
+        if (elapsed < frame_interval_ms) continue; // 跳帧
+        last_time = now;
+
         unsigned char* data = (unsigned char*)buffer;
         if (data[0] != 0xFF || data[1] != 0xD8) continue;
 
         std::vector<uchar> jpeg_data(data, data + buf.bytesused);
         cv::Mat img = cv::imdecode(jpeg_data, cv::IMREAD_COLOR);
-        if (img.empty()) continue;
 
         {
             std::lock_guard<std::mutex> lock(*queue_mutexes[cam_id]);
@@ -361,65 +377,75 @@ void inference_thread(int cam_id) {
 
         cv::Mat img = data.frame;
 
-        if(car_detect[cam_id] > 0){
-            // ---------------- YOLO 推理 + ROI ----------------
-            //std::vector<cv::Rect> cars = detect_cars(img);
-            auto result = detect_cars(img);
-            std::vector<cv::Rect> cars = result.raw_boxes;
-            std::vector<cv::Rect> cars_box = result.final_boxes;
-            std::vector<cv::Rect> cars_in_roi;
-            std::vector<cv::Rect> cars_box_in_roi;
-
-            //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars.size()) + " car!" << std::endl;
-
-            if(cam_id < camera_rois.size()){
-                for(auto& car : cars) {
-                    if(is_in_roi(car, camera_rois[cam_id].polygon)) {
-                        cars_in_roi.push_back(car);
-                    }
-                }
-
-                //std::cout << "camera" + std::to_string(cam_id) + " " + std::to_string(cars_in_roi.size()) + " car in roi!" << std::endl;
-
-                if(!cars_in_roi.empty()) {
-                    std::lock_guard<std::mutex> lock(lane_mutex);
-                    if(camera_car[cam_id] == 0){
-                        //std::cout << "camera" + std::to_string(cam_id) + " lane unsafe!" << std::endl;
-                    }
-                    camera_car[cam_id] = 1;
-                } else {
-                    std::lock_guard<std::mutex> lock(lane_mutex);
-                    if(camera_car[cam_id] == 1){
-                        //std::cout << "camera" + std::to_string(cam_id) + " lane safe!" << std::endl;
-                    }
-                    camera_car[cam_id] = 0;
-                }
-            } else {
-                cars_in_roi = cars;
-            }
-
-            if(cam_id < camera_rois.size()){
-                for(auto& car : cars_box) {
-                    if(is_in_roi(car, camera_rois[cam_id].polygon)) {
-                        cars_box_in_roi.push_back(car);
-                    }
-                }
-            }
-
-            // 绘制 ROI
-            if(cam_id < camera_rois.size() && !camera_rois[cam_id].polygon.empty())
-                cv::polylines(img, std::vector<std::vector<cv::Point>>{camera_rois[cam_id].polygon}, true, cv::Scalar(0,255,0), 2);
-
-            // 绘制检测框
-            for(auto& car : cars_box_in_roi)
-                cv::rectangle(img, car, cv::Scalar(0,0,255), 2);
+        // 空帧防护
+        if (img.empty() || img.cols < 10 || img.rows < 10) {
+            std::cerr << "[WARN] Camera " << cam_id << ": empty or invalid frame, skip inference" << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            continue;
         }
 
-        // 更新共享图像
+        if (car_detect[cam_id] > 0) {
+            try {
+                // ---------------- YOLO 推理 + ROI ----------------
+                auto result = detect_cars(img);
+                std::vector<cv::Rect> cars = result.raw_boxes;
+                std::vector<cv::Rect> cars_box = result.final_boxes;
+                std::vector<cv::Rect> cars_in_roi;
+                std::vector<cv::Rect> cars_box_in_roi;
+
+                if (cam_id < camera_rois.size()) {
+                    for (auto &car : cars) {
+                        if (is_in_roi(car, camera_rois[cam_id].polygon)) {
+                            cars_in_roi.push_back(car);
+                        }
+                    }
+
+                    {
+                        std::lock_guard<std::mutex> lock(lane_mutex);
+                        camera_car[cam_id] = cars_in_roi.empty() ? 0 : 1;
+                    }
+                } else {
+                    cars_in_roi = cars;
+                }
+
+                if (cam_id < camera_rois.size()) {
+                    for (auto &car : cars_box) {
+                        if (is_in_roi(car, camera_rois[cam_id].polygon)) {
+                            cars_box_in_roi.push_back(car);
+                        }
+                    }
+                }
+
+                // 绘制前检查 polygon 是否有效
+                if (cam_id < camera_rois.size() && !camera_rois[cam_id].polygon.empty()) {
+                    cv::polylines(img, std::vector<std::vector<cv::Point>>{camera_rois[cam_id].polygon}, true, cv::Scalar(0,255,0), 2);
+                }
+
+                for (auto &car : cars_box_in_roi) {
+                    // 防止超出边界的矩形崩溃
+                    cv::Rect safe_rect = car & cv::Rect(0, 0, img.cols, img.rows);
+                    if (safe_rect.width > 0 && safe_rect.height > 0)
+                        cv::rectangle(img, safe_rect, cv::Scalar(0,0,255), 2);
+                }
+
+            } catch (const cv::Exception &e) {
+                std::cerr << "[ERROR] Camera " << cam_id << ": OpenCV exception during inference: " << e.what() << std::endl;
+                continue;
+            } catch (const std::exception &e) {
+                std::cerr << "[ERROR] Camera " << cam_id << ": Exception during inference: " << e.what() << std::endl;
+                continue;
+            } catch (...) {
+                std::cerr << "[ERROR] Camera " << cam_id << ": Unknown error during inference" << std::endl;
+                continue;
+            }
+        }
+
+        // ---------------- 更新共享图像 ----------------
         {
             std::lock_guard<std::mutex> lock(frame_mutex);
             if (cam_id >= shared_images.size()) shared_images.resize(cam_id + 1);
-            shared_images[cam_id] = img.clone();
+            //shared_images[cam_id] = img.clone();
+            shared_images[cam_id] = img;  // 不 clone
         }
     }
 }
@@ -518,14 +544,17 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
 
 // ---------------- 显示线程 ----------------
 void display_loop() {
+    const int interval_ms = 100;  // 刷新间隔 100ms
     while (running) {
+        auto start_time = std::chrono::steady_clock::now();
+
         if(show_video)
         {
             std::lock_guard<std::mutex> lock(frame_mutex);
 
             if(single_window) {
                 int cam_count = shared_images.size();
-                if(cam_count == 0) continue;
+                if(cam_count == 0) goto wait_next;  // 没有图像，等待下次
 
                 int width = shared_images[0].cols;
                 int height = shared_images[0].rows;
@@ -536,6 +565,7 @@ void display_loop() {
 
                 cv::Mat combined = cv::Mat::zeros(rows * height, cols * width, shared_images[0].type());
 
+                /*
                 for(int i = 0; i < cam_count; ++i) {
                     if(shared_images[i].empty()) continue;
 
@@ -544,29 +574,60 @@ void display_loop() {
                     cv::Rect roi(c * width, r * height, width, height);
                     shared_images[i].copyTo(combined(roi));
                 }
+                */
+                for (int i = 0; i < cam_count; ++i) {
+                    if (shared_images[i].empty()) continue;
+
+                    int r = i / cols;
+                    int c = i % cols;
+                    cv::Rect roi(c * width, r * height, width, height);
+
+                    if (roi.x + roi.width > combined.cols || roi.y + roi.height > combined.rows)
+                        continue;
+
+                    cv::Mat src;
+                    if (shared_images[i].cols != width || shared_images[i].rows != height)
+                        cv::resize(shared_images[i], src, cv::Size(width, height));
+                    else
+                        src = shared_images[i];
+
+                    if (src.type() != combined.type()) {
+                        if (src.channels() == 1 && combined.channels() == 3)
+                            cv::cvtColor(src, src, cv::COLOR_GRAY2BGR);
+                        else if (src.channels() == 3 && combined.channels() == 1)
+                            cv::cvtColor(src, src, cv::COLOR_BGR2GRAY);
+                        else
+                            continue;
+                    }
+
+                    src.copyTo(combined(roi));
+                }
 
                 cv::imshow("All Cameras", combined);
+
             } else {
                 for (int i = 0; i < shared_images.size(); ++i) {
                     if (shared_images[i].empty()) continue;
-
                     std::string window_name = "Camera " + std::to_string(i);
                     cv::imshow(window_name, shared_images[i]);
-
-                    static std::vector<int> cam_ids;
-                    if(cam_ids.size() < shared_images.size()) cam_ids.resize(shared_images.size());
-                    cam_ids[i] = i;
-
-                    cv::setMouseCallback(window_name, mouse_callback, &cam_ids[i]);
                 }
             }
         }
 
-        if (cv::waitKey(1) == 27) { // ESC
+        int key = cv::waitKey(1);
+        if (key == 27) { // ESC
             dcout << "display_loop end" << std::endl;
             running = false;
         }
+
+    wait_next:
+        // 计算剩余时间等待
+        auto elapsed = std::chrono::steady_clock::now() - start_time;
+        auto sleep_time = std::chrono::milliseconds(interval_ms) - elapsed;
+        if (sleep_time > std::chrono::milliseconds(0))
+            std::this_thread::sleep_for(sleep_time);
     }
+
     cv::destroyAllWindows();
 }
 
@@ -663,7 +724,7 @@ bool load_camera_config(const std::string &filename) {
         show_video = json["show_video"].bool_value();
         std::cout << "[CFG] show_video = " << (show_video ? "true" : "false") << std::endl;
     }
-    
+
     if (json["single_window"].is_bool()) {
         single_window = json["single_window"].bool_value();
         std::cout << "[CFG] single_window = " << (single_window ? "true" : "false") << std::endl;
