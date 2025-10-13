@@ -174,7 +174,7 @@ struct DetectionResult {
 // detect_cars 返回两个结果
 DetectionResult detect_cars(cv::Mat& frame) {
     DetectionResult result;
-    
+
     if (frame.empty() || frame.channels() != 3) {
         std::cerr << "[WARN] detect_cars: invalid or empty frame, skip" << std::endl;
         return result;
@@ -330,7 +330,7 @@ void capture_from_camera(const std::string& device, int cam_id) {
     if (buffer == MAP_FAILED) { std::cerr << "mmap failed " << device << std::endl; close(fd); return; }
 
     if (ioctl(fd, VIDIOC_STREAMON, &buf.type) == -1) { std::cerr << "streamon failed " << device << std::endl; close(fd); return; }
-    
+
     // ================== 新增：跳帧控制 ==================
     auto last_time = std::chrono::steady_clock::now();
     const double target_fps = 10.0;
@@ -338,19 +338,19 @@ void capture_from_camera(const std::string& device, int cam_id) {
 
     while (running) {
         if (ioctl(fd, VIDIOC_QBUF, &buf) == -1 || ioctl(fd, VIDIOC_DQBUF, &buf) == -1) continue;
-        
+
         // 跳帧逻辑
         auto now = std::chrono::steady_clock::now();
         double elapsed = std::chrono::duration<double, std::milli>(now - last_time).count();
         if (elapsed < frame_interval_ms) continue; // 跳帧
         last_time = now;
-    
+
         unsigned char* data = (unsigned char*)buffer;
         if (data[0] != 0xFF || data[1] != 0xD8) continue;
 
         std::vector<uchar> jpeg_data(data, data + buf.bytesused);
         cv::Mat img = cv::imdecode(jpeg_data, cv::IMREAD_COLOR);
-        
+
         {
             std::lock_guard<std::mutex> lock(*queue_mutexes[cam_id]);
             frame_queues[cam_id].push({img, cam_id});
@@ -544,14 +544,17 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
 
 // ---------------- 显示线程 ----------------
 void display_loop() {
+    const int interval_ms = 100;  // 刷新间隔 100ms
     while (running) {
+        auto start_time = std::chrono::steady_clock::now();
+
         if(show_video)
         {
             std::lock_guard<std::mutex> lock(frame_mutex);
 
             if(single_window) {
                 int cam_count = shared_images.size();
-                if(cam_count == 0) continue;
+                if(cam_count == 0) goto wait_next;  // 没有图像，等待下次
 
                 int width = shared_images[0].cols;
                 int height = shared_images[0].rows;
@@ -562,6 +565,7 @@ void display_loop() {
 
                 cv::Mat combined = cv::Mat::zeros(rows * height, cols * width, shared_images[0].type());
 
+                /*
                 for(int i = 0; i < cam_count; ++i) {
                     if(shared_images[i].empty()) continue;
 
@@ -570,29 +574,60 @@ void display_loop() {
                     cv::Rect roi(c * width, r * height, width, height);
                     shared_images[i].copyTo(combined(roi));
                 }
+                */
+                for (int i = 0; i < cam_count; ++i) {
+                    if (shared_images[i].empty()) continue;
+
+                    int r = i / cols;
+                    int c = i % cols;
+                    cv::Rect roi(c * width, r * height, width, height);
+
+                    if (roi.x + roi.width > combined.cols || roi.y + roi.height > combined.rows)
+                        continue;
+
+                    cv::Mat src;
+                    if (shared_images[i].cols != width || shared_images[i].rows != height)
+                        cv::resize(shared_images[i], src, cv::Size(width, height));
+                    else
+                        src = shared_images[i];
+
+                    if (src.type() != combined.type()) {
+                        if (src.channels() == 1 && combined.channels() == 3)
+                            cv::cvtColor(src, src, cv::COLOR_GRAY2BGR);
+                        else if (src.channels() == 3 && combined.channels() == 1)
+                            cv::cvtColor(src, src, cv::COLOR_BGR2GRAY);
+                        else
+                            continue;
+                    }
+
+                    src.copyTo(combined(roi));
+                }
 
                 cv::imshow("All Cameras", combined);
+
             } else {
                 for (int i = 0; i < shared_images.size(); ++i) {
                     if (shared_images[i].empty()) continue;
-
                     std::string window_name = "Camera " + std::to_string(i);
                     cv::imshow(window_name, shared_images[i]);
-
-                    static std::vector<int> cam_ids;
-                    if(cam_ids.size() < shared_images.size()) cam_ids.resize(shared_images.size());
-                    cam_ids[i] = i;
-
-                    cv::setMouseCallback(window_name, mouse_callback, &cam_ids[i]);
                 }
             }
         }
 
-        if (cv::waitKey(1) == 27) { // ESC
+        int key = cv::waitKey(1);
+        if (key == 27) { // ESC
             dcout << "display_loop end" << std::endl;
             running = false;
         }
+
+    wait_next:
+        // 计算剩余时间等待
+        auto elapsed = std::chrono::steady_clock::now() - start_time;
+        auto sleep_time = std::chrono::milliseconds(interval_ms) - elapsed;
+        if (sleep_time > std::chrono::milliseconds(0))
+            std::this_thread::sleep_for(sleep_time);
     }
+
     cv::destroyAllWindows();
 }
 
@@ -689,7 +724,7 @@ bool load_camera_config(const std::string &filename) {
         show_video = json["show_video"].bool_value();
         std::cout << "[CFG] show_video = " << (show_video ? "true" : "false") << std::endl;
     }
-    
+
     if (json["single_window"].is_bool()) {
         single_window = json["single_window"].bool_value();
         std::cout << "[CFG] single_window = " << (single_window ? "true" : "false") << std::endl;
