@@ -545,6 +545,7 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
 // ---------------- 显示线程 ----------------
 void display_loop() {
     const int interval_ms = 100;  // 刷新间隔 100ms
+    int key = 0;
     while (running) {
         auto start_time = std::chrono::steady_clock::now();
 
@@ -552,60 +553,58 @@ void display_loop() {
         {
             std::lock_guard<std::mutex> lock(frame_mutex);
 
-            if(single_window) {
+            if (single_window) {
                 int cam_count = shared_images.size();
-                if(cam_count == 0) goto wait_next;  // 没有图像，等待下次
+                if (cam_count == 0) goto wait_next;
 
-                int width = shared_images[0].cols;
-                int height = shared_images[0].rows;
+                // 找到第一个有效帧
+                int valid_index = -1;
+                for (int i = 0; i < cam_count; ++i) {
+                    if (!shared_images[i].empty() && shared_images[i].cols > 0 && shared_images[i].rows > 0) {
+                        valid_index = i;
+                        break;
+                    }
+                }
 
-                // 动态列数
+                // 没有有效帧，跳过
+                if (valid_index == -1) goto wait_next;
+
+                int width = shared_images[valid_index].cols;
+                int height = shared_images[valid_index].rows;
+                int type = shared_images[valid_index].type();
+
                 int cols = (cam_count > 4) ? 3 : 2;
                 int rows = (cam_count + cols - 1) / cols;
 
-                cv::Mat combined = cv::Mat::zeros(rows * height, cols * width, shared_images[0].type());
+                cv::Mat combined = cv::Mat::zeros(rows * height, cols * width, type);
 
-                /*
-                for(int i = 0; i < cam_count; ++i) {
-                    if(shared_images[i].empty()) continue;
+                bool has_any_frame = false;
 
-                    int r = i / cols;
-                    int c = i % cols;
-                    cv::Rect roi(c * width, r * height, width, height);
-                    shared_images[i].copyTo(combined(roi));
-                }
-                */
                 for (int i = 0; i < cam_count; ++i) {
-                    if (shared_images[i].empty()) continue;
-
-                    int r = i / cols;
-                    int c = i % cols;
-                    cv::Rect roi(c * width, r * height, width, height);
-
-                    if (roi.x + roi.width > combined.cols || roi.y + roi.height > combined.rows)
+                    if (shared_images[i].empty() || shared_images[i].cols < 10 || shared_images[i].rows < 10)
                         continue;
 
-                    cv::Mat src;
-                    if (shared_images[i].cols != width || shared_images[i].rows != height)
-                        cv::resize(shared_images[i], src, cv::Size(width, height));
-                    else
-                        src = shared_images[i];
-
-                    if (src.type() != combined.type()) {
-                        if (src.channels() == 1 && combined.channels() == 3)
-                            cv::cvtColor(src, src, cv::COLOR_GRAY2BGR);
-                        else if (src.channels() == 3 && combined.channels() == 1)
-                            cv::cvtColor(src, src, cv::COLOR_BGR2GRAY);
-                        else
-                            continue;
+                    cv::Mat img = shared_images[i];
+                    if (img.channels() == 1) {
+                        cv::cvtColor(img, img, cv::COLOR_GRAY2BGR);
+                    }
+                    if (img.cols != width || img.rows != height) {
+                        cv::resize(img, img, cv::Size(width, height));
                     }
 
-                    src.copyTo(combined(roi));
+                    int r = i / cols;
+                    int c = i % cols;
+                    cv::Rect roi(c * width, r * height, width, height);
+                    img.copyTo(combined(roi));
+
+                    has_any_frame = true;
                 }
 
-                cv::imshow("All Cameras", combined);
-
-            } else {
+                if (has_any_frame && combined.cols > 0 && combined.rows > 0) {
+                    cv::imshow("All Cameras", combined);
+                }
+            }
+            else {
                 for (int i = 0; i < shared_images.size(); ++i) {
                     if (shared_images[i].empty()) continue;
                     std::string window_name = "Camera " + std::to_string(i);
@@ -614,7 +613,7 @@ void display_loop() {
             }
         }
 
-        int key = cv::waitKey(1);
+        key = cv::waitKey(1);
         if (key == 27) { // ESC
             dcout << "display_loop end" << std::endl;
             running = false;
@@ -1018,6 +1017,7 @@ int main() {
         queue_conds[i] = std::make_unique<std::condition_variable>();
     }
 
+    shared_images.resize(cam_max_num);
     camera_car.resize(cam_max_num, 0);
     lane_safe[0] = lane_safe[1] = -1;
 
