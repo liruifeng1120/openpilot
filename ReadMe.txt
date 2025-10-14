@@ -106,6 +106,8 @@ python3 yolov5/export.py --weights yolov5s.pt --img-size 416 --batch-size 1 --dy
 
 固定尺寸416
 python3 yolov5/export.py --weights yolov5s.pt --img-size 416 --batch-size 1 --include onnx
+或者加--opset 17，AI说比较兼容AMD GPU
+python3 yolov5/export.py --weights yolov5s.pt --img-size 416 --batch-size 1 --include onnx --opset 17
 固定尺寸640
 python3 yolov5/export.py --weights yolov5s.pt --img-size 640 --batch-size 1 --include onnx
 

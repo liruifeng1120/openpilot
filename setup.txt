@@ -74,9 +74,15 @@ tools/op.sh build
 # 启动OP,ROAD_CAM指定摄像头,NO_DM驾驶监控开关(注意安全驾驶，关闭驾驶监控仅用测试，正常驾驶请打开驾驶监控功能)
 USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 system/manager/manager.py
 
+#通过C++的USB摄像头采集
+USE_USBCAM=1 ROAD_CAM=0 NO_DM=0 system/manager/manager.py
+
 #如果只是测试一下摄像头显示，使用下面的命令
 USE_WEBCAM=1 ROAD_CAM=0 NO_DM=0 selfdrive/debug/uiview.py
 参数说明：USE_WEBCAM 使用USB摄像头，需要指定USE_WEBCAM为1，ROAD_CAM=0表示使用编号为0的摄像头（即/dev/video0）, NO_DM=0表示无驾驶员监控
+
+#通过C++的USB摄像头测试
+USE_USBCAM=1 selfdrive/debug/uiview.py
 
 #========================================================
 #开机自动运行openpilot
@@ -158,6 +164,51 @@ USB4 / Thunderbolt-兼容设备（如 Type-C 显示器、硬盘、Dock）；
 DisplayPort over USB-C；
 USB-PD 充电；
 只会禁用 雷电设备授权与策略管理功能（AMD 平台本来也不支持）。
+
+===========================================================
+YOLO使用GPU加速
+->安装全功能的AMD GPU驱动
+sudo apt update
+wget https://repo.radeon.com/amdgpu-install/6.4.4/ubuntu/noble/amdgpu-install_6.4.60404-1_all.deb
+sudo apt install ./amdgpu-install_6.4.60404-1_all.deb
+sudo amdgpu-install -y --usecase=graphics,rocm  --accept-eula　#安装需要24个G，可以选择只安装驱动＋基础Rocm
+sudo usermod -a -G render,video $LOGNAME
+只安装动＋基础Rocm
+sudo amdgpu-install -y --usecase=graphics,rocm --no-dkms --accept-eula
+sudo apt install rocblas miopen-hip hipblas hipsparse rocfft  #手动补装必要的计算库（而不是全部 SDK）
+
+安装后可以用以下命令检查：
+/opt/rocm/bin/rocminfo | grep Name
+正常会显示显卡的名称
+
+使用命令rocm-smi可查看GPU使用情况
+
+安装 OpenCL 工具
+sudo apt install clinfo
+clinfo | grep "Device"
+
+---------------------------------------------------------
+->安装 ONNX Runtime ROCm 版本，在python虚拟环境中安装（适合使用python）
+pip uninstall onnxruntime -y
+pip install onnxruntime-rocm==1.18.0 或 pip install onnxruntime-rocm 可自行测试
+
+验证
+python -c "import onnxruntime as ort; print(ort.get_device())"
+如果出现GPU说明成功
+
+->使用camera目录的下脚本test_rocm_onnxruntime.py进行测试
+python3 test_rocm_onnxruntime.py
+
+---------------------------------------------------------
+->适合C++使用onnxruntime的设置
+下载onnxruntime-rocm
+wget https://github.com/microsoft/onnxruntime/releases/download/v1.18.0/onnxruntime-linux-x64-rocm-1.18.0.tgz
+tar -xzf onnxruntime-linux-x64-rocm-1.18.0.tgz
+cd onnxruntime-linux-x64-rocm-1.18.0
+把onnxruntime-linux-x64-rocm-1.18.0文件夹拷贝到third_party中
+
+YOLOv5s ONNX 模型需要处理图像，所以要用 OpenCV
+sudo apt install libopencv-dev
 
 
 
