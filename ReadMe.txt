@@ -5,6 +5,9 @@ https://gitee.com/huheas/pilotosinit/blob/master/README.md
 export http_proxy=http://192.168.1.10:7897
 export https_proxy=http://192.168.1.10:7897
 
+export http_proxy=http://192.168.22.86:7897
+export https_proxy=http://192.168.22.86:7897
+
 安装git和ssh服务器
 sudo apt update
 sudo apt install git -y
@@ -106,6 +109,8 @@ python3 yolov5/export.py --weights yolov5s.pt --img-size 416 --batch-size 1 --dy
 
 固定尺寸416
 python3 yolov5/export.py --weights yolov5s.pt --img-size 416 --batch-size 1 --include onnx
+或者加--opset 17，AI说比较兼容AMD GPU
+python3 yolov5/export.py --weights yolov5s.pt --img-size 416 --batch-size 1 --include onnx --opset 17
 固定尺寸640
 python3 yolov5/export.py --weights yolov5s.pt --img-size 640 --batch-size 1 --include onnx
 
