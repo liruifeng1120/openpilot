@@ -3,8 +3,13 @@
 
 #include <vector>
 
+#define USE_ROADCAMERASTATE
+#define USE_WIDEROADCAMERASTATE
+#define CAM_WIDTH 2592//1920
+#define CAM_HEIGHT 1944//1080
+#define CAM_FPS 20
 
-const char *PATH_VIDEOS = "/home/my/videos/"; // Save record videos.
+const char *PATH_VIDEOS = "/home/op/videos/"; // Save record videos.
 
 int mac();
 
@@ -32,7 +37,7 @@ const char * query_device(const char *device_path, char *result) {
     snprintf(result, 255, "%s", cap.bus_info);
     return (const char*)result;
 }
-
+/*
 const char *get_device(const char *addr, char *device)
 {
      DIR *dir;
@@ -73,7 +78,7 @@ const char *get_device(const char *addr, char *device)
     closedir(dir);
     return "";
 }
-
+*/
 void camerad::camera_runner() {
   //cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   //cl_device_type device_type = CL_DEVICE_TYPE_GPU | CL_DEVICE_TYPE_CPU;
@@ -100,45 +105,56 @@ void camerad::camera_runner() {
 }
 
 void camerad::run() {
-  if (mac() != 0) {
+  //if (mac() != 0) {
     // return;
-  }
+  //}
 
+#ifdef USE_ROADCAMERASTATE
   char device_path0[512] = {0};
+#endif
+#ifdef USE_ROADCAMERASTATE
   char device_path1[512] = {0};
-  get_device("usb-0000:03:00.4-3", device_path0);
+#endi
+  //get_device("usb-0000:03:00.4-3", device_path0);
   // get_device("usb-0000:04:00.3-2", device_path0);
-  std::cout << device_path0 <<  std::endl;
-  get_device("usb-0000:03:00.3-4", device_path1);
-  std::cout << device_path1 <<  std::endl;
+  //std::cout << device_path0 <<  std::endl;
+  //get_device("usb-0000:03:00.3-4", device_path1);
+  //std::cout << device_path1 <<  std::endl;
 
+#ifdef USE_ROADCAMERASTATE
   if (strlen(device_path0) == 0)
   {
-      std::cerr << "Error finding video " << "usb-0000:04:00.3-2.2" << std::endl;
+      //std::cerr << "Error finding video " << "usb-0000:04:00.3-2.2" << std::endl;
       strcpy(device_path0, "/dev/video0");
       // return;
   }
+#endif
 
+#ifdef USE_ROADCAMERASTATE
   if (strlen(device_path1) == 0)
   {
-      std::cerr << "Error finding video " << "usb-0000:04:00.3-2.3" << std::endl;
+      //std::cerr << "Error finding video " << "usb-0000:04:00.3-2.3" << std::endl;
       strcpy(device_path1, "/dev/video2");
       // return;
   }
+#endif
 
+#ifdef USE_ROADCAMERASTATE
   const char* device0 = device_path0;//"/dev/video0";
-  int width = 1920;
-  int height = 1080;
+  int width = CAM_WIDTH;
+  int height = CAM_HEIGHT;
   std::string output_prefix = PATH_VIDEOS; // PC has a large hard drive capacity, so you can use it as a dashcam.
-  camera *cam_road = new camera(device0, "roadCameraState", width, height, 30, output_prefix);
+  camera *cam_road = new camera(device0, "roadCameraState", width, height, CAM_FPS, output_prefix);
   m_cameras.push_back(cam_road);
+#endif
 
+#ifdef USE_WIDEROADCAMERASTATE
   const char* device1 = device_path1; //"/dev/video2";
-  width = 1920;
-  height = 1080;
-  camera *cam_wide = new camera(device1, "wideRoadCameraState", width, height,  30, output_prefix);
+  width = CAM_WIDTH;
+  height = CAM_HEIGHT;
+  camera *cam_wide = new camera(device1, "wideRoadCameraState", width, height,  CAM_FPS, output_prefix);
   m_cameras.push_back(cam_wide);
-
+#end
 
   for (camera *cam : m_cameras) {
       cam->run();
@@ -148,6 +164,7 @@ void camerad::run() {
   th_cam.join();
 }
 
+/*
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -186,3 +203,4 @@ int mac() {
   //printf("%s\n", tmp_mac);
   return 1;
 }
+*/
