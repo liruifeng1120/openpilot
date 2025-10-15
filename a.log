@@ -1,0 +1,974 @@
+system/loggerd/bootlog.cc: bootlog to /home/my/.comma/media/0/realdata/boot/00000086--19b4a3231b.zst
+common/transformations/camera.py: needs update
+selfdrive/car/card.py: needs update
+selfdrive/ui/ui.h: needs update
+missing public key: /home/my/.comma/persist/comma/id_rsa.pub
+[33m * Tip: There are .env files present. Install python-dotenv to use them.[0m
+ * Serving Flask app 'selfdrive.frogpilot.fleetmanager.fleet_manager'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8082
+ * Running on http://192.168.213.67:8082
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+Panda 20004a000551383430363336 connected, version: DEV-95d62fc0-DEBU, signature 0f11dc54f56c2ffe, expected 0f11dc54f56c2ffe
+selfdrive/pandad/main.cc: starting pandad
+selfdrive/pandad/pandad.cc: connecting to pandas: 20004a000551383430363336
+selfdrive/pandad/panda.cc: connected to 20004a000551383430363336 over USB
+selfdrive/pandad/pandad.cc: connected to all pandas
+Failed to get: No such device
+usb-0000:03:00.3-4
+Failed to get: No such device
+isatty success!
+open /dev/ttyUSB1 success
+isatty success!
+kj/filesystem-disk-unix.c++:1734: warning: PWD environment variable doesn't match current directory; pwd = /home/my/data/openpilot
+kj/filesystem-disk-unix.c++:1734: warning: PWD environment variable doesn't match current directory; pwd = /home/my/data/openpilot
+VIN 00000000000000000
+VIN 00000000000000000
+usb-0000:03:00.3-4
+usb-0000:03:00.4-3
+usb-0000:03:00.4-3
+ok
+/dev/video0
+usb-0000:03:00.3-4
+usb-0000:03:00.3-4
+ok
+/dev/video2
+/bin/sh: 1: /data/openpilot/selfdrive/debug/debug_console_carrot.py: not found
+current 30 FPS
+current 30 FPS
+Successfully initialized FFmpeg for /home/my/videos/roadCameraState_20251010_1922.mp4
+Successfully initialized FFmpeg for /home/my/videos/wideRoadCameraState_20251010_1922
+modeld init
+setting up CL context
+CL context ready; loading model
+{'event': 'fingerprinted', 'car_fingerprint': 'VOLKSWAGEN_TIGUAN_MK2', 'source': 2, 'fuzzy': False, 'cached': False, 'fw_count': 0, 'ecu_responses': [], 'vin_rx_addr': -1, 'vin_rx_bus': -1, 'fingerprints': '{0: {779: 8, 795: 8, 299: 8, 134: 8, 389225232: 3, 159: 8, 792: 8, 873: 8, 178: 8, 253: 8, 279: 8, 260: 8, 290: 8, 278: 8, 302: 8, 288: 8, 807: 8, 289: 8, 806: 8, 376: 8, 808: 8, 346: 8, 809: 8, 981: 8, 389219600: 3, 64: 8, 573: 8, 828: 8, 257: 8, 262: 8, 286: 8, 1122: 8, 283: 8, 870: 8, 997: 8, 679: 8, 316494960: 8, 619: 8, 427: 8, 988: 8, 949: 8, 173: 8, 780: 8, 804: 8, 1162: 8, 418: 8, 960: 4, 1626: 8, 919: 8, 1635: 8, 389219584: 4, 987: 8, 1123: 8, 958: 8, 1385: 8, 1440: 5, 913: 8, 1019: 8, 401604695: 8, 991: 8, 1648: 8, 385: 8, 668: 8, 1120: 8, 1156: 8, 1157: 8, 1158: 8, 380195850: 8, 452984848: 8, 1124: 8, 1716: 8, 1520: 8, 681: 8, 1312: 8, 441800082: 8, 401604687: 8, 1631: 8, 294: 8, 389224720: 3, 389226768: 3, 1719: 8, 1153: 8, 1600: 8, 1720: 8, 1603: 8, 1714: 8, 380196036: 8, 1624: 8, 380196034: 8, 441800097: 8, 684: 8, 1413: 8, 1601: 8, 1629: 8, 1605: 8, 901: 8, 1000: 8}, 1: {1547: 8, 263: 8, 286: 8, 168: 8, 663: 8, 167: 8, 779: 8, 812: 8, 869: 8, 299: 8, 134: 8, 173: 8, 174: 8, 301: 8, 1349: 8, 178: 8, 253: 8, 260: 8, 288: 8, 289: 8, 987: 8, 278: 8, 279: 8, 346: 8, 290: 8, 815: 8, 327: 8, 376: 8, 64: 8, 989: 8, 573: 8, 257: 8, 262: 8, 283: 8, 452984951: 8, 828: 8, 1122: 8, 870: 8, 982: 8, 177: 8, 916: 8, 968: 8, 990: 8, 798: 8, 401604727: 8, 914: 8, 980: 8, 997: 8, 427: 8, 316494960: 8, 1411: 8, 949: 8, 418: 8, 960: 4, 1626: 8, 1525: 8, 1546: 8, 1452: 8, 931: 8, 958: 8, 913: 8, 1019: 8, 1123: 8, 984: 8, 1284: 8, 1648: 8, 967: 8, 380195860: 8, 976: 8, 1630: 8, 1527: 8, 452984848: 8, 1124: 8, 1716: 8, 441799983: 8, 1505: 8, 452984950: 8, 1520: 8, 452984853: 8, 380196074: 8, 65: 8, 1312: 8, 401604629: 8, 1654: 8, 1631: 8, 1391: 8, 1367: 8, 1125: 8, 1719: 8, 1420: 8, 1385: 8, 401604726: 8, 1600: 8, 1607: 8, 380195861: 8, 1616: 8, 441799808: 8, 706: 8, 1720: 8, 1603: 8, 1714: 8, 380196036: 8, 513: 8, 1792: 8, 1392: 8, 380196034: 8, 684: 8, 2016: 8, 2024: 8, 1413: 8, 1366: 8, 1601: 8, 1629: 8, 389222672: 5, 901: 8, 1000: 8, 1022: 8}, 2: {779: 8, 795: 8, 299: 8, 134: 8, 389225232: 3, 159: 8, 792: 8, 873: 8, 178: 8, 253: 8, 279: 8, 260: 8, 290: 8, 278: 8, 302: 8, 288: 8, 807: 8, 289: 8, 806: 8, 376: 8, 808: 8, 346: 8, 809: 8, 981: 8, 389219600: 3, 64: 8, 573: 8, 828: 8, 257: 8, 262: 8, 286: 8, 1122: 8, 283: 8, 870: 8, 997: 8, 679: 8, 316494960: 8, 619: 8, 427: 8, 988: 8, 949: 8, 173: 8, 780: 8, 804: 8, 1162: 8, 418: 8, 960: 4, 1626: 8, 919: 8, 1635: 8, 389219584: 4, 987: 8, 1123: 8, 958: 8, 1385: 8, 1440: 5, 913: 8, 1019: 8, 401604695: 8, 991: 8, 1648: 8, 385: 8, 668: 8, 1120: 8, 1156: 8, 1157: 8, 1158: 8, 380195850: 8, 452984848: 8, 1124: 8, 1716: 8, 1520: 8, 681: 8, 1312: 8, 441800082: 8, 401604687: 8, 1631: 8, 294: 8, 389224720: 3, 389226768: 3, 1719: 8, 1153: 8, 1600: 8, 1720: 8, 1603: 8, 1714: 8, 380196036: 8, 1624: 8, 380196034: 8, 441800097: 8, 684: 8, 1413: 8, 1601: 8, 1629: 8, 1605: 8, 901: 8, 1000: 8}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}}', 'fw_query_time': 0.002646381999966252}
+{'event': 'fingerprinted', 'car_fingerprint': 'VOLKSWAGEN_TIGUAN_MK2', 'source': 2, 'fuzzy': False, 'cached': False, 'fw_count': 0, 'ecu_responses': [], 'vin_rx_addr': -1, 'vin_rx_bus': -1, 'fingerprints': '{0: {779: 8, 795: 8, 299: 8, 134: 8, 389225232: 3, 159: 8, 792: 8, 873: 8, 178: 8, 253: 8, 279: 8, 260: 8, 290: 8, 278: 8, 302: 8, 288: 8, 807: 8, 289: 8, 806: 8, 376: 8, 808: 8, 346: 8, 809: 8, 981: 8, 389219600: 3, 64: 8, 573: 8, 828: 8, 257: 8, 262: 8, 286: 8, 1122: 8, 283: 8, 870: 8, 997: 8, 679: 8, 316494960: 8, 619: 8, 427: 8, 988: 8, 949: 8, 173: 8, 780: 8, 804: 8, 1162: 8, 418: 8, 960: 4, 1626: 8, 919: 8, 1635: 8, 389219584: 4, 987: 8, 1123: 8, 958: 8, 1385: 8, 1440: 5, 913: 8, 1019: 8, 401604695: 8, 991: 8, 1648: 8, 385: 8, 668: 8, 1120: 8, 1156: 8, 1157: 8, 1158: 8, 380195850: 8, 452984848: 8, 1124: 8, 1716: 8, 1520: 8, 681: 8, 1312: 8, 441800082: 8, 401604687: 8, 1631: 8, 294: 8, 389224720: 3, 389226768: 3, 1719: 8, 1153: 8, 1600: 8, 1720: 8, 1603: 8, 1714: 8, 380196036: 8, 1624: 8, 380196034: 8, 441800097: 8, 684: 8, 1413: 8, 1601: 8, 1629: 8, 1605: 8, 901: 8, 1000: 8}, 1: {1547: 8, 263: 8, 286: 8, 168: 8, 663: 8, 167: 8, 779: 8, 812: 8, 869: 8, 299: 8, 134: 8, 173: 8, 174: 8, 301: 8, 1349: 8, 178: 8, 253: 8, 260: 8, 288: 8, 289: 8, 987: 8, 278: 8, 279: 8, 346: 8, 290: 8, 815: 8, 327: 8, 376: 8, 64: 8, 989: 8, 573: 8, 257: 8, 262: 8, 283: 8, 452984951: 8, 828: 8, 1122: 8, 870: 8, 982: 8, 177: 8, 916: 8, 968: 8, 990: 8, 798: 8, 401604727: 8, 914: 8, 980: 8, 997: 8, 427: 8, 316494960: 8, 1411: 8, 949: 8, 418: 8, 960: 4, 1626: 8, 1525: 8, 1546: 8, 1452: 8, 931: 8, 958: 8, 913: 8, 1019: 8, 1123: 8, 984: 8, 1284: 8, 1648: 8, 967: 8, 380195860: 8, 976: 8, 1630: 8, 1527: 8, 452984848: 8, 1124: 8, 1716: 8, 441799983: 8, 1505: 8, 452984950: 8, 1520: 8, 452984853: 8, 380196074: 8, 65: 8, 1312: 8, 401604629: 8, 1654: 8, 1631: 8, 1391: 8, 1367: 8, 1125: 8, 1719: 8, 1420: 8, 1385: 8, 401604726: 8, 1600: 8, 1607: 8, 380195861: 8, 1616: 8, 441799808: 8, 706: 8, 1720: 8, 1603: 8, 1714: 8, 380196036: 8, 513: 8, 1792: 8, 1392: 8, 380196034: 8, 684: 8, 2016: 8, 2024: 8, 1413: 8, 1366: 8, 1601: 8, 1629: 8, 389222672: 5, 901: 8, 1000: 8, 1022: 8}, 2: {779: 8, 795: 8, 299: 8, 134: 8, 389225232: 3, 159: 8, 792: 8, 873: 8, 178: 8, 253: 8, 279: 8, 260: 8, 290: 8, 278: 8, 302: 8, 288: 8, 807: 8, 289: 8, 806: 8, 376: 8, 808: 8, 346: 8, 809: 8, 981: 8, 389219600: 3, 64: 8, 573: 8, 828: 8, 257: 8, 262: 8, 286: 8, 1122: 8, 283: 8, 870: 8, 997: 8, 679: 8, 316494960: 8, 619: 8, 427: 8, 988: 8, 949: 8, 173: 8, 780: 8, 804: 8, 1162: 8, 418: 8, 960: 4, 1626: 8, 919: 8, 1635: 8, 389219584: 4, 987: 8, 1123: 8, 958: 8, 1385: 8, 1440: 5, 913: 8, 1019: 8, 401604695: 8, 991: 8, 1648: 8, 385: 8, 668: 8, 1120: 8, 1156: 8, 1157: 8, 1158: 8, 380195850: 8, 452984848: 8, 1124: 8, 1716: 8, 1520: 8, 681: 8, 1312: 8, 441800082: 8, 401604687: 8, 1631: 8, 294: 8, 389224720: 3, 389226768: 3, 1719: 8, 1153: 8, 1600: 8, 1720: 8, 1603: 8, 1714: 8, 380196036: 8, 1624: 8, 380196034: 8, 441800097: 8, 684: 8, 1413: 8, 1601: 8, 1629: 8, 1605: 8, 901: 8, 1000: 8}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}}', 'fw_query_time': 0.002646381999966252}
+crash
+Traceback (most recent call last):
+  File "/home/my/data/openpilot/openpilot/system/manager/process.py", line 41, in launcher
+    mod.main()
+  File "/home/my/data/openpilot/selfdrive/car/card.py", line 317, in main
+    car = Car()
+          ^^^^^
+  File "/home/my/data/openpilot/selfdrive/car/card.py", line 106, in __init__
+    self.RI = RadarInterface(self.CI.CP)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/my/data/openpilot/opendbc/car/radar_interface.py", line 67, in __init__
+    self.rcp = _create_radar_parser()
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/my/data/openpilot/opendbc/car/radar_interface.py", line 59, in _create_radar_parser
+    return CANParser('u_radar', messages, 1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/my/data/openpilot/opendbc/can/parser.py", line 147, in __init__
+    raise RuntimeError(f"could not find message {name_or_addr!r} in DBC {dbc_name}")
+RuntimeError: could not find message 'ObjectData_53' in DBC u_radar
+Process card:
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 314, in _bootstrap
+    self.run()
+  File "/usr/lib/python3.12/multiprocessing/process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/my/data/openpilot/openpilot/system/manager/process.py", line 41, in launcher
+    mod.main()
+  File "/home/my/data/openpilot/selfdrive/car/card.py", line 317, in main
+    car = Car()
+          ^^^^^
+  File "/home/my/data/openpilot/selfdrive/car/card.py", line 106, in __init__
+    self.RI = RadarInterface(self.CI.CP)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/my/data/openpilot/opendbc/car/radar_interface.py", line 67, in __init__
+    self.rcp = _create_radar_parser()
+               ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/my/data/openpilot/opendbc/car/radar_interface.py", line 59, in _create_radar_parser
+    return CANParser('u_radar', messages, 1)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/my/data/openpilot/opendbc/can/parser.py", line 147, in __init__
+    raise RuntimeError(f"could not find message {name_or_addr!r} in DBC {dbc_name}")
+RuntimeError: could not find message 'ObjectData_53' in DBC u_radar
+Waiting for CAN messages...
+SelectedCar = VOLKSWAGEN_TIGUAN_MK2
+########get_nn_model_path : VOLKSWAGEN_TIGUAN_MK2 
+NNFF loaded... /home/my/data/openpilot/opendbc_repo/opendbc/car/torque_data/lat_models/VOLKSWAGEN_TIGUAN_MK2.json
+Carrot GitBranch = b'carrot2-v9', b"'1757127514 2025-09-06 10:58:34 +0800'"
+########get_nn_model_path : VOLKSWAGEN_TIGUAN_MK2 
+roadCameraState fps = 29
+models loaded, dmonitoringmodeld starting
+connecting to driver stream
+Starting listener for: camerad
+wideRoadCameraState fps = 29
+got request for invalid buffer type: 1
+connected with buffer size: None
+115200 baud find sensor
+
+models loaded in 1.3s, modeld starting
+vision stream set up, main_wide_camera: False, use_extra_client: True
+acc:9.895703 -0.866113 0.263184
+connected main cam with buffer size: 3110400 (1920 x 1080)
+connected extra cam with buffer size: 3110400 (1920 x 1080)
+roadCameraState fps = 31
+acc:9.766504 -0.732129 0.272754
+acc:9.656446 -0.655566 0.287109
+wideRoadCameraState fps = 31
+acc:9.804785 -0.784766 0.244043
+acc:9.780859 -0.779980 0.267969
+acc:9.838282 -0.813477 0.287109
+roadCameraState fps = 30
+acc:9.737793 -0.760840 0.272754
+acc:9.704297 -0.631641 0.272754
+wideRoadCameraState fps = 31
+acc:9.910059 -0.856543 0.248828
+acc:9.694727 -0.674707 0.301465
+acc:9.862207 -0.775195 0.392383
+roadCameraState fps = 30
+acc:9.804785 -0.837402 0.287109
+acc:9.709082 -0.665137 0.344531
+wideRoadCameraState fps = 30
+acc:9.800000 -0.741699 0.287109
+acc:9.871778 -0.851758 0.282324
+acc:9.666016 -0.636426 0.306250
+roadCameraState fps = 30
+acc:9.833496 -0.823047 0.287109
+acc:9.713867 -0.669922 0.306250
+wideRoadCameraState fps = 30
+acc:9.881348 -0.842188 0.320605
+acc:9.752149 -0.708203 0.325391
+acc:9.761719 -0.689062 0.291895
+roadCameraState fps = 30
+acc:9.862207 -0.837402 0.229687
+acc:9.766504 -0.712988 0.291895
+wideRoadCameraState fps = 30
+acc:9.752149 -0.689062 0.354102
+acc:9.857422 -0.856543 0.287109
+acc:9.742579 -0.650781 0.344531
+roadCameraState fps = 30
+acc:9.785645 -0.732129 0.277539
+acc:9.876562 -0.823047 0.267969
+wideRoadCameraState fps = 30
+acc:9.680371 -0.669922 0.258398
+acc:9.871778 -0.808691 0.263184
+acc:9.699512 -0.655566 0.291895
+roadCameraState fps = 31
+acc:9.761719 -0.717773 0.306250
+acc:9.776074 -0.827832 0.248828
+wideRoadCameraState fps = 30
+: libpng warning: iCCP: known incorrect sRGB profile
+acc:9.723437 -0.698633 0.287109
+: libpng warning: iCCP: known incorrect sRGB profile
+acc:9.723437 -0.674707 0.248828
+acc:9.929199 -0.832617 0.258398
+roadCameraState fps = 30
+acc:9.718653 -0.674707 0.282324
+acc:9.747363 -0.732129 0.320605
+wideRoadCameraState fps = 30
+acc:9.833496 -0.837402 0.248828
+acc:9.694727 -0.607715 0.315820
+acc:9.694727 -0.689062 0.248828
+roadCameraState fps = 30
+acc:9.804785 -0.689062 0.325391
+acc:9.833496 -0.842188 0.239258
+wideRoadCameraState fps = 30
+acc:9.733007 -0.660352 0.334961
+acc:9.843066 -0.823047 0.320605
+acc:9.780859 -0.756055 0.296680
+roadCameraState fps = 30
+acc:9.756933 -0.641211 0.334961
+acc:9.910059 -0.842188 0.287109
+wideRoadCameraState fps = 30
+acc:9.823926 -0.727344 0.330176
+acc:9.752149 -0.669922 0.358887
+acc:9.838282 -0.813477 0.272754
+roadCameraState fps = 31
+acc:9.733007 -0.746484 0.296680
+acc:9.852636 -0.837402 0.287109
+wideRoadCameraState fps = 30
+acc:9.771289 -0.722559 0.320605
+acc:9.766504 -0.674707 0.334961
+acc:9.876562 -0.775195 0.258398
+roadCameraState fps = 30
+acc:9.833496 -0.765625 0.315820
+acc:9.718653 -0.674707 0.363672
+wideRoadCameraState fps = 30
+acc:9.843066 -0.856543 0.291895
+acc:9.680371 -0.655566 0.315820
+acc:9.766504 -0.698633 0.282324
+roadCameraState fps = 30
+acc:9.881348 -0.832617 0.277539
+wideRoadCameraState fps = 30
+acc:9.756933 -0.741699 0.277539
+acc:9.694727 -0.645996 0.311035
+acc:9.680371 -0.698633 0.267969
+acc:9.766504 -0.712988 0.334961
+roadCameraState fps = 30
+acc:9.814356 -0.827832 0.248828
+wideRoadCameraState fps = 30
+acc:9.694727 -0.717773 0.287109
+acc:9.785645 -0.708203 0.306250
+acc:9.847852 -0.842188 0.239258
+acc:9.670801 -0.679492 0.277539
+roadCameraState fps = 30
+acc:9.756933 -0.712988 0.339746
+wideRoadCameraState fps = 30
+acc:9.814356 -0.808691 0.287109
+acc:9.780859 -0.760840 0.272754
+acc:9.685156 -0.641211 0.296680
+acc:9.823926 -0.779980 0.220117
+roadCameraState fps = 30
+acc:9.776074 -0.655566 0.339746
+wideRoadCameraState fps = 30
+acc:9.910059 -0.832617 0.272754
+acc:9.843066 -0.722559 0.392383
+acc:9.800000 -0.741699 0.358887
+acc:9.823926 -0.818262 0.306250
+roadCameraState fps = 30
+acc:9.699512 -0.607715 0.330176
+wideRoadCameraState fps = 30
+acc:9.905273 -0.842188 0.229687
+acc:9.680371 -0.631641 0.287109
+acc:9.814356 -0.779980 0.315820
+acc:9.814356 -0.789551 0.311035
+roadCameraState fps = 30
+acc:9.733007 -0.622070 0.344531
+acc:9.900488 -0.846973 0.272754
+wideRoadCameraState fps = 31
+acc:9.776074 -0.751270 0.267969
+acc:9.819140 -0.818262 0.244043
+acc:9.685156 -0.631641 0.339746
+roadCameraState fps = 30
+acc:9.833496 -0.842188 0.248828
+acc:9.680371 -0.679492 0.277539
+wideRoadCameraState fps = 31
+acc:9.776074 -0.693848 0.315820
+acc:9.929199 -0.861328 0.296680
+acc:9.670801 -0.669922 0.291895
+roadCameraState fps = 30
+acc:9.733007 -0.722559 0.311035
+acc:9.771289 -0.823047 0.234473
+wideRoadCameraState fps = 30
+acc:9.718653 -0.645996 0.320605
+acc:9.804785 -0.765625 0.263184
+acc:9.723437 -0.626855 0.291895
+roadCameraState fps = 31
+acc:9.919629 -0.832617 0.258398
+acc:9.718653 -0.698633 0.287109
+wideRoadCameraState fps = 30
+acc:9.761719 -0.693848 0.368457
+acc:9.852636 -0.808691 0.282324
+acc:9.756933 -0.765625 0.296680
+acc:9.733007 -0.645996 0.311035
+roadCameraState fps = 31
+acc:9.943555 -0.861328 0.296680
+wideRoadCameraState fps = 30
+acc:9.718653 -0.693848 0.325391
+acc:9.776074 -0.712988 0.291895
+acc:9.747363 -0.813477 0.224902
+acc:9.680371 -0.626855 0.277539
+roadCameraState fps = 31
+acc:9.737793 -0.693848 0.354102
+wideRoadCameraState fps = 30
+acc:9.819140 -0.717773 0.315820
+acc:9.910059 -0.837402 0.306250
+acc:9.747363 -0.689062 0.315820
+acc:9.771289 -0.703418 0.354102
+roadCameraState fps = 31
+acc:9.852636 -0.856543 0.320605
+wideRoadCameraState fps = 30
+acc:9.795215 -0.689062 0.354102
+acc:9.800000 -0.698633 0.325391
+acc:9.852636 -0.827832 0.263184
+acc:9.694727 -0.636426 0.330176
+roadCameraState fps = 31
+acc:9.790430 -0.803906 0.301465
+wideRoadCameraState fps = 31
+acc:9.804785 -0.794336 0.248828
+acc:9.780859 -0.746484 0.296680
+acc:9.862207 -0.803906 0.258398
+acc:9.632520 -0.679492 0.229687
+roadCameraState fps = 31
+acc:9.771289 -0.722559 0.272754
+wideRoadCameraState fps = 30
+acc:9.828711 -0.832617 0.220117
+acc:9.699512 -0.641211 0.325391
+acc:9.800000 -0.789551 0.253613
+acc:9.742579 -0.784766 0.224902
+roadCameraState fps = 30
+acc:9.713867 -0.655566 0.282324
+wideRoadCameraState fps = 30
+acc:9.890918 -0.866113 0.229687
+acc:9.661230 -0.626855 0.296680
+acc:9.843066 -0.784766 0.320605
+acc:9.718653 -0.655566 0.325391
+roadCameraState fps = 30
+acc:9.866992 -0.861328 0.272754
+wideRoadCameraState fps = 31
+acc:9.670801 -0.645996 0.296680
+x=581, y=958, ey=122
+_current_carrot_display1=1
+acc:9.761719 -0.708203 0.291895
+acc:9.843066 -0.803906 0.205762
+acc:9.780859 -0.717773 0.330176
+roadCameraState fps = 30
+acc:9.785645 -0.703418 0.306250
+wideRoadCameraState fps = 30
+acc:9.871778 -0.823047 0.296680
+acc:9.780859 -0.741699 0.325391
+acc:9.723437 -0.650781 0.296680
+acc:9.876562 -0.784766 0.325391
+roadCameraState fps = 31
+acc:9.895703 -0.818262 0.306250
+wideRoadCameraState fps = 30
+acc:9.866992 -0.794336 0.325391
+acc:9.823926 -0.784766 0.244043
+acc:9.713867 -0.650781 0.330176
+acc:9.804785 -0.770410 0.354102
+roadCameraState fps = 30
+acc:9.766504 -0.827832 0.248828
+wideRoadCameraState fps = 30
+acc:9.680371 -0.626855 0.320605
+acc:9.814356 -0.789551 0.229687
+acc:9.795215 -0.775195 0.234473
+acc:9.718653 -0.698633 0.320605
+roadCameraState fps = 31
+acc:9.800000 -0.722559 0.320605
+wideRoadCameraState fps = 30
+acc:9.905273 -0.842188 0.325391
+acc:9.819140 -0.846973 0.253613
+acc:9.670801 -0.674707 0.224902
+acc:9.742579 -0.708203 0.282324
+roadCameraState fps = 30
+acc:9.866992 -0.861328 0.234473
+wideRoadCameraState fps = 30
+acc:9.661230 -0.641211 0.311035
+acc:9.809570 -0.818262 0.248828
+acc:9.709082 -0.708203 0.263184
+acc:9.785645 -0.708203 0.301465
+roadCameraState fps = 30
+acc:9.886133 -0.842188 0.244043
+wideRoadCameraState fps = 30
+acc:9.699512 -0.655566 0.306250
+acc:9.756933 -0.717773 0.291895
+acc:9.857422 -0.823047 0.253613
+acc:9.862207 -0.837402 0.315820
+roadCameraState fps = 30
+acc:9.809570 -0.760840 0.301465
+wideRoadCameraState fps = 30
+acc:9.723437 -0.636426 0.325391
+acc:9.857422 -0.813477 0.244043
+acc:9.790430 -0.765625 0.287109
+acc:9.800000 -0.684277 0.358887
+roadCameraState fps = 30
+acc:9.910059 -0.866113 0.373242
+wideRoadCameraState fps = 30
+acc:9.718653 -0.655566 0.354102
+acc:9.886133 -0.765625 0.378027
+acc:9.857422 -0.799121 0.282324
+acc:9.766504 -0.660352 0.406738
+roadCameraState fps = 30
+x=1247, y=489, ey=591
+_current_carrot_display1=2
+acc:9.828711 -0.818262 0.306250
+wideRoadCameraState fps = 30
+acc:9.709082 -0.698633 0.311035
+acc:9.847852 -0.823047 0.267969
+acc:9.733007 -0.698633 0.296680
+acc:9.718653 -0.684277 0.277539
+roadCameraState fps = 30
+acc:9.871778 -0.813477 0.224902
+wideRoadCameraState fps = 30
+acc:9.752149 -0.693848 0.291895
+acc:9.756933 -0.655566 0.320605
+acc:9.895703 -0.842188 0.291895
+acc:9.622950 -0.636426 0.258398
+roadCameraState fps = 31
+acc:9.804785 -0.736914 0.296680
+wideRoadCameraState fps = 30
+acc:9.814356 -0.818262 0.220117
+acc:9.761719 -0.684277 0.311035
+acc:9.833496 -0.808691 0.234473
+acc:9.785645 -0.708203 0.315820
+roadCameraState fps = 30
+acc:9.718653 -0.674707 0.291895
+wideRoadCameraState fps = 30
+acc:9.857422 -0.837402 0.258398
+acc:9.709082 -0.674707 0.287109
+acc:9.785645 -0.698633 0.325391
+acc:9.871778 -0.808691 0.267969
+acc:9.823926 -0.784766 0.277539
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.666016 -0.655566 0.296680
+acc:9.747363 -0.741699 0.325391
+acc:9.847852 -0.827832 0.234473
+acc:9.780859 -0.708203 0.325391
+acc:9.833496 -0.808691 0.306250
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.713867 -0.655566 0.344531
+acc:9.780859 -0.727344 0.301465
+acc:9.890918 -0.823047 0.277539
+acc:9.661230 -0.641211 0.315820
+acc:9.804785 -0.794336 0.306250
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.699512 -0.770410 0.234473
+acc:9.718653 -0.636426 0.311035
+acc:9.919629 -0.870898 0.267969
+acc:9.742579 -0.679492 0.330176
+acc:9.785645 -0.708203 0.325391
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.881348 -0.851758 0.320605
+acc:9.804785 -0.760840 0.263184
+acc:9.785645 -0.794336 0.239258
+acc:9.651660 -0.622070 0.253613
+acc:9.866992 -0.784766 0.229687
+roadCameraState fps = 30
+x=1237, y=268, ey=812
+_current_carrot_display1=3
+wideRoadCameraState fps = 30
+acc:9.838282 -0.765625 0.301465
+acc:9.737793 -0.655566 0.358887
+acc:9.852636 -0.832617 0.267969
+acc:9.723437 -0.727344 0.272754
+acc:9.713867 -0.645996 0.291895
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.886133 -0.832617 0.244043
+acc:9.737793 -0.741699 0.263184
+acc:9.704297 -0.655566 0.306250
+acc:9.761719 -0.698633 0.311035
+acc:9.776074 -0.703418 0.320605
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.823926 -0.827832 0.267969
+acc:9.728223 -0.626855 0.344531
+acc:9.890918 -0.823047 0.296680
+acc:9.776074 -0.770410 0.287109
+acc:9.737793 -0.665137 0.339746
+roadCameraState fps = 31
+acc:9.910059 -0.851758 0.291895
+wideRoadCameraState fps = 31
+acc:9.685156 -0.641211 0.301465
+acc:9.804785 -0.727344 0.287109
+acc:9.881348 -0.846973 0.291895
+acc:9.713867 -0.650781 0.349316
+roadCameraState fps = 31
+acc:9.790430 -0.765625 0.287109
+wideRoadCameraState fps = 31
+acc:9.713867 -0.645996 0.325391
+acc:9.895703 -0.842188 0.344531
+acc:9.713867 -0.727344 0.291895
+acc:9.776074 -0.693848 0.320605
+roadCameraState fps = 30
+acc:9.876562 -0.851758 0.267969
+wideRoadCameraState fps = 31
+acc:9.709082 -0.693848 0.282324
+acc:9.718653 -0.674707 0.320605
+acc:9.828711 -0.861328 0.291895
+CarrotManager Started
+************************************************CarrotMan init************************************************
+#########carrot_cmd_zmq: thread started...
+################# waiting connection from CarrotMan route #####################
+CarrotMan <selfdrive.carrot.carrot_man.CarrotMan object at 0x701a799d46e0>
+#########kisa_app_thread: UDP thread started...
+#########carrot_man_thread: UDP thread started...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": false, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Directory creation failed: 550 carrot2-v9 VOLKSWAGEN_TIGUAN_MK2 UnregisteredDevice: File exists.
+ftp sending error...: [Errno 2] No such file or directory: '/data/media/tmux.log'
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Directory creation failed: 550 carrot2-v9 VOLKSWAGEN_TIGUAN_MK2 UnregisteredDevice: File exists.
+acc:9.756933 -0.732129 0.301465
+roadCameraState fps = 30
+acc:9.694727 -0.645996 0.263184
+wideRoadCameraState fps = 30
+acc:9.876562 -0.851758 0.229687
+acc:9.843066 -0.770410 0.272754
+acc:9.823926 -0.799121 0.253613
+acc:9.699512 -0.665137 0.311035
+roadCameraState fps = 31
+acc:9.809570 -0.746484 0.320605
+wideRoadCameraState fps = 31
+acc:9.814356 -0.794336 0.248828
+acc:9.689941 -0.622070 0.315820
+acc:9.924414 -0.837402 0.282324
+acc:9.780859 -0.765625 0.287109
+acc:9.689941 -0.660352 0.325391
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.819140 -0.779980 0.267969
+acc:9.713867 -0.799121 0.234473
+acc:9.890918 -0.827832 0.287109
+acc:9.766504 -0.732129 0.325391
+acc:9.718653 -0.674707 0.301465
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.857422 -0.818262 0.267969
+acc:9.733007 -0.751270 0.263184
+acc:9.733007 -0.679492 0.339746
+acc:9.890918 -0.875684 0.263184
+acc:9.689941 -0.665137 0.334961
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.800000 -0.722559 0.282324
+acc:9.890918 -0.808691 0.267969
+acc:9.689941 -0.689062 0.311035
+acc:9.804785 -0.746484 0.325391
+acc:9.737793 -0.669922 0.382812
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.847852 -0.861328 0.301465
+acc:9.670801 -0.660352 0.277539
+acc:9.795215 -0.746484 0.325391
+acc:9.857422 -0.827832 0.277539
+acc:9.656446 -0.622070 0.311035
+roadCameraState fps = 30
+acc:9.838282 -0.851758 0.301465
+wideRoadCameraState fps = 31
+acc:9.737793 -0.712988 0.315820
+acc:9.790430 -0.698633 0.301465
+acc:9.833496 -0.832617 0.263184
+acc:9.661230 -0.626855 0.315820
+roadCameraState fps = 31
+acc:9.852636 -0.866113 0.320605
+wideRoadCameraState fps = 30
+Successfully initialized FFmpeg for /home/my/videos/roadCameraState_20251010_1923.mp4
+acc:9.723437 -0.727344 0.229687
+acc:9.804785 -0.813477 0.234473
+Successfully initialized FFmpeg for /home/my/videos/wideRoadCameraState_20251010_1923
+acc:9.694727 -0.626855 0.301465
+acc:9.895703 -0.827832 0.301465
+roadCameraState fps = 30
+acc:9.804785 -0.779980 0.287109
+wideRoadCameraState fps = 31
+acc:9.704297 -0.641211 0.330176
+acc:9.857422 -0.842188 0.296680
+acc:9.694727 -0.717773 0.296680
+acc:9.761719 -0.679492 0.277539
+roadCameraState fps = 31
+acc:9.881348 -0.813477 0.234473
+wideRoadCameraState fps = 30
+acc:9.723437 -0.708203 0.287109
+acc:9.699512 -0.669922 0.296680
+acc:9.656446 -0.645996 0.301465
+acc:9.886133 -0.827832 0.358887
+roadCameraState fps = 31
+acc:9.747363 -0.736914 0.291895
+wideRoadCameraState fps = 31
+acc:9.790430 -0.679492 0.344531
+acc:9.876562 -0.832617 0.263184
+acc:9.685156 -0.645996 0.320605
+acc:9.843066 -0.813477 0.344531
+roadCameraState fps = 30
+acc:9.819140 -0.789551 0.311035
+wideRoadCameraState fps = 31
+acc:9.689941 -0.631641 0.315820
+acc:9.862207 -0.799121 0.267969
+acc:9.828711 -0.756055 0.301465
+acc:9.704297 -0.665137 0.330176
+roadCameraState fps = 30
+acc:9.737793 -0.679492 0.291895
+wideRoadCameraState fps = 30
+acc:9.771289 -0.727344 0.320605
+acc:9.819140 -0.803906 0.272754
+acc:9.694727 -0.698633 0.296680
+acc:9.752149 -0.703418 0.315820
+roadCameraState fps = 30
+acc:9.833496 -0.775195 0.234473
+wideRoadCameraState fps = 30
+acc:9.866992 -0.760840 0.315820
+acc:9.622950 -0.636426 0.248828
+acc:9.847852 -0.861328 0.248828
+acc:9.632520 -0.626855 0.234473
+roadCameraState fps = 31
+acc:9.800000 -0.741699 0.196191
+wideRoadCameraState fps = 31
+acc:9.866992 -0.775195 0.287109
+acc:9.910059 -0.856543 0.296680
+acc:9.675586 -0.693848 0.296680
+acc:9.771289 -0.708203 0.325391
+roadCameraState fps = 30
+acc:9.819140 -0.837402 0.248828
+wideRoadCameraState fps = 30
+acc:9.747363 -0.684277 0.315820
+acc:9.766504 -0.684277 0.296680
+acc:9.929199 -0.837402 0.296680
+acc:9.713867 -0.693848 0.296680
+roadCameraState fps = 30
+acc:9.809570 -0.760840 0.354102
+wideRoadCameraState fps = 30
+acc:9.843066 -0.808691 0.282324
+acc:9.718653 -0.650781 0.349316
+x=653, y=495, ey=585
+_current_carrot_display1=2
+acc:9.857422 -0.789551 0.272754
+acc:9.733007 -0.655566 0.315820
+roadCameraState fps = 31
+acc:9.852636 -0.803906 0.234473
+wideRoadCameraState fps = 30
+acc:9.780859 -0.751270 0.277539
+acc:9.776074 -0.684277 0.349316
+acc:9.857422 -0.832617 0.267969
+acc:9.699512 -0.655566 0.301465
+acc:9.833496 -0.736914 0.296680
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.886133 -0.827832 0.291895
+acc:9.766504 -0.669922 0.392383
+acc:9.857422 -0.813477 0.306250
+acc:9.742579 -0.727344 0.277539
+acc:9.728223 -0.660352 0.306250
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.646875 -0.641211 0.287109
+acc:9.886133 -0.799121 0.263184
+acc:9.699512 -0.717773 0.229687
+acc:9.752149 -0.703418 0.320605
+acc:9.819140 -0.813477 0.248828
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.689941 -0.655566 0.306250
+acc:9.819140 -0.746484 0.315820
+acc:9.857422 -0.827832 0.234473
+acc:9.675586 -0.650781 0.291895
+acc:9.814356 -0.799121 0.267969
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.627734 -0.693848 0.172266
+acc:9.776074 -0.689062 0.291895
+acc:9.718653 -0.660352 0.349316
+acc:9.900488 -0.808691 0.296680
+acc:9.828711 -0.736914 0.306250
+roadCameraState fps = 30
+acc:9.771289 -0.665137 0.392383
+wideRoadCameraState fps = 31
+acc:9.828711 -0.818262 0.263184
+acc:9.747363 -0.698633 0.349316
+acc:9.814356 -0.736914 0.267969
+acc:9.895703 -0.818262 0.291895
+roadCameraState fps = 30
+acc:9.756933 -0.693848 0.325391
+wideRoadCameraState fps = 30
+acc:9.756933 -0.712988 0.363672
+acc:9.866992 -0.842188 0.287109
+acc:9.733007 -0.703418 0.301465
+acc:9.785645 -0.832617 0.253613
+roadCameraState fps = 31
+acc:9.670801 -0.631641 0.296680
+wideRoadCameraState fps = 31
+acc:9.843066 -0.756055 0.272754
+acc:9.857422 -0.775195 0.291895
+acc:9.733007 -0.665137 0.339746
+acc:9.819140 -0.784766 0.358887
+roadCameraState fps = 31
+acc:9.800000 -0.784766 0.253613
+wideRoadCameraState fps = 30
+acc:9.670801 -0.626855 0.282324
+acc:9.795215 -0.751270 0.224902
+acc:9.833496 -0.779980 0.258398
+acc:9.670801 -0.650781 0.311035
+roadCameraState fps = 31
+acc:9.670801 -0.655566 0.287109
+wideRoadCameraState fps = 30
+acc:9.785645 -0.736914 0.330176
+acc:9.795215 -0.808691 0.248828
+acc:9.651660 -0.665137 0.267969
+acc:9.771289 -0.751270 0.234473
+roadCameraState fps = 30
+acc:9.838282 -0.832617 0.210547
+wideRoadCameraState fps = 30
+acc:9.924414 -0.827832 0.306250
+acc:9.780859 -0.722559 0.330176
+acc:9.752149 -0.698633 0.354102
+acc:9.857422 -0.803906 0.277539
+roadCameraState fps = 30
+acc:9.800000 -0.789551 0.325391
+wideRoadCameraState fps = 31
+acc:9.699512 -0.645996 0.287109
+acc:9.933985 -0.799121 0.282324
+acc:9.814356 -0.736914 0.344531
+acc:9.747363 -0.698633 0.334961
+acc:9.833496 -0.875684 0.306250
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.709082 -0.674707 0.334961
+acc:9.910059 -0.823047 0.334961
+acc:9.747363 -0.645996 0.320605
+acc:9.881348 -0.794336 0.234473
+acc:9.699512 -0.669922 0.277539
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.795215 -0.736914 0.311035
+acc:9.823926 -0.832617 0.282324
+acc:9.661230 -0.622070 0.277539
+acc:9.800000 -0.732129 0.258398
+acc:9.833496 -0.818262 0.244043
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.723437 -0.660352 0.325391
+acc:9.785645 -0.765625 0.277539
+acc:9.819140 -0.775195 0.263184
+acc:9.689941 -0.650781 0.311035
+acc:9.723437 -0.712988 0.244043
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.704297 -0.665137 0.244043
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+[32mlogmessaged[0m [32mcamerad[0m [32mlogcatd[0m [32mproclogd[0m [32mmicd[0m [32mmodeld[0m [32mdmonitoringmodeld[0m [32msensord[0m [32mui[0m [32msoundd[0m [32mlocationd[0m [32mcalibrationd[0m [32mtorqued[0m [32mcontrolsd[0m [32mselfdrived[0m [31mcard[0m [32mdeleter[0m [32mdmonitoringd[0m [32mnavd[0m [32mpandad[0m [32mparamsd[0m [32mlagd[0m [32mplannerd[0m [32mradard[0m [32mhardwared[0m [32mstatsd[0m [32mfleet_manager[0m [32mcarrot_man[0m
+acc:9.866992 -0.813477 0.248828
+acc:9.771289 -0.775195 0.253613
+acc:9.627734 -0.645996 0.277539
+acc:9.862207 -0.837402 0.272754
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.771289 -0.760840 0.301465
+acc:9.752149 -0.689062 0.301465
+acc:9.890918 -0.808691 0.282324
+acc:9.776074 -0.751270 0.277539
+acc:9.651660 -0.684277 0.272754
+roadCameraState fps = 30
+wideRoadCameraState fps = 30
+acc:9.795215 -0.770410 0.334961
+acc:9.747363 -0.665137 0.334961
+acc:9.910059 -0.856543 0.349316
+acc:9.718653 -0.689062 0.320605
+acc:9.838282 -0.698633 0.315820
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.924414 -0.827832 0.315820
+acc:9.752149 -0.669922 0.363672
+acc:9.847852 -0.842188 0.368457
+acc:9.747363 -0.756055 0.306250
+acc:9.790430 -0.679492 0.363672
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.876562 -0.818262 0.220117
+acc:9.723437 -0.679492 0.311035
+acc:9.776074 -0.760840 0.320605
+acc:9.694727 -0.650781 0.330176
+acc:9.833496 -0.813477 0.258398
+roadCameraState fps = 31
+wideRoadCameraState fps = 31
+acc:9.771289 -0.722559 0.291895
+acc:9.646875 -0.636426 0.215332
+acc:9.886133 -0.846973 0.248828
+acc:9.747363 -0.727344 0.306250
+acc:9.771289 -0.717773 0.334961
+roadCameraState fps = 31
+acc:9.804785 -0.813477 0.253613
+wideRoadCameraState fps = 31
+acc:9.666016 -0.669922 0.277539
+acc:9.756933 -0.712988 0.258398
+acc:9.905273 -0.823047 0.258398
+acc:9.713867 -0.660352 0.306250
+roadCameraState fps = 30
+acc:9.823926 -0.789551 0.248828
+wideRoadCameraState fps = 30
+acc:9.694727 -0.636426 0.320605
+acc:9.828711 -0.765625 0.306250
+acc:9.809570 -0.813477 0.320605
+acc:9.709082 -0.650781 0.267969
+roadCameraState fps = 30
+acc:9.943555 -0.808691 0.287109
+wideRoadCameraState fps = 30
+acc:9.800000 -0.727344 0.301465
+acc:9.728223 -0.679492 0.325391
+acc:9.866992 -0.842188 0.277539
+acc:9.795215 -0.741699 0.306250
+acc:9.771289 -0.669922 0.330176
+wideRoadCameraState fps = 30
+roadCameraState fps = 31
+acc:9.866992 -0.741699 0.339746
+acc:9.728223 -0.650781 0.325391
+acc:9.795215 -0.741699 0.263184
+acc:9.890918 -0.799121 0.277539
+acc:9.747363 -0.660352 0.339746
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.785645 -0.751270 0.311035
+acc:9.823926 -0.832617 0.339746
+acc:9.694727 -0.655566 0.258398
+acc:9.852636 -0.693848 0.320605
+acc:9.933985 -0.823047 0.301465
+roadCameraState fps = 30
+wideRoadCameraState fps = 30
+acc:9.771289 -0.703418 0.354102
+acc:9.766504 -0.722559 0.330176
+acc:9.756933 -0.784766 0.258398
+acc:9.795215 -0.842188 0.229687
+acc:9.699512 -0.689062 0.272754
+roadCameraState fps = 30
+wideRoadCameraState fps = 30
+acc:9.752149 -0.674707 0.282324
+acc:9.866992 -0.818262 0.234473
+acc:9.871778 -0.727344 0.344531
+acc:9.689941 -0.665137 0.306250
+acc:9.843066 -0.832617 0.282324
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.661230 -0.722559 0.253613
+acc:9.752149 -0.698633 0.311035
+acc:9.871778 -0.808691 0.244043
+acc:9.785645 -0.732129 0.291895
+acc:9.666016 -0.660352 0.287109
+roadCameraState fps = 30
+wideRoadCameraState fps = 30
+acc:9.766504 -0.665137 0.378027
+acc:9.828711 -0.765625 0.301465
+acc:9.819140 -0.808691 0.287109
+acc:9.756933 -0.669922 0.349316
+acc:9.819140 -0.756055 0.267969
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.852636 -0.813477 0.282324
+acc:9.704297 -0.665137 0.330176
+acc:9.857422 -0.799121 0.306250
+acc:9.823926 -0.775195 0.301465
+acc:9.838282 -0.803906 0.263184
+roadCameraState fps = 30
+wideRoadCameraState fps = 30
+acc:9.790430 -0.732129 0.306250
+acc:9.685156 -0.645996 0.263184
+acc:9.919629 -0.813477 0.325391
+acc:9.847852 -0.770410 0.306250
+acc:9.718653 -0.645996 0.363672
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.823926 -0.823047 0.301465
+acc:9.694727 -0.727344 0.282324
+acc:9.766504 -0.808691 0.220117
+acc:9.704297 -0.665137 0.315820
+acc:9.790430 -0.770410 0.191406
+roadCameraState fps = 31
+wideRoadCameraState fps = 30
+acc:9.852636 -0.779980 0.267969
+acc:9.642090 -0.641211 0.282324
+acc:9.833496 -0.803906 0.239258
+acc:9.656446 -0.712988 0.229687
+acc:9.761719 -0.698633 0.301465
+wideRoadCameraState fps = 30
+roadCameraState fps = 31
+acc:9.871778 -0.837402 0.253613
+acc:9.685156 -0.693848 0.287109
+acc:9.737793 -0.698633 0.291895
+acc:9.814356 -0.832617 0.263184
+acc:9.756933 -0.732129 0.253613
+wideRoadCameraState fps = 31
+roadCameraState fps = 31
+acc:9.881348 -0.861328 0.330176
+acc:9.737793 -0.650781 0.311035
+acc:9.900488 -0.832617 0.301465
+acc:9.776074 -0.756055 0.287109
+acc:9.709082 -0.669922 0.301465
+roadCameraState fps = 30
+wideRoadCameraState fps = 31
+acc:9.819140 -0.799121 0.296680
+acc:9.838282 -0.823047 0.301465
+acc:9.752149 -0.626855 0.354102
+acc:9.933985 -0.770410 0.330176
+acc:9.823926 -0.736914 0.354102
+roadCameraState fps = 30
+wideRoadCameraState fps = 30
+acc:9.790430 -0.674707 0.358887
+acc:9.666016 -0.689062 0.277539
+acc:9.795215 -0.722559 0.330176
+acc:9.804785 -0.818262 0.248828
+acc:9.733007 -0.741699 0.291895
+wideRoadCameraState fps = 30
+roadCameraState fps = 31
+acc:9.728223 -0.669922 0.320605
+acc:9.833496 -0.832617 0.220117
+x=1924, y=311, ey=769
+_current_carrot_display1=3
+acc:9.704297 -0.708203 0.248828
+acc:9.656446 -0.650781 0.234473
+acc:9.790430 -0.842188 0.220117
+wideRoadCameraState fps = 30
+roadCameraState fps = 30
+acc:9.680371 -0.655566 0.277539
+acc:9.823926 -0.751270 0.315820
+acc:9.833496 -0.832617 0.239258
+acc:9.866992 -0.775195 0.244043
+acc:9.771289 -0.751270 0.248828
+ftp sending error...: [Errno 2] No such file or directory: '/data/media/tmux.log'
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}
+Waiting for data (timeout)...
+Waiting for data (timeout)...
+Broadcasting: 255.255.255.255:{"Carrot2": "0.9.9", "IsOnroad": true, "CarrotRouteActive": false, "ip": "192.168.213.67", "port": 7706, "log_carrot": "", "v_cruise_kph": 0, "v_ego_kph": 0, "tbt_dist": 0, "sdi_dist": 0, "active": false, "xState": 0, "trafficState": 0}

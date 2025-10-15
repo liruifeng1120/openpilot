@@ -1,0 +1,15 @@
+diff --git a/selfdrive/car/card.py b/selfdrive/car/card.py
+index 8c3ece0..be271f2 100755
+--- a/selfdrive/car/card.py
++++ b/selfdrive/car/card.py
+@@ -101,7 +101,9 @@ class Car:
+           cached_params = _cached_params
+ 
+       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), alpha_long_allowed, is_release, num_pandas, cached_params)
+-      self.RI = interfaces[self.CI.CP.carFingerprint].RadarInterface(self.CI.CP)
++      #self.RI = interfaces[self.CI.CP.carFingerprint].RadarInterface(self.CI.CP)
++      from opendbc.car.radar_interface import RadarInterface
++      self.RI = RadarInterface(self.CI.CP)
+       self.CP = self.CI.CP
+ 
+       # continue onto next fingerprinting step in pandad
