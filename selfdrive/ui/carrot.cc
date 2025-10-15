@@ -2584,7 +2584,7 @@ public:
             }
             if (show_datetime == 1 || show_datetime == 3) {
                 //strftime(str, sizeof(str), "%m-%d-%a", local);
-                const char* weekdays_ko[] = { "일", "월", "화", "수", "목", "금", "토" };
+                const char* weekdays_ko[] = { "日", "一", "二", "三", "四", "五", "六" };
                 strftime(str, sizeof(str), "%m-%d", local); // 날짜만 가져옴
                 int weekday_index = local->tm_wday; // tm_wday: 0=일, 1=월, ..., 6=토
                 snprintf(str + strlen(str), sizeof(str) - strlen(str), "(%s)", weekdays_ko[weekday_index]);
