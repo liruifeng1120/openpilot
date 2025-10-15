@@ -35,7 +35,7 @@
 #include "third_party/libyuv/include/libyuv.h"
 #include "common/timing.h"
 
-//#define USING_AMD_GPU
+#define USING_AMD_GPU
 
 using namespace std;
 using namespace json11;
@@ -140,35 +140,32 @@ void initialize_yolo(const std::string& model_path) {
 Ort::Env env(ORT_LOGGING_LEVEL_WARNING, "yolo");
 std::unique_ptr<Ort::Session> session;
 
-void initialize_yolo(const std::string& model_path) {
-    try {
-        Ort::SessionOptions session_options;
-        session_options.SetIntraOpNumThreads(1);
-        session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
 
-        // ✅ 启用 ROCm Execution Provider
-        OrtStatus* status = OrtSessionOptionsAppendExecutionProvider_ROCM(session_options, 0);
-        if (status != nullptr) {
-            const char* msg = Ort::GetApi().GetErrorMessage(status);
-            std::cerr << "Failed to append ROCm Execution Provider: " << msg << std::endl;
-            Ort::GetApi().ReleaseStatus(status);
-            throw std::runtime_error("ROCm Execution Provider init failed");
-        }
-
-        // ✅ 创建 Session
-        session = std::make_unique<Ort::Session>(env, model_path.c_str(), session_options);
-
-        // ✅ 输出信息（替代已删除的 provider 列表函数）
-        std::cout << "[YOLO] ONNX Runtime initialized with ROCm Execution Provider (v1.18.0)" << std::endl;
-        std::cout << "[YOLO] Model path: " << model_path << std::endl;
-
-    } catch (const Ort::Exception& e) {
-        std::cerr << "ONNX Runtime error: " << e.what() << std::endl;
-        throw;
-    } catch (const std::exception& e) {
-        std::cerr << "General error: " << e.what() << std::endl;
-        throw;
-    }
+void initialize_yolo(const std::string& model_path) {  
+    try {  
+        Ort::SessionOptions session_options;  
+        session_options.SetIntraOpNumThreads(1);  
+        session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);  
+  
+        // 使用 C++ API 添加 ROCm 执行提供程序  
+        OrtROCMProviderOptions rocm_options;  
+        rocm_options.device_id = 0;  
+        rocm_options.do_copy_in_default_stream = 1;  
+        session_options.AppendExecutionProvider_ROCM(rocm_options);  
+  
+        // 创建 Session  
+        session = std::make_unique<Ort::Session>(env, model_path.c_str(), session_options);  
+  
+        std::cout << "[YOLO] ONNX Runtime initialized with ROCm Execution Provider" << std::endl;  
+        std::cout << "[YOLO] Model path: " << model_path << std::endl;  
+  
+    } catch (const Ort::Exception& e) {  
+        std::cerr << "ONNX Runtime error: " << e.what() << std::endl;  
+        throw;  
+    } catch (const std::exception& e) {  
+        std::cerr << "General error: " << e.what() << std::endl;  
+        throw;  
+    }  
 }
 #endif
 

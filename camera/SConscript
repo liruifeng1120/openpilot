@@ -8,8 +8,8 @@ opencv_cflags = os.popen('pkg-config --cflags opencv4').read().strip().split()
 opencv_libs = os.popen('pkg-config --libs opencv4').read().strip().split()
 
 # ---------------- ONNX Runtime 路径 ----------------
-onnx_include = Dir('#/third_party/onnxruntime-linux-x64-rocm-1.18.0/include').abspath
-onnx_lib = Dir('#/third_party/onnxruntime-linux-x64-rocm-1.18.0/lib').abspath
+onnx_include = Dir('#/third_party/onnxruntime-rocm/include/onnxruntime').abspath
+onnx_lib = Dir('#/third_party/onnxruntime-rocm/lib').abspath
 
 # ---------------- openpilot 头文件路径 ----------------
 # 添加 openpilot 核心头文件路径

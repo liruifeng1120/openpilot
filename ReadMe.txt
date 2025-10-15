@@ -5,6 +5,9 @@ https://gitee.com/huheas/pilotosinit/blob/master/README.md
 export http_proxy=http://192.168.1.10:7897
 export https_proxy=http://192.168.1.10:7897
 
+export http_proxy=http://192.168.22.86:7897
+export https_proxy=http://192.168.22.86:7897
+
 安装git和ssh服务器
 sudo apt update
 sudo apt install git -y
