@@ -71,3 +71,13 @@ env.Program(
     LIBPATH=all_libpath,
     LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']
 )
+
+# ---------------- Program: web_camera ----------------
+env.Program(
+    target='usb_camera',
+    source=['usb_camera.cpp', 'json11.cpp'],
+    CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + all_includes,
+    LIBS=all_libs,
+    LIBPATH=all_libpath,
+    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']
+)
