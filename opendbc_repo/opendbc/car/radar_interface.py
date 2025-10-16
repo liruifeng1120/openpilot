@@ -150,6 +150,7 @@ class RadarInterface(RadarInterfaceBase):
         self._pts_cache[track_id].dRel = d_rel
         self._pts_cache[track_id].yRel = y_rel
         self._pts_cache[track_id].vRel = float(cpt['VRelLong'])
+        self._pts_cache[track_id].vLead = self._pts_cache[track_id].vRel + self.v_ego
         self._pts_cache[track_id].aRel = float('nan')
         self._pts_cache[track_id].measured = True
 
