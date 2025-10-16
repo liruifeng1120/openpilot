@@ -1,11 +1,21 @@
-#include "selfdrive/locationd/locationd.h"
+#include <getopt.h>
+
+#include "selfdrive/locationd/locationd_jy62.h"
 
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <string>
+#include <sstream>
+#include <thread>
+#include <algorithm>
+#include <iterator>
 
 using namespace EKFS;
 using namespace Eigen;
@@ -88,7 +98,14 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
 
   VectorXd ecef_pos = this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
   this->converter = std::make_unique<LocalCoord>((ECEF) { .x = ecef_pos[0], .y = ecef_pos[1], .z = ecef_pos[2] });
-  this->configure_gnss_source(gnss_source);
+
+  // 初始化设备类型
+  this->device_type_ = ImuDeviceType::NONE;
+  this->is_jy62_device_ = false;
+  this->device_path_ = "/dev/ttyUSB0";
+  this->baud_rate_ = 115200;  // JY62设备默认波特率
+  this->jy62_fd_ = -1;
+  this->jy62_running_ = false;
 }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
@@ -250,7 +267,8 @@ void Localizer::handle_sensor(double current_time, const cereal::SensorEventData
   }
 
   // TODO: handle messages from two IMUs at the same time
-  if (log.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
+  // For JY62 device, we allow BMX055 source
+  if (log.getSource() == cereal::SensorEventData::SensorSource::BMX055 && !this->is_jy62()) {
     return;
   }
 
@@ -347,7 +365,10 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     }
     orientation_error(i) -= M_PI;
   }
-  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
+  ECEF ecef_pos_struct = { ecef_pos(0), ecef_pos(1), ecef_pos(2) };
+  VectorXd ecef_pose_euler = ecef_euler_from_ned(ecef_pos_struct, orientation_ned_gps);
+  Quaterniond ecef_pose_quat = euler2quat(ecef_pose_euler);
+  VectorXd initial_pose_ecef_quat = quat2vector(ecef_pose_quat);
 
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
@@ -406,7 +427,7 @@ void Localizer::handle_gnss(double current_time, const cereal::GnssMeasurements:
     }
     orientation_error(i) -= M_PI;
   }
-  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ned_gps)));
+  VectorXd initial_pose_ecef_quat = quat2vector(euler2quat(ecef_euler_from_ned({ ecef_pos(0), ecef_pos[1], ecef_pos[2] }, orientation_ned_gps)));
 
   if (ecef_pos_std > GPS_POS_STD_THRESHOLD || ecef_vel_std > GPS_VEL_STD_THRESHOLD) {
     this->determine_gps_mode(current_time);
@@ -591,9 +612,15 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
   double t = log.getLogMonoTime() * 1e-9;
   this->time_check(t);
   if (log.isAccelerometer()) {
-    this->handle_sensor(t, log.getAccelerometer());
+    if (log.getAccelerometer().getSource() == cereal::SensorEventData::SensorSource::BMX055 && !this->is_jy62()) {
+      // 仅在非JY62设备模式下处理BMX055加速度计数据
+      this->handle_sensor(t, log.getAccelerometer());
+    }
   } else if (log.isGyroscope()) {
-    this->handle_sensor(t, log.getGyroscope());
+    if (log.getGyroscope().getSource() == cereal::SensorEventData::SensorSource::BMX055 && !this->is_jy62()) {
+      // 仅在非JY62设备模式下处理BMX055陀螺仪数据
+      this->handle_sensor(t, log.getGyroscope());
+    }
   } else if (log.isGpsLocation()) {
     this->handle_gps(t, log.getGpsLocation(), GPS_QUECTEL_SENSOR_TIME_OFFSET);
   } else if (log.isGpsLocationExternal()) {
@@ -660,39 +687,30 @@ void Localizer::determine_gps_mode(double current_time) {
   }
 }
 
-void Localizer::configure_gnss_source(const LocalizerGnssSource &source) {
-  this->gnss_source = source;
-  if (source == LocalizerGnssSource::UBLOX) {
-    this->gps_std_factor = 10.0;
-    this->gps_variance_factor = 1.0;
-    this->gps_vertical_variance_factor = 1.0;
-    this->gps_time_offset = GPS_UBLOX_SENSOR_TIME_OFFSET;
-  } else {
-    this->gps_std_factor = 2.0;
-    this->gps_variance_factor = 0.0;
-    this->gps_vertical_variance_factor = 3.0;
-    this->gps_time_offset = GPS_QUECTEL_SENSOR_TIME_OFFSET;
-  }
-}
 
 int Localizer::locationd_thread() {
   Params params;
-  LocalizerGnssSource source;
+  // LocalizerGnssSource source;
   const char* gps_location_socket;
   if (params.getBool("UbloxAvailable")) {
-    source = LocalizerGnssSource::UBLOX;
+    // source = LocalizerGnssSource::UBLOX;
     gps_location_socket = "gpsLocationExternal";
   } else {
-    source = LocalizerGnssSource::QCOM;
+    // LocalizerGnssSource source = LocalizerGnssSource::QCOM;
     gps_location_socket = "gpsLocation";
   }
 
-  this->configure_gnss_source(source);
+  // Removed configure_gnss_source call since it's not defined
   const std::initializer_list<const char *> service_list = {gps_location_socket, "cameraOdometry", "liveCalibration",
                                                           "carState", "accelerometer", "gyroscope"};
 
   SubMaster sm(service_list, {}, nullptr, {gps_location_socket});
   PubMaster pm({"liveLocationKalman"});
+
+  // 如果是JY62设备，启动读取线程
+  if (this->is_jy62_device_) {
+    this->start_jy62_reader();
+  }
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
@@ -743,7 +761,7 @@ int Localizer::locationd_thread() {
       }
       printf("InputsOK: %d, SensorsOK: %d, GPSOK: %d, FilterInitialized: %d\n", inputsOK, sensorsOK, gpsOK, filterInitialized);
       */
-      
+
       // Log time to first fix
       if (gpsOK && std::isnan(this->ttff) && !std::isnan(this->first_valid_log_time)) {
         this->ttff = std::max(1e-3, (sm[trigger_msg].getLogMonoTime() * 1e-9) - this->first_valid_log_time);
@@ -763,12 +781,529 @@ int Localizer::locationd_thread() {
       cnt++;
     }
   }
+
+  // 停止JY62设备读取
+  if (this->is_jy62_device_) {
+    this->stop_jy62_reader();
+  }
+
   return 0;
 }
 
-int main() {
-  util::set_realtime_priority(5);
+int main(int argc, char *argv[]) {
+  const std::string default_device_path = "/dev/ttyUSB0";
+  const int default_baud_rate = 115200;
+
+  std::string device_path = default_device_path;
+  int baud_rate = default_baud_rate;
+  std::string device_type = "jy62"; // 默认使用JY62设备
+
+  // 解析命令行参数
+  int opt;
+  const char* short_opts = "d:b:t:";
+  const struct option long_opts[] = {
+    {"device", required_argument, NULL, 'd'},
+    {"baud", required_argument, NULL, 'b'},
+    {"type", required_argument, NULL, 't'},
+    {NULL, 0, NULL, 0}
+  };
+  int long_index = 0;
+
+  while ((opt = getopt_long(argc, argv, short_opts, long_opts, &long_index)) != -1) {
+    switch (opt) {
+      case 'd':
+        device_path = optarg;
+        break;
+      case 'b':
+        baud_rate = std::stoi(optarg);
+        break;
+      case 't':
+        device_type = optarg;
+        break;
+      default:
+        fprintf(stderr, "Usage: %s [-d device_path|--device=device_path] [-b baud_rate|--baud=baud_rate] [-t device_type|--type=device_type]\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+  }
+
+  LOGW("Starting locationd with device type: %s, device path: %s, baud rate: %d",
+       device_type.c_str(), device_path.c_str(), baud_rate);
 
   Localizer localizer;
+
+  // 如果指定了JY62设备类型，则设置相关参数
+  if (device_type == "jy62") {
+    localizer.set_device_type(ImuDeviceType::JY62);
+    localizer.set_device_params(device_path, baud_rate);
+  }
+
   return localizer.locationd_thread();
+}
+
+// 添加JY62设备相关的方法实现
+void Localizer::set_device_type(ImuDeviceType type) {
+  this->device_type_ = type;
+  this->is_jy62_device_ = (type == ImuDeviceType::JY62);
+}
+
+bool Localizer::is_jy62() const {
+  return (this->device_type_ == ImuDeviceType::JY62);
+}
+
+// 设置设备参数
+void Localizer::set_device_params(const std::string& device_path, int baud_rate) {
+  // 设置设备路径和波特率
+  this->device_path_ = device_path;
+  this->baud_rate_ = baud_rate;
+
+  LOGW("Device path set to: %s, baud rate set to: %d", this->device_path_.c_str(), this->baud_rate_);
+}
+
+// 打开JY62串口设备
+int Localizer::open_jy62_device() {
+  LOGW("Attempting to open JY62 device at %s with baud rate %d", this->device_path_.c_str(), this->baud_rate_);
+
+  // 打开串口设备
+  this->jy62_fd_ = open(this->device_path_.c_str(), O_RDONLY | O_NOCTTY);
+  if (this->jy62_fd_ < 0) {
+    LOGE("Failed to open JY62 device at %s", this->device_path_.c_str());
+    return -1;
+  }
+
+  // 配置串口参数
+  struct termios tty;
+  if (tcgetattr(this->jy62_fd_, &tty) != 0) {
+    LOGE("Failed to get terminal attributes for JY62 device");
+    close(this->jy62_fd_);
+    this->jy62_fd_ = -1;
+    return -1;
+  }
+
+  // 设置波特率
+  speed_t baud_rate;
+  switch (this->baud_rate_) {
+    case 9600:   baud_rate = B9600;   break;
+    case 19200:  baud_rate = B19200;  break;
+    case 38400:  baud_rate = B38400;  break;
+    case 57600:  baud_rate = B57600;  break;
+    case 115200: baud_rate = B115200; break;
+    case 230400: baud_rate = B230400; break;
+    case 460800: baud_rate = B460800; break;
+    case 921600: baud_rate = B921600; break;
+    default:     
+      LOGW("Unsupported baud rate %d, using default 115200", this->baud_rate_);
+      baud_rate = B115200;   
+      break;
+  }
+
+  cfsetispeed(&tty, baud_rate);
+  cfsetospeed(&tty, baud_rate);
+
+  // 设置数据位为8位
+  tty.c_cflag &= ~CSIZE;
+  tty.c_cflag |= CS8;
+
+  // 无奇偶校验
+  tty.c_cflag &= ~PARENB;
+
+  // 1个停止位
+  tty.c_cflag &= ~CSTOPB;
+
+  // 启用接收器
+  tty.c_cflag |= CREAD | CLOCAL;
+
+  // 禁用规范模式和回显
+  tty.c_lflag &= ~ICANON;
+  tty.c_lflag &= ~ECHO;
+  tty.c_lflag &= ~ECHOE;
+  tty.c_lflag &= ~ISIG;
+
+  // 禁用软件流控
+  tty.c_iflag &= ~(IXON | IXOFF | IXANY);
+  tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL);
+
+  // 禁用输出处理
+  tty.c_oflag &= ~OPOST;
+  tty.c_oflag &= ~ONLCR;
+
+  // 设置超时
+  tty.c_cc[VMIN] = 0;      // 最小字符数
+  tty.c_cc[VTIME] = 10;    // 超时时间(1秒)
+
+  // 应用设置
+  if (tcsetattr(this->jy62_fd_, TCSANOW, &tty) != 0) {
+    LOGE("Failed to set terminal attributes for JY62 device");
+    close(this->jy62_fd_);
+    this->jy62_fd_ = -1;
+    return -1;
+  }
+
+  LOGW("Successfully opened JY62 device at %s with baud rate %d", this->device_path_.c_str(), this->baud_rate_);
+  return 0;
+}
+
+// 从JY62设备读取一行数据
+std::string Localizer::read_jy62_line() {
+  if (this->jy62_fd_ < 0) return "";
+
+  char buffer[256];
+  ssize_t bytes_read;
+  std::string line;
+
+  // 逐字节读取直到换行符或读完缓冲区
+  while ((bytes_read = read(this->jy62_fd_, buffer, sizeof(buffer) - 1)) > 0) {
+    buffer[bytes_read] = '\0';
+    line += buffer;
+
+    // 检查是否包含换行符
+    size_t newline_pos = line.find('\n');
+    if (newline_pos != std::string::npos) {
+      // 截取到换行符的部分作为一行返回
+      std::string result = line.substr(0, newline_pos);
+      // 保留换行符后的内容供下次读取
+      // 这里简化处理，实际应用中可能需要更复杂的缓冲区管理
+      return result;
+    }
+  }
+
+  return line;
+}
+
+std::tuple<double, double, double> Localizer::parse_accelerometer(const std::string& line) {
+  if (line.find("ACC:") != std::string::npos) {
+    std::istringstream iss(line.substr(4));
+    double x, y, z;
+    if (iss >> x >> y >> z) {
+      // 转换为 m/s² (g → m/s²)
+      return std::make_tuple(x * 9.8, y * 9.8, z * 9.8);
+    }
+  }
+  return std::make_tuple(0.0, 0.0, 0.0);
+}
+
+std::tuple<double, double, double> Localizer::parse_gyroscope(const std::string& line) {
+  if (line.find("GYRO:") != std::string::npos) {
+    std::istringstream iss(line.substr(5));
+    double x, y, z;
+    if (iss >> x >> y >> z) {
+      // 转换为 rad/s (°/s → rad/s)
+      const double DEG_TO_RAD = M_PI / 180.0;
+      return std::make_tuple(x * DEG_TO_RAD, y * DEG_TO_RAD, z * DEG_TO_RAD);
+    }
+  }
+  return std::make_tuple(0.0, 0.0, 0.0);
+}
+
+std::tuple<double, double, double> Localizer::parse_angle(const std::string& line) {
+  if (line.find("ANGLE:") != std::string::npos) {
+    std::istringstream iss(line.substr(6));
+    double pitch, roll, yaw;
+    if (iss >> pitch >> roll >> yaw) {
+      return std::make_tuple(pitch, roll, yaw);
+    }
+  }
+  return std::make_tuple(0.0, 0.0, 0.0);
+}
+
+// 发布加速度计数据到系统中
+void Localizer::publish_accelerometer(double x, double y, double z) {
+  // 创建并发送加速度计消息
+  MessageBuilder msg;
+  auto event = msg.initEvent();
+  event.setLogMonoTime(nanos_since_boot());
+
+  auto accel = event.initAccelerometer();
+  accel.setSource(cereal::SensorEventData::SensorSource::BMX055);
+  accel.setSensor(SENSOR_ACCELEROMETER);
+  accel.setType(SENSOR_TYPE_ACCELEROMETER);
+  accel.setTimestamp(nanos_since_epoch());
+
+  auto accelVec = accel.initAcceleration();
+  std::vector<float> accelVals = {(float)y, (float)x, (float)z};  // 调整坐标轴顺序以匹配系统约定
+  accelVec.setV(kj::ArrayPtr<float>(accelVals.data(), accelVals.size()));
+
+  accel.setVersion(1);
+
+  // 发布消息
+  PubMaster pm({"accelerometer"});
+  pm.send("accelerometer", msg);
+}
+
+// 发布陀螺仪数据到系统中
+void Localizer::publish_gyroscope(double x, double y, double z) {
+  // 创建并发送陀螺仪消息
+  MessageBuilder msg;
+  auto event = msg.initEvent();
+  event.setLogMonoTime(nanos_since_boot());
+
+  auto gyro = event.initGyroscope();
+  gyro.setSource(cereal::SensorEventData::SensorSource::BMX055);
+  gyro.setSensor(SENSOR_GYRO_UNCALIBRATED);
+  gyro.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
+  gyro.setTimestamp(nanos_since_epoch());
+
+  auto gyroVec = gyro.initGyroUncalibrated();
+  std::vector<float> gyroVals = {(float)y, (float)x, (float)z};  // 调整坐标轴顺序以匹配系统约定
+  gyroVec.setV(kj::ArrayPtr<float>(gyroVals.data(), gyroVals.size()));
+
+  gyro.setVersion(1);
+
+  // 发布消息
+  PubMaster pm({"gyroscope"});
+  pm.send("gyroscope", msg);
+}
+
+// 发布角度数据到系统中
+void Localizer::publish_orientation(double pitch, double roll, double yaw) {
+  // 暂时不需要直接发布角度数据，因为系统会通过加速度和陀螺仪数据计算姿态
+  LOGD("Orientation data: pitch=%f, roll=%f, yaw=%f", pitch, roll, yaw);
+}
+
+// 从JY62设备读取数据包
+std::vector<uint8_t> Localizer::read_jy62_packet() {
+  if (this->jy62_fd_ < 0) return {};
+
+  static std::vector<uint8_t> buffer;  // 静态缓冲区保存未处理的数据
+  uint8_t temp_buffer[256];
+
+  // 先读取新数据到临时缓冲区
+  int bytes_read = read(this->jy62_fd_, temp_buffer, sizeof(temp_buffer));
+
+  if (bytes_read > 0) {
+    // 将新数据添加到缓冲区
+    buffer.insert(buffer.end(), temp_buffer, temp_buffer + bytes_read);
+  } else if (bytes_read < 0) {
+    // 读取错误
+    LOGE("Error reading from JY62 device: %s", strerror(errno));
+    return {};
+  }
+
+  // 如果缓冲区太大，清理掉旧数据避免内存泄漏
+  if (buffer.size() > 1024) {
+    buffer.erase(buffer.begin(), buffer.begin() + 512);
+  }
+
+  // 尝试从缓冲区中提取完整数据包
+  while (buffer.size() >= 11) {
+    // 查找数据包起始标记
+    size_t start_pos = 0;
+    while (start_pos < buffer.size() && buffer[start_pos] != 0x55) {
+      start_pos++;
+    }
+
+    // 如果没有找到起始标记，清空缓冲区
+    if (start_pos >= buffer.size()) {
+      buffer.clear();
+      break;
+    }
+
+    // 如果起始标记不在开头，删除前面的无效数据
+    if (start_pos > 0) {
+      buffer.erase(buffer.begin(), buffer.begin() + start_pos);
+    }
+
+    // 确保有足够的数据构成完整数据包
+    if (buffer.size() < 11) {
+      break;
+    }
+
+    // 检查数据包类型
+    uint8_t packet_type = buffer[1];
+
+    // 检查是否为有效的数据包类型
+    bool valid_type = (packet_type >= 0x50 && packet_type <= 0x59);
+    if (!valid_type) {
+      // 未知类型，跳过起始字节并继续查找
+      if (!buffer.empty()) {
+        buffer.erase(buffer.begin());
+      }
+      continue;
+    }
+
+    // 计算校验和
+    uint8_t checksum = 0;
+    for (int i = 0; i < 10; ++i) {
+      checksum += buffer[i];
+    }
+
+    if (checksum != buffer[10]) {
+      LOGW("Checksum mismatch: expected 0x%02x, got 0x%02x", checksum, buffer[10]);
+      // 校验失败，仅跳过起始字节，而不是整个数据包
+      if (!buffer.empty()) {
+        buffer.erase(buffer.begin());
+      }
+      continue;
+    }
+
+    // 提取完整且有效的数据包
+    std::vector<uint8_t> packet(buffer.begin(), buffer.begin() + 11);
+    buffer.erase(buffer.begin(), buffer.begin() + 11);
+    LOGD("Successfully extracted packet of type 0x%02x", packet_type);
+    return packet;
+  }
+
+  return {};
+}
+
+// 根据文档规范解析JY62数据包
+bool Localizer::parse_jy62_packet(const std::vector<uint8_t>& packet, 
+                         double& accel_x, double& accel_y, double& accel_z,
+                         double& gyro_x, double& gyro_y, double& gyro_z) {
+  // 检查数据包大小
+  if (packet.size() < 11) {  // 至少需要11个字节
+    cloudlog_e(0, __FILE__, __LINE__, __func__, "Invalid JY62 packet size: %zu", packet.size());
+    return false;
+  }
+
+  // 检查协议头
+  if (packet[0] != 0x55) {
+    cloudlog_e(0, __FILE__, __LINE__, __func__, "Invalid JY62 packet header: 0x%02x", packet[0]);
+    return false;
+  }
+
+  // 计算校验和 (前10个字节之和的低8位)
+  uint8_t expected_sum = 0;
+  for (int i = 0; i < 10; i++) {
+    expected_sum += packet[i];
+  }
+  uint8_t actual_sum = packet[10];
+
+  if (expected_sum != actual_sum) {
+    cloudlog_e(0, __FILE__, __LINE__, __func__, "JY62 packet checksum error: expected 0x%02x, got 0x%02x",
+               expected_sum, actual_sum);
+    return false;
+  }
+
+  // 解析数据包类型
+  uint8_t type = packet[1];
+  switch (type) {
+    case 0x51: { // 加速度数据
+      // 检查是否有足够的数据
+      if (packet.size() < 11) return false;
+      
+      // 解析加速度数据
+      int16_t ax = (int16_t)((packet[3] << 8) | packet[2]);
+      int16_t ay = (int16_t)((packet[5] << 8) | packet[4]);
+      int16_t az = (int16_t)((packet[7] << 8) | packet[6]);
+      
+      // 转换为物理单位 (g)
+      accel_x = ax / 32768.0 * 16.0;
+      accel_y = ay / 32768.0 * 16.0;
+      accel_z = az / 32768.0 * 16.0;
+      
+      return true;
+    }
+    case 0x52: { // 角速度数据
+      // 检查是否有足够的数据
+      if (packet.size() < 11) return false;
+      
+      // 解析角速度数据
+      int16_t wx = (int16_t)((packet[3] << 8) | packet[2]);
+      int16_t wy = (int16_t)((packet[5] << 8) | packet[4]);
+      int16_t wz = (int16_t)((packet[7] << 8) | packet[6]);
+      
+      // 转换为物理单位 (°/s)
+      gyro_x = wx / 32768.0 * 2000.0;
+      gyro_y = wy / 32768.0 * 2000.0;
+      gyro_z = wz / 32768.0 * 2000.0;
+      
+      return true;
+    }
+    case 0x53: { // 角度数据
+      // 检查是否有足够的数据
+      if (packet.size() < 11) return false;
+      
+      // 解析角度数据
+      int16_t roll_l = (int16_t)((packet[3] << 8) | packet[2]);
+      int16_t pitch_l = (int16_t)((packet[5] << 8) | packet[4]);
+      int16_t yaw_l = (int16_t)((packet[7] << 8) | packet[6]);
+      
+      // 转换为物理单位 (°)
+      double roll = roll_l / 32768.0 * 180.0;
+      double pitch = pitch_l / 32768.0 * 180.0;
+      double yaw = yaw_l / 32768.0 * 180.0;
+      
+      // 发布角度数据
+      publish_orientation(pitch, roll, yaw);
+      
+      return true;
+    }
+    default: {
+      cloudlog_e(0, __FILE__, __LINE__, __func__, "Unknown JY62 packet type: 0x%02x", type);
+      return false;
+    }
+  }
+}
+
+// 更新后的JY62设备数据读取线程
+void Localizer::jy62_reader_thread() {
+  if (!this->is_jy62_device_ || this->jy62_fd_ < 0) return;
+
+  LOGW("Starting JY62 reader thread");
+
+  double accel_x = 0, accel_y = 0, accel_z = 0;
+  double gyro_x = 0, gyro_y = 0, gyro_z = 0;
+
+  int read_count = 0;
+
+  while (this->jy62_running_) {
+    std::vector<uint8_t> packet = this->read_jy62_packet();
+    if (!packet.empty()) {
+      read_count++;
+      LOGD("Received packet #%d, type: 0x%02x, size: %zu", read_count, packet[1], packet.size());
+
+      // 解析数据包
+      if (this->parse_jy62_packet(packet, accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z)) {
+        // 根据数据包类型发布相应的数据
+        uint8_t packet_type = packet[1];
+        switch (packet_type) {
+          case 0x51: // 加速度数据
+            this->publish_accelerometer(accel_x, accel_y, accel_z);
+            break;
+          case 0x52: // 角速度数据
+            this->publish_gyroscope(gyro_x, gyro_y, gyro_z);
+            break;
+          case 0x53: // 角度数据
+            // 当前不处理角度数据
+            LOGD("Angle packet received and validated");
+            break;
+          default:
+            LOGD("Valid packet of type 0x%02x processed", packet_type);
+            break;
+        }
+      } else {
+        LOGD("Failed to parse packet #%d", read_count);
+      }
+    }
+
+    // 短暂休眠以避免过度占用CPU
+    usleep(5000); // 5ms
+  }
+
+  LOGW("JY62 reader thread stopped");
+}
+
+// 启动JY62设备读取
+void Localizer::start_jy62_reader() {
+  if (!this->is_jy62_device_) return;
+
+  if (this->open_jy62_device() == 0) {
+    this->jy62_running_ = true;
+    this->jy62_thread_ = std::thread(&Localizer::jy62_reader_thread, this);
+  }
+}
+
+// 停止JY62设备读取
+void Localizer::stop_jy62_reader() {
+  if (this->is_jy62_device_) {
+    if (this->jy62_thread_.joinable()) {
+      this->jy62_running_ = false;
+      this->jy62_thread_.join();
+    }
+
+    if (this->jy62_fd_ >= 0) {
+      close(this->jy62_fd_);
+      this->jy62_fd_ = -1;
+    }
+  }
 }

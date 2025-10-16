@@ -8,8 +8,8 @@ opencv_cflags = os.popen('pkg-config --cflags opencv4').read().strip().split()
 opencv_libs = os.popen('pkg-config --libs opencv4').read().strip().split()
 
 # ---------------- ONNX Runtime 路径 ----------------
-onnx_include = Dir('#/third_party/onnxruntime/include').abspath
-onnx_lib = Dir('#/third_party/onnxruntime/lib').abspath
+onnx_include = Dir('#/third_party/onnxruntime-rocm/include/onnxruntime').abspath
+onnx_lib = Dir('#/third_party/onnxruntime-rocm/lib').abspath
 
 # ---------------- openpilot 头文件路径 ----------------
 # 添加 openpilot 核心头文件路径
@@ -66,6 +66,15 @@ env.Program(
 env.Program(
     target='c3cam_8845',
     source=['c3cam_8845.cpp', 'json11.cpp'],
+    CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + all_includes,
+    LIBS=all_libs,
+    LIBPATH=all_libpath,
+    LINKFLAGS=[f'-Wl,-rpath,{onnx_lib}']
+)
+
+env.Program(
+    target='c3cam_amdgpu',
+    source=['c3cam_amdgpu.cpp', 'json11.cpp'],
     CPPFLAGS=['-std=c++17', f'-I{onnx_include}'] + all_includes,
     LIBS=all_libs,
     LIBPATH=all_libpath,
