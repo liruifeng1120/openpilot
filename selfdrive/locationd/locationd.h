@@ -6,7 +6,6 @@
 #include <memory>
 #include <map>
 #include <string>
-#include <thread>
 
 #include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
@@ -25,12 +24,6 @@
 
 enum LocalizerGnssSource {
   UBLOX, QCOM
-};
-
-// JY62设备类型枚举
-enum class ImuDeviceType {
-  NONE,
-  JY62
 };
 
 class Localizer {
@@ -71,14 +64,6 @@ public:
 
   void input_fake_gps_observations(double current_time);
 
-  // JY62设备相关的方法声明
-  void set_device_type(ImuDeviceType type);
-  bool is_jy62() const;
-  void set_device_params(const std::string& device_path, int baud_rate);
-  std::tuple<double, double, double> parse_accelerometer(const std::string& line);
-  std::tuple<double, double, double> parse_gyroscope(const std::string& line);
-  std::tuple<double, double, double> parse_angle(const std::string& line);
-
 private:
   std::unique_ptr<LiveKalman> kf;
 
@@ -100,6 +85,7 @@ private:
   double first_valid_log_time = NAN;
   double ttff = NAN;
   double last_gps_msg = 0;
+  LocalizerGnssSource gnss_source;
   bool observation_timings_invalid = false;
   std::map<std::string, double> observation_values_invalid;
   bool standstill = true;
@@ -112,29 +98,6 @@ private:
 
   uint32_t accel_data_cnt = 0;
   uint32_t gyro_data_cnt = 0;
-  std::unique_ptr<PubMaster> _pm;  // 添加这一行
 
-  // JY62设备相关的成员变量
-  ImuDeviceType device_type_;
-  bool is_jy62_device_ = false;
-  std::string device_path_;
-  int baud_rate_;
-  int jy62_fd_;
-  std::thread jy62_thread_;
-  bool jy62_running_ = false;
-
-  // JY62设备私有方法
-  int open_jy62_device();
-  std::string read_jy62_line();
-  void publish_accelerometer(double x, double y, double z);
-  void publish_gyroscope(double x, double y, double z);
-  void publish_orientation(double pitch, double roll, double yaw);
-  std::vector<uint8_t> read_jy62_packet();
-  bool parse_jy62_packet(const std::vector<uint8_t>& packet,
-                         double& accel_x, double& accel_y, double& accel_z,
-                         double& gyro_x, double& gyro_y, double& gyro_z);
-  void jy62_reader_thread();
-  void start_jy62_reader();
-  void stop_jy62_reader();
-
+  void configure_gnss_source(const LocalizerGnssSource &source);
 };
