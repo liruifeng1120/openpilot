@@ -18,6 +18,7 @@ from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_I
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import get_build_metadata, terms_version, training_version
 from openpilot.system.hardware.hw import Paths
+from openpilot.common.realtime import config_realtime_process, set_core_affinity
 
 def get_default_params():
   default_params : list[tuple[str, str | bytes]] = [
@@ -249,15 +250,15 @@ def get_default_params_key():
   all_keys = [key for key, _ in default_params]
   return all_keys
 
-def manager_init() -> None:
-  save_bootlog()
-
-  build_metadata = get_build_metadata()
+def manager_init():
+  # setup manager struct
+  config_realtime_process([0, 1, 2, 3], 31)
 
   params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
   params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
-  params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+  
+  build_metadata = get_build_metadata()
   if build_metadata.release_channel:
     params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
 
@@ -268,8 +269,12 @@ def manager_init() -> None:
 
   # set unset params
   for k, v in default_params:
-    if params.get(k) is None:
-      params.put(k, v)
+    try:
+      if params.get(k) is None:
+        params.put(k, v)
+    except Exception:
+      # Skip unknown parameter names
+      pass
 
   # Create folders needed for msgq
   try:
