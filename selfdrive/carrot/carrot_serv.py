@@ -828,6 +828,9 @@ class CarrotServ:
       safe_sec = 2.0
       atc_desired = min(atc_desired, self.calculate_current_speed(x_dist_to_turn - atc_dist, atc_speed, safe_sec, decel))
 
+      if atc_type == 5:
+        print(f"atc_type={atc_type},atc_desired={atc_desired:.1f},atc_speed={atc_speed:.1f},atc_dist={atc_dist:.1f},x_dist={x_dist_to_turn:.1f},start_dist={atc_start_dist:.1f}")
+
     if (self.showDebugLog & 1) > 0 and check_steer:
       debugText = (f"***atc info: type={atc_type_org},{atc_type},xdist={x_dist_to_turn:.1f},max_xdist={self.xDistToTurnMax:.1f}(cnt:{self.xDistToTurnMaxCnt})," +
                    f"start_dist={atc_start_dist:.1f},atc_dist={atc_dist:.1f},fork_dist={do_fork_dist:.1f}," +
