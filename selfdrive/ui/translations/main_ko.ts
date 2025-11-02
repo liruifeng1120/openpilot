@@ -1260,6 +1260,10 @@
         <source>Are you sure you want to reset %1?</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>AllCalibParams</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DrawCarrot</name>
