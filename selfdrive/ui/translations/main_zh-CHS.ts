@@ -421,25 +421,9 @@
         <translation>相机校准参数</translation>
     </message>
     <message>
-        <source>LiveDelay</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LiveTorqueParameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LiveParameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LiveParametersV2</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>AllLiveParams</source>
         <translation>实时学习参数</translation>
-    </message>    
+    </message>
     <message>
         <source>Select calibration parameter to reset</source>
         <translation>请选择你要重置的校准参数</translation>

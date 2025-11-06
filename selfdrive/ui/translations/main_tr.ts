@@ -409,27 +409,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ClearAllParams</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>CalibrationParams</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LiveDelay</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LiveTorqueParameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LiveParameters</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>LiveParametersV2</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -438,6 +418,14 @@
     </message>
     <message>
         <source>Are you sure you want to reset %1?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AllCalibParams</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AllLiveParams</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
