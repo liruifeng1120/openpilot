@@ -6,6 +6,8 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.common.params import Params
 from collections import deque
 
+from openpilot.selfdrive.carrot.amap_navi import AmapNaviBroadcaster #new
+
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
 TurnDirection = log.Desire
@@ -92,6 +94,8 @@ class ExistCounter:
 
 class DesireHelper:
   def __init__(self):
+    self.amap_navi = AmapNaviBroadcaster() #new
+    self.amap_navi_cmd_index_last = -1 #new
     self.params = Params()
     self.frame = 0
     self.lane_change_state = LaneChangeState.off
@@ -163,14 +167,14 @@ class DesireHelper:
                                                                                                     modeldata.laneLines[2], modeldata.roadEdges[1])
     self.lane_exist_left_count.update(lane_prob_left)
     self.lane_exist_right_count.update(lane_prob_right)
-    
+
     self.lane_width_left_queue.append(lane_width_left)
     self.lane_width_right_queue.append(lane_width_right)
     self.lane_width_left = np.mean(self.lane_width_left_queue)
     self.lane_width_right = np.mean(self.lane_width_right_queue)
     self.lane_width_left_diff = self.lane_width_left_queue[-1] - self.lane_width_left_queue[0]
     self.lane_width_right_diff = self.lane_width_right_queue[-1] - self.lane_width_right_queue[0]
-    
+
     min_lane_width = 2.5
     self.lane_width_left_count.update(self.lane_width_left > min_lane_width)
     self.lane_width_right_count.update(self.lane_width_right > min_lane_width)
@@ -202,7 +206,7 @@ class DesireHelper:
       self.model_turn_speed = self.model_turn_speed * 0.9 + model_turn_speed * 0.1
     else:
       self.model_turn_speed = 200.0
-    
+
   def update(self, carstate, modeldata, lateral_active, lane_change_prob, carrotMan, radarState):
 
     if self.frame % 100 == 0:
@@ -248,6 +252,13 @@ class DesireHelper:
       self.carrot_lane_change_count = int(0.2 / DT_MDL)
       #print(f"Desire lanechange: {carrotMan.carrotArg}")
       self.carrot_blinker_state = BLINKER_LEFT if carrotMan.carrotArg == "LEFT" else BLINKER_RIGHT
+    #new
+    elif self.amap_navi.cmd_index != self.amap_navi_cmd_index_last and ((self.amap_navi.remote_cmd == "LANECHANGE")
+                or (self.amap_navi.remote_cmd == "OVERTAKE")) and self.amap_navi.cmd_index >= 0:
+      self.amap_navi_cmd_index_last = self.amap_navi.cmd_index
+      self.carrot_lane_change_count = int(20. / DT_MDL)
+      self.carrot_blinker_state = BLINKER_LEFT if self.amap_navi.remote_arg == "LEFT" else BLINKER_RIGHT
+    #new
     elif atc_type in ["turn left", "turn right"]:
       if self.atc_active != 2:
         below_lane_change_speed = True
@@ -258,7 +269,7 @@ class DesireHelper:
     elif atc_type in ["fork left", "fork right", "atc left", "atc right"]:
       if self.atc_active != 2:
         below_lane_change_speed = False
-        atc_blinker_state = BLINKER_LEFT if atc_type in ["fork left", "atc left"] else BLINKER_RIGHT        
+        atc_blinker_state = BLINKER_LEFT if atc_type in ["fork left", "atc left"] else BLINKER_RIGHT
         self.atc_active = 1
     else:
       self.atc_active = 0
@@ -362,7 +373,7 @@ class DesireHelper:
         #self.auto_lane_change_enable = False if lane_exist_counter > 0 else True
         self.auto_lane_change_enable = False if lane_exist_counter > 0 or lane_change_available else True
         self.next_lane_change = False
-         
+
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
@@ -371,8 +382,8 @@ class DesireHelper:
           blinker_state == BLINKER_LEFT else LaneChangeDirection.right
 
         dir_map = {
-            LaneChangeDirection.left:  (carstate.steeringTorque > 0, carstate.leftBlindspot),
-            LaneChangeDirection.right: (carstate.steeringTorque < 0, carstate.rightBlindspot),
+            LaneChangeDirection.left:  (carstate.steeringTorque > 0, carstate.leftBlindspot or self.amap_navi.left_blindspot()), #new
+            LaneChangeDirection.right: (carstate.steeringTorque < 0, carstate.rightBlindspot or self.amap_navi.right_blindspot()), #new
         }
         torque_cond, blindspot_cond = dir_map.get(self.lane_change_direction, (False, False))
         torque_applied = carstate.steeringPressed and torque_cond
