@@ -414,7 +414,7 @@ def main(demo=False):
       modelv2_sp_send = messaging.new_message('modelV2SP')
       modelv2_sp_send.valid = True
       if not (custom_model and model_capabilities & ModelCapabilities.LateralPlannerSolution):
-        modelv2_sp_send.modelV2SP.laneChangePrev = DH.prev_lane_change
+        modelv2_sp_send.modelV2SP.laneChangePrev = False #DH.prev_lane_change
         modelv2_sp_send.modelV2SP.laneChangeEdgeBlock = lat_plan_sp.laneChangeEdgeBlockDEPRECATED
       pm.send('modelV2SP', modelv2_sp_send)
 

@@ -11,7 +11,7 @@ from openpilot.selfdrive.controls.lib.lateral_planner import LateralPlanner
 from openpilot.selfdrive.modeld.model_capabilities import ModelCapabilities
 from openpilot.selfdrive.sunnypilot import get_model_generation
 import cereal.messaging as messaging
-from openpilot.selfdrive.fishsp.traffic_light import CarrotPlanner
+from openpilot.selfdrive.carrot.traffic_light import CarrotPlanner
 
 
 def cumtrapz(x, t):

@@ -23,7 +23,7 @@ from openpilot.selfdrive.controls.lib.dynamic_experimental_controller import Dyn
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, V_CRUISE_UNSET
-from openpilot.selfdrive.fishsp.traffic_light import CarrotPlanner, XState
+from openpilot.selfdrive.carrot.traffic_light import CarrotPlanner, XState
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -2.5

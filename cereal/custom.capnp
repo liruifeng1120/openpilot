@@ -242,6 +242,9 @@ struct CarrotMan @0xb86e6369214c01c8 {
 	xSdiSpeedName @36 : Text;
   extBlinker @37 : Int32;
   extState @38 : Int32;
+
+  leftBlind @39 : Int32;
+	rightBlind @40 : Int32;
 }
 
 struct CustomReserved8 @0xf416ec09499d9d19 {

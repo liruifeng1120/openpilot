@@ -11,7 +11,7 @@ from openpilot.selfdrive.modeld.constants import index_function
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 from openpilot.common.logger import logger
-from openpilot.selfdrive.fishsp.traffic_light import CarrotPlanner
+from openpilot.selfdrive.carrot.traffic_light import CarrotPlanner
 from openpilot.common.params import Params
 
 if __name__ == '__main__':  # generating code
