@@ -176,6 +176,9 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   left_front_blind = meta.getLeftFrontBlind();
   right_front_blind = meta.getRightFrontBlind();
 
+  carrot_left_blind = cs_alive && car_state.getLeftBlind();
+  carrot_right_blind = cs_alive && car_state.getRightBlind();
+
   steerOverride = car_state.getSteeringPressed();
   gasOverride = car_state.getGasPressed();
   latActive = car_control.getLatActive();
@@ -1161,7 +1164,7 @@ void AnnotatedCameraWidget::drawLeftTurnSignal(QPainter &painter, int x, int y, 
 
   QColor circle_color, circle_color_0, circle_color_1;
   QColor arrow_color, arrow_color_0, arrow_color_1;
-  if ((left_blindspot || left_front_blind || lane_change_edge_block) && !(left_blinker && right_blinker)) {
+  if ((left_blindspot || left_front_blind || carrot_left_blind || lane_change_edge_block) && !(left_blinker && right_blinker)) {
     circle_color_0 = QColor(164, 0, 1);
     circle_color_1 = QColor(204, 0, 1);
     arrow_color_0 = QColor(72, 1, 1);
@@ -1227,7 +1230,7 @@ void AnnotatedCameraWidget::drawRightTurnSignal(QPainter &painter, int x, int y,
 
   QColor circle_color, circle_color_0, circle_color_1;
   QColor arrow_color, arrow_color_0, arrow_color_1;
-  if ((right_blindspot || right_front_blind || lane_change_edge_block) && !(left_blinker && right_blinker)) {
+  if ((right_blindspot || right_front_blind || carrot_right_blind || lane_change_edge_block) && !(left_blinker && right_blinker)) {
     circle_color_0 = QColor(164, 0, 1);
     circle_color_1 = QColor(204, 0, 1);
     arrow_color_0 = QColor(72, 1, 1);
@@ -1473,8 +1476,11 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   else if(left_front_blind || right_front_blind) {
     painter.setBrush(QColor::fromRgbF(1.0, 1.0, 0.0, 0.2));
   }
-  if (left_blindspot || left_front_blind) painter.drawPolygon(scene.lane_barrier_vertices[0]);
-  if (right_blindspot || right_front_blind) painter.drawPolygon(scene.lane_barrier_vertices[1]);
+  else if(carrot_left_blind || carrot_right_blind) {
+    painter.setBrush(QColor::fromRgbF(0.0, 0.0, 1.0, 0.2));
+  }
+  if (left_blindspot || left_front_blind || carrot_left_blind) painter.drawPolygon(scene.lane_barrier_vertices[0]);
+  if (right_blindspot || right_front_blind || carrot_right_blind) painter.drawPolygon(scene.lane_barrier_vertices[1]);
 
   // road edges
   for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {

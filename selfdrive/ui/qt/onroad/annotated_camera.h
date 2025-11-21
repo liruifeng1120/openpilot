@@ -118,6 +118,8 @@ private:
   bool right_blindspot = false;
   bool left_front_blind = false;
   bool right_front_blind = false;
+  bool carrot_left_blind = false;
+  bool carrot_right_blind = false;
   std::unique_ptr<PubMaster> e2e_state;
 
   bool steerOverride = false;
