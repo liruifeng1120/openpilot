@@ -29,8 +29,10 @@ void setMainWindow(QWidget *w) {
   void *egl = native->nativeResourceForWindow("egldisplay", w->windowHandle());
   assert(egl != nullptr);
 #elif defined(QT_WIDGETS_LIB)
-  // For PC, enable fullscreen if requested
-  if (fullscreen) {
+  // For PC, enable fullscreen by default, can toggle with F11
+  if (Hardware::PC()) {
+    w->setWindowState(Qt::WindowFullScreen);
+  } else if (fullscreen) {
     w->setWindowState(Qt::WindowFullScreen);
   }
 #endif
