@@ -4,13 +4,12 @@ void setMainWindow(QWidget *w) {
   const float scale = util::getenv("SCALE", 1.0f);
   const QSize sz = QGuiApplication::primaryScreen()->size();
 
-  // Check if fullscreen mode is requested
-  const bool fullscreen = util::getenv("FULLSCREEN", 0);
-
-  if (Hardware::PC() && scale == 1.0 && !(sz - DEVICE_SCREEN_SIZE).isValid() && !fullscreen) {
+  if (Hardware::PC() && scale == 1.0 && !(sz - DEVICE_SCREEN_SIZE).isValid()) {
     w->setMinimumSize(QSize(640, 480)); // allow resize smaller than fullscreen
     w->setMaximumSize(DEVICE_SCREEN_SIZE);
     w->resize(sz);
+    // 设置全屏
+    w->setWindowState(Qt::WindowFullScreen);
   } else {
     w->setFixedSize(DEVICE_SCREEN_SIZE * scale);
   }
@@ -28,13 +27,6 @@ void setMainWindow(QWidget *w) {
   // ensure we have a valid eglDisplay, otherwise the ui will silently fail
   void *egl = native->nativeResourceForWindow("egldisplay", w->windowHandle());
   assert(egl != nullptr);
-#elif defined(QT_WIDGETS_LIB)
-  // For PC, enable fullscreen by default, can toggle with F11
-  if (Hardware::PC()) {
-    w->setWindowState(Qt::WindowFullScreen);
-  } else if (fullscreen) {
-    w->setWindowState(Qt::WindowFullScreen);
-  }
 #endif
 }
 
