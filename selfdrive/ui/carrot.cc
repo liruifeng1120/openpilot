@@ -1403,6 +1403,7 @@ public:
 
         SubMaster& sm = *(s->sm);
         auto car_state = sm["carState"].getCarState();
+        // 使用前摄像头分别检测左前和右前盲区（一个摄像头可以检测两个前部盲区区域）
         bool left_blindspot = car_state.getLeftBlindspot();
         bool right_blindspot = car_state.getRightBlindspot();
 
@@ -1424,7 +1425,7 @@ public:
         */
 
 #if 0
-        //TEST
+        //测试
         leftFrontBlind = true;
         rightFrontBlind = true;
         carrotLeftBlind = true;
@@ -1432,6 +1433,7 @@ public:
         left_blindspot = true;
         right_blindspot = true;
 #endif
+        // 一个前摄像头可以分别检测左右前盲区并在各自区域显示
         if (left_blindspot) {
             ui_draw_bsd(s, lane_barrier_vertices[0], &color, false);
         }
