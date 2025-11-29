@@ -9,6 +9,7 @@ from openpilot.selfdrive.sunnypilot import get_model_generation
 import numpy as np
 from collections import deque
 from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.selfdrive.carrot.config import UnifiedParams
 from openpilot.selfdrive.controls.lib.events import Events
 import time
 
@@ -117,7 +118,7 @@ class ExistCounter:
 
 class DesireHelper:
   def __init__(self):
-    self.params = Params()
+    self.params = UnifiedParams()
     self.frame = 0
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none

@@ -9,6 +9,7 @@ import capnp
 from cereal import messaging, log, car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
+from openpilot.selfdrive.carrot.config import UnifiedParams
 from openpilot.common.realtime import DT_MDL, DT_CTRL, Ratekeeper, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlagsSP
@@ -307,7 +308,7 @@ class RadarD:
     self.CP = CP
 
     #new
-    self.params = Params()
+    self.params = UnifiedParams()
     self.sideRadarMinDist = self.params.get_float("SideRadarMinDist") * 0.1
     self.radar_lat_factor = 0.0
 
