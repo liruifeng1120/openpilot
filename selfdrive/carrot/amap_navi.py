@@ -128,6 +128,8 @@ class SharedData:
     self.break_press = None
     self.engaged = None
     self.cruise_valid = None
+    self.cruise_enable = None
+    self.selfdrive_active = None
     self.left_blindspot = None
     self.right_blindspot = None
 
@@ -203,6 +205,7 @@ class AmapNaviServ:
       if hasattr(carState, 'cruiseState'):
         self.shared_data.engaged = carState.cruiseState.enabled
         self.shared_data.cruise_valid = carState.cruiseState.available
+        self.shared_data.cruise_enable = carState.cruiseState.enabled
       # 盲区检测
       if hasattr(carState, 'leftBlindspot'):
         self.shared_data.left_blindspot = int(carState.leftBlindspot)
@@ -811,19 +814,27 @@ class AmapNaviServ:
         if self.shared_data.rightFrontBlind is None and hasattr(meta, 'rightFrontBlind'):
           msg['r_front_blind'] = meta.rightFrontBlind
 
-    #来自controlsState消息
+    #===============巡航状态处理==============
     if self.sm.alive['controlsState']:
       control_state = self.sm['controlsState']
-      msg['active'] = True if control_state.active else False
+      self.shared_data.selfdrive_active = True if control_state.active else False
       if hasattr(control_state, 'vCruise') and self.shared_data.v_cruise_kph is None:
         msg['v_cruise_kph'] = control_state.vCruise
 
-      # 若 engaged 不存在或为 False，且 active 为 True，则设置 engaged = True
-      if control_state.active and not msg.get('engaged', False):
-        msg['engaged'] = True
-
     if self.shared_data.cruise_valid is not None:
       msg['active'] = self.shared_data.cruise_valid
+    # 是否在巡航
+    cruise_enable = False
+    #if self.shared_data.cruise_enable is not None and self.shared_data.cruise_enable:
+    #  cruise_enable = True
+    if self.shared_data.selfdrive_active is not None and self.shared_data.selfdrive_active:
+      cruise_enable = True
+    # 在巡航，active强制为True
+    if cruise_enable:
+      msg['active'] = True
+    # 若engaged不存在则赋值巡航状态
+    if not msg.get('engaged', False):
+      msg['engaged'] = cruise_enable
 
     return json.dumps(msg)
 
@@ -841,9 +852,27 @@ class AmapNaviServ:
         if self.shared_data.v_ego_kph is not None:
           msg['v_ego_kph'] = self.shared_data.v_ego_kph  # 当前速度
 
+      # ===============巡航状态处理==============
       if self.sm.alive['controlsState']:
         control_state = self.sm['controlsState']
-        msg['active'] = True if control_state.active else False
+        self.shared_data.selfdrive_active = True if control_state.active else False
+        if hasattr(control_state, 'vCruise') and self.shared_data.v_cruise_kph is None:
+          msg['v_cruise_kph'] = control_state.vCruise
+
+      if self.shared_data.cruise_valid is not None:
+        msg['active'] = self.shared_data.cruise_valid
+      # 是否在巡航
+      cruise_enable = False
+      # if self.shared_data.cruise_enable is not None and self.shared_data.cruise_enable:
+      #  cruise_enable = True
+      if self.shared_data.selfdrive_active is not None and self.shared_data.selfdrive_active:
+        cruise_enable = True
+      # 在巡航，active强制为True
+      if cruise_enable:
+        msg['active'] = True
+      # 若engaged不存在则赋值巡航状态
+      if not msg.get('engaged', False):
+        msg['engaged'] = cruise_enable
 
       if self.sm.alive['carrotMan']:
         carrotMan = self.sm['carrotMan']
@@ -895,13 +924,27 @@ class AmapNaviServ:
       if hasattr(meta, 'blinker'):
         msg['blinker'] = meta.blinker
 
-    #来自controlsState消息
+    #===============巡航状态处理==============
     if self.sm.alive['controlsState']:
       control_state = self.sm['controlsState']
-      msg['active'] = True if control_state.active else False
+      self.shared_data.selfdrive_active = True if control_state.active else False
+      if hasattr(control_state, 'vCruise') and self.shared_data.v_cruise_kph is None:
+        msg['v_cruise_kph'] = control_state.vCruise
 
     if self.shared_data.cruise_valid is not None:
       msg['active'] = self.shared_data.cruise_valid
+    # 是否在巡航
+    cruise_enable = False
+    # if self.shared_data.cruise_enable is not None and self.shared_data.cruise_enable:
+    #  cruise_enable = True
+    if self.shared_data.selfdrive_active is not None and self.shared_data.selfdrive_active:
+      cruise_enable = True
+    # 在巡航，active强制为True
+    if cruise_enable:
+      msg['active'] = True
+    # 若engaged不存在则赋值巡航状态
+    if not msg.get('engaged', False):
+      msg['engaged'] = cruise_enable
 
     return json.dumps(msg)
 
