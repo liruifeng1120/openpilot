@@ -254,7 +254,7 @@ export function NavDestination() {
     const hasAMap = !!state.amap1Key && !!state.amap2Key;
     state.missingKeys = !hasMapbox;
     state.canToggleProvider = hasMapbox && hasAMap;
-    state.searchProvider = hasMapbox ? "mapbox" : "";
+    state.searchProvider = hasAMap ? "amap" : (hasMapbox ? "mapbox" : "");
     if (state.missingKeys) return;
     state.lastPosition = {
       latitude: parseFloat(data.lastPosition.latitude),
