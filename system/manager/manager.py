@@ -57,8 +57,9 @@ def get_default_params():
     ("ShowPlotMode", "1"),
     ("AutoCruiseControl", "0"),
     ("CruiseEcoControl", "0"),
-    ("CarrotCruiseDecel", "-1"),
-    ("CarrotCruiseAtcDecel", "-1"),
+    # 纵向制动优化：降低减速舒适性改善（避免剧烈制动）
+    ("CarrotCruiseDecel", "120"),  # 从-1改为120，设定舒适减速值
+    ("CarrotCruiseAtcDecel", "150"),  # 从-1改为150，ATC自动减速值
     ("CommaLongAcc", "0"),
     ("AutoGasTokSpeed", "0"),
     ("AutoGasSyncSpeed", "1"),
@@ -82,14 +83,17 @@ def get_default_params():
     ("AutoNaviSpeedBumpTime", "1"),
     ("AutoNaviSpeedBumpSpeed", "35"),
     ("AutoNaviSpeedSafetyFactor", "105"),
-    ("AutoNaviSpeedDecelRate", "120"),
+    # 导航减速率优化：更平缓的减速曲线
+    ("AutoNaviSpeedDecelRate", "80"),  # 从120改为80，减速更平缓，提高舒适度
     ("AutoRoadSpeedLimitOffset", "-1"),
     ("AutoNaviCountDownMode", "2"),
     ("TurnSpeedControlMode", "1"),
     ("MapTurnSpeedFactor", "90"),
-    ("StoppingAccel", "0"),
+    # 停止加速度优化：控制停止时的制动强度
+    ("StoppingAccel", "150"),  # 从0改为150，停止时制动更平缓
     ("StopDistanceCarrot", "550"),
-    ("JLeadFactor3", "0"),
+    # jLead因子优化：控制前车加速度变化对本车的影响
+    ("JLeadFactor3", "50"),  # 从0改为50，适度响应前车加速度变化
     ("CruiseButtonMode", "0"),
     ("CancelButtonMode", "0"),
     ("LfaButtonMode", "0"),
@@ -119,22 +123,24 @@ def get_default_params():
     ("LongTuningKf", "100"),
     ("LongActuatorDelay", "20"),
     ("VEgoStopping", "50"),
-    ("RadarReactionFactor", "100"),
-    ("EnableRadarTracks", "0"),
-    ("RadarLatFactor", "0"),
-    ("EnableCornerRadar", "0"),
+    # 雷达优化：提高雷达反应因子以改善跟车稳定性
+    ("RadarReactionFactor", "120"),  # 从100改为120，提高雷达追踪的灵敏度
+    ("EnableRadarTracks", "1"),      # 启用雷达轨迹追踪，改善目标识别稳定性
+    ("RadarLatFactor", "10"),        # 从0改为10，考虑雷达的横向信息
+    ("EnableCornerRadar", "1"),      # 启用角雷达，提高边缘车辆检测
     ("HyundaiCameraSCC", "0"),
     ("IsLdwsCar", "0"),
     ("CanfdHDA2", "0"),
     ("CanfdDebug", "0"),
     ("SoundVolumeAdjust", "100"),
     ("SoundVolumeAdjustEngage", "10"),
-    ("TFollowGap1", "110"),
-    ("TFollowGap2", "120"),
-    ("TFollowGap3", "140"),
-    ("TFollowGap4", "160"),
-    ("DynamicTFollow", "0"),
-    ("DynamicTFollowLC", "100"),
+    # 跟车距离优化：基于速度分段调整跟车时间间隔
+    ("TFollowGap1", "120"),  # 从110改为120，低速跟车更稳定
+    ("TFollowGap2", "130"),  # 从120改为130，中低速增加安全距离
+    ("TFollowGap3", "150"),  # 从140改为150，中速保持较大间隔
+    ("TFollowGap4", "170"),  # 从160改为170，高速时间隔更大
+    ("DynamicTFollow", "1"),  # 启用动态跟车时间，根据前车行为调整
+    ("DynamicTFollowLC", "120"),  # 从100改为120，变道时的动态参数
     ("HapticFeedbackWhenSpeedCamera", "0"),
     ("UseLaneLineSpeed", "10"),
     ("PathOffset", "0"),
