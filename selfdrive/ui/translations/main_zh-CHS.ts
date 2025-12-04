@@ -2246,7 +2246,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>carrotpilot</source>
-        <translation>carrotpilot</translation>
+        <translation>LV-carrotpilot</translation>
     </message>
     <message>
         <source>now</source>
