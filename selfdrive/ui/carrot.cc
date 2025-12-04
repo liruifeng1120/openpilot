@@ -1941,7 +1941,6 @@ private:
 typedef struct {
     float x, y, d, v, y_rel, v_lat, radar, model_prob, score;
 } lead_vertex_data;
-#endif
 
 char    carrot_man_debug[128] = "";
 class DrawCarrot : public QObject {
