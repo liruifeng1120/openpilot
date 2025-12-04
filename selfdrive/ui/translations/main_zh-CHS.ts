@@ -1196,7 +1196,7 @@
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>您确定要重置设备校准吗？</translation>
+        <translation type="vanished">您确定要重置设备校准吗？</translation>
     </message>
     <message>
         <source>Review Training Guide</source>
@@ -1354,8 +1354,6 @@
         <source>Reboot &amp; Disengage to Calibration</source>
         <translation>重启并取消接管以进行校准</translation>
     </message>
-<<<<<<< HEAD
-=======
     <message>
         <source>CalibrationParams</source>
         <translation type="unfinished">相机校准参数</translation>
@@ -1388,7 +1386,6 @@
         <source>AllCalibParams</source>
         <translation type="unfinished"></translation>
     </message>
->>>>>>> 6f6077ae (fix(events): 禁用 selfdrivedLagging 事件的触发条件)
 </context>
 <context>
     <name>DrawCarrot</name>

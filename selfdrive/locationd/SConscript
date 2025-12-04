@@ -1,4 +1,6 @@
-Import('env', 'rednose')
+Import('env', 'arch', 'common', 'messaging', 'rednose', 'transformations')
+
+loc_libs = [messaging, common, 'pthread', 'dl']
 
 # build ekf models
 rednose_gen_dir = 'models/generated'
@@ -10,6 +12,13 @@ pose_ekf = env.RednoseCompileFilter(
   filter_gen_script='models/pose_kf.py',
   output_dir=rednose_gen_dir,
   extra_gen_artifacts=[],
+  gen_script_deps=rednose_gen_deps,
+)
+live_ekf = env.RednoseCompileFilter(
+  target='live',
+  filter_gen_script='models/live_kf.py',
+  output_dir=rednose_gen_dir,
+  extra_gen_artifacts=['live_kf_constants.h'],
   gen_script_deps=rednose_gen_deps,
 )
 car_ekf = env.RednoseCompileFilter(
