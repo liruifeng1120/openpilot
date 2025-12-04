@@ -1277,6 +1277,7 @@ class CarrotServ:
     self.lidar_lblind = False
     self.lidar_rblind = False
     #new
+    self.atcType = "none"
 
     self.update_params()
 
@@ -1328,6 +1329,8 @@ class CarrotServ:
       self.showDebugLog = self.params.get_int("ShowDebugLog")
       self.cpSpdAndRoadLimit = self.params.get_int("CpSpdAndRoadLimit")
     self.param_frame += 1
+    if self.roadType >= 0: #手动设置道路类型
+      self.roadcate = self.roadType
     #new
 
   def _update_cmd(self):
@@ -2238,7 +2241,8 @@ class CarrotServ:
       self.nSdiPlusBlockType = int(json.get("nSdiPlusBlockType", -1))
       self.nSdiPlusBlockSpeed = int(json.get("nSdiPlusBlockSpeed", 0))
       self.nSdiPlusBlockDist = int(json.get("nSdiPlusBlockDist", 0))
-      self.roadcate = int(json.get("roadcate", 0))
+      if self.roadType < 0:
+        self.roadcate = int(json.get("roadcate", 0))
 
       ## GuidePoint
       self.nTBTDist = int(json.get("nTBTDist", 0))
