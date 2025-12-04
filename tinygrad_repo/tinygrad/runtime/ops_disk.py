@@ -1,5 +1,11 @@
-import os, sys, mmap, io, ctypes, contextlib, pathlib
-from typing import Generator, Callable
+import os
+import sys
+import mmap
+import io
+import ctypes
+import contextlib
+import pathlib
+from collections.abc import Generator, Callable
 from tinygrad.helpers import OSX, round_up
 from tinygrad.device import Compiled, Allocator
 with contextlib.suppress(ImportError):
@@ -10,7 +16,8 @@ class DiskDevice(Compiled):
   _tried_io_uring_init = False
 
   def __init__(self, device:str):
-    if not DiskDevice._tried_io_uring_init: self._iouring_setup()
+    if not DiskDevice._tried_io_uring_init:
+      self._iouring_setup()
 
     self.size: int|None = None
     self.fd: int|None = None
@@ -29,26 +36,42 @@ class DiskDevice(Compiled):
       self.mem = mmap.mmap(fd, self.size, mmap.MAP_SHARED | MAP_POPULATE | MAP_LOCKED)
       os.close(fd)
     else:
-      try: self.fd = os.open(filename, os.O_RDWR|os.O_CREAT|getattr(os, "O_DIRECT", 0))
-      except OSError: self.fd = os.open(filename, os.O_RDWR|os.O_CREAT)
-      if not pathlib.Path(filename).is_block_device() and os.fstat(self.fd).st_size < self.size: os.ftruncate(self.fd, self.size)
+      try:
+        self.fd = os.open(filename, os.O_RDWR|os.O_CREAT|getattr(os, "O_DIRECT", 0))
+      except OSError:
+        self.fd = os.open(filename, os.O_RDWR|os.O_CREAT)
+      if not pathlib.Path(filename).is_block_device() and os.fstat(self.fd).st_size < self.size:
+        os.ftruncate(self.fd, self.size)
       self.mem = mmap.mmap(self.fd, self.size)
     if hasattr(self.mem, 'madvise') and (hp := getattr(mmap, "MADV_HUGEPAGE", None)) is not None:
-      with contextlib.suppress(OSError): self.mem.madvise(hp) # some systems have transparent_hugepage disabled
+      with contextlib.suppress(OSError):
+        # some systems have transparent_hugepage disabled
+        self.mem.madvise(hp)
     self.count += 1
   def _might_close(self):
     self.count -= 1
     if self.count == 0:
       if self.fd is not None:
         os.close(self.fd)
-      if hasattr(self, "mem"): self.mem.close()
+        self.fd = None
+      if hasattr(self, "mem"):
+        try:
+          # mmap.close() can raise BufferError if exported pointers (memoryviews) still exist.
+          # During interpreter shutdown or object finalization this can happen; treat it as a soft-failure
+          # and leave the mmap object alive so we don't raise an exception during GC.
+          self.mem.close()
+        except BufferError:
+          # Can't close now because exported pointers exist. Keep the mmap around and retry on next close.
+          # Do not clear self.size so future opens will reuse the existing mapping.
+          return
       self.size = None
   def _iouring_setup(self):
     DiskDevice._tried_io_uring_init = True
 
     if sys.platform == 'linux' and not hasattr(sys, "getandroidapilevel"):
       fd = libc.syscall(io_uring.NR_io_uring_setup, 4096, ctypes.byref(p:=io_uring.struct_io_uring_params()))
-      if fd < 0: return
+      if fd < 0:
+        return
 
       sq_ptr = libc.mmap(0, p.sq_off.array + p.sq_entries * 4, mmap.PROT_READ | mmap.PROT_WRITE, mmap.MAP_SHARED | MAP_POPULATE, fd, 0)
       cq_ptr = libc.mmap(0, p.cq_off.cqes + p.cq_entries * ctypes.sizeof(io_uring.struct_io_uring_cqe),
@@ -89,7 +112,11 @@ class DiskAllocator(Allocator):
       with io.FileIO(self.dev.fd, "a+b", closefd=False) as fo:
         fo.seek(src.offset)
         bytes_read = 0
-        while (n := fo.readinto(dest[bytes_read:])) is not None and n > 0: bytes_read += n
+        while True:
+          n = fo.readinto(dest[bytes_read:])
+          if n is None or n <= 0:
+            break
+          bytes_read += n
     else:
       dest[:] = src._buf()
 
