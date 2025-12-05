@@ -861,219 +861,219 @@
     </message>
     <message>
         <source>CRUISE: Speed Lower limit(10)</source>
-        <translation type="unfinished"></translation>
+        <translation>巡航：最低限速(10)</translation>
     </message>
     <message>
         <source>Cruise control MIN speed</source>
-        <translation type="unfinished"></translation>
+        <translation>巡航控制最小速度</translation>
     </message>
     <message>
         <source>GAS CRUISE ON: Use</source>
-        <translation type="unfinished"></translation>
+        <translation>油门巡航开启：使用</translation>
     </message>
     <message>
         <source>Auto Cruise on when GAS pedal released, 60% Gas Cruise On automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>松开油门踏板时自动启动巡航，60%情况下自动启用油门巡航</translation>
     </message>
     <message>
         <source>GAS CRUISE ON: Speed(30)</source>
-        <translation type="unfinished"></translation>
+        <translation>油门巡航开启：速度(30)</translation>
     </message>
     <message>
         <source>Driving speed exceeds the set value, Cruise ON</source>
-        <translation type="unfinished"></translation>
+        <translation>驾驶速度超过设定值时，启动巡航</translation>
     </message>
     <message>
         <source>GAP: Additional TFs 40km/h(0)x0.01s</source>
-        <translation type="unfinished"></translation>
+        <translation>间距：额外TFs 40km/h(0)x0.01秒</translation>
     </message>
     <message>
         <source>Speed-dependent additional max(100km/h) TFs</source>
-        <translation type="unfinished"></translation>
+        <translation>速度相关的最大(100km/h) TFs</translation>
     </message>
     <message>
         <source>GAP: Additional TFs 100Km/h(0)x0.01s</source>
-        <translation type="unfinished"></translation>
+        <translation>间距：额外TFs 100Km/h(0)x0.01秒</translation>
     </message>
     <message>
         <source>AChangeCostStarting</source>
-        <translation type="unfinished"></translation>
+        <translation>变道成本起始值</translation>
     </message>
     <message>
         <source>TrafficStopDistanceAdjust</source>
-        <translation type="unfinished"></translation>
+        <translation>交通停车距离调整</translation>
     </message>
     <message>
         <source>DRIVEMODE: ECO Accel ratio(80%)</source>
-        <translation type="unfinished"></translation>
+        <translation>驾驶模式：经济加速比例(80%)</translation>
     </message>
     <message>
         <source>Acceleration ratio in ECO mode</source>
-        <translation type="unfinished"></translation>
+        <translation>经济模式下的加速比例</translation>
     </message>
     <message>
         <source>DRIVEMODE: SAFE ratio(60%)</source>
-        <translation type="unfinished"></translation>
+        <translation>驾驶模式：安全比例(60%)</translation>
     </message>
     <message>
         <source>Accel/StopDistance/DecelRatio/Gap control ratio</source>
-        <translation type="unfinished"></translation>
+        <translation>加速/停车距离/减速比例/间距控制比例</translation>
     </message>
     <message>
         <source>DRIVEMODE: HIGH ratio(100%)</source>
-        <translation type="unfinished"></translation>
+        <translation>驾驶模式：高性能比例(100%)</translation>
     </message>
     <message>
         <source>AccelRatio control ratio</source>
-        <translation type="unfinished"></translation>
+        <translation>加速比例控制比例</translation>
     </message>
     <message>
         <source>LaneChangeSpeed(20)</source>
-        <translation type="unfinished"></translation>
+        <translation>变道速度(20)</translation>
     </message>
     <message>
         <source>LAT:LatSmoothSec(13)</source>
-        <translation type="unfinished"></translation>
+        <translation>横向：纬度平滑秒数(13)</translation>
     </message>
     <message>
         <source>LONG: JERK START(10)x0.1</source>
-        <translation type="unfinished"></translation>
+        <translation>纵向：起步加加速度(10)x0.1</translation>
     </message>
     <message>
         <source>Starting Jerk.</source>
-        <translation type="unfinished"></translation>
+        <translation>起步加加速度。</translation>
     </message>
     <message>
         <source>LONG: ControlType</source>
-        <translation type="unfinished"></translation>
+        <translation>纵向：控制类型</translation>
     </message>
     <message>
         <source>0:velocity pid, 1:accel pid, 2:accel pid(comma)</source>
-        <translation type="unfinished"></translation>
+        <translation>0:速度PID, 1:加速度PID, 2:加速度PID( comma)</translation>
     </message>
     <message>
         <source>LONG: StartingAccel 2.0x(0)%</source>
-        <translation type="unfinished"></translation>
+        <translation>纵向：起步加速2.0倍(0)%</translation>
     </message>
     <message>
         <source>Specifies the acceleration rate when starting from stop. 0: Disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>指定从停止状态起步时的加速率。0：禁用。</translation>
     </message>
     <message>
         <source>LONG: StoppingAccel -2.0x(0)%</source>
-        <translation type="unfinished"></translation>
+        <translation>纵向：停车减速度-2.0倍(0)%</translation>
     </message>
     <message>
         <source>Adjusts brake pressure when maintaining stop. 0: Disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>在保持停车状态时调整制动压力。0：禁用。</translation>
     </message>
     <message>
         <source>LONG: TrafficStopDistance adjust(150)cm</source>
-        <translation type="unfinished"></translation>
+        <translation>纵向：交通停车距离调整(150)厘米</translation>
     </message>
     <message>
         <source>DECEL:(120)</source>
-        <translation type="unfinished"></translation>
+        <translation>减速:(120)</translation>
     </message>
     <message>
         <source>Sets the deceleration rate.(x0.01m/s^2)</source>
-        <translation type="unfinished"></translation>
+        <translation>设置减速度。(x0.01m/s^2)</translation>
     </message>
     <message>
         <source>DISP:Display Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：显示模式</translation>
     </message>
     <message>
         <source>0:Frog,1:APilot,2:Bottom,3:Top,4:Left,5:Left-Bottom</source>
-        <translation type="unfinished"></translation>
+        <translation>0:青蛙,1:APilot,2:底部,3:顶部,4:左侧,5:左下</translation>
     </message>
     <message>
         <source>DISP:Handle rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：手柄旋转</translation>
     </message>
     <message>
         <source>0:None,1:Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>0:无,1:旋转</translation>
     </message>
     <message>
         <source>DISP:Accel meter</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：加速度表</translation>
     </message>
     <message>
         <source>0:None,1:Display,1:Accel+RPM</source>
-        <translation type="unfinished"></translation>
+        <translation>0:无,1:显示,1:加速+转速</translation>
     </message>
     <message>
         <source>DISP:TPMS</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：胎压监测</translation>
     </message>
     <message>
         <source>DISP:Handle Display Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：手柄显示模式</translation>
     </message>
     <message>
         <source>0:Black,1:Color,2:None</source>
-        <translation type="unfinished"></translation>
+        <translation>0:黑色,1:彩色,2:无</translation>
     </message>
     <message>
         <source>DISP:APM connection</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：APM连接</translation>
     </message>
     <message>
         <source>0:NOne,1:Display</source>
-        <translation type="unfinished"></translation>
+        <translation>0:无,1:显示</translation>
     </message>
     <message>
         <source>DISP:BSD Info</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：盲点检测信息</translation>
     </message>
     <message>
         <source>DISP:GAP Info</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：间距信息</translation>
     </message>
     <message>
         <source>DISP:DM Info</source>
-        <translation type="unfinished"></translation>
+        <translation>显示：驾驶员监控信息</translation>
     </message>
     <message>
         <source>0:None,1:Display,-1:Disable(Reboot)</source>
-        <translation type="unfinished"></translation>
+        <translation>0:无,1:显示,-1:禁用(重启)</translation>
     </message>
     <message>
         <source>Hardware is C3x Lite</source>
-        <translation type="unfinished"></translation>
+        <translation>硬件为C3x Lite</translation>
     </message>
     <message>
         <source>NaviCountDown Speed(10)</source>
-        <translation type="unfinished"></translation>
+        <translation>导航倒计时速度(10)</translation>
     </message>
     <message>
         <source>Disable Logger</source>
-        <translation type="unfinished"></translation>
+        <translation>禁用日志记录器</translation>
     </message>
     <message>
         <source>LaneChange: Need Torque</source>
-        <translation type="unfinished"></translation>
+        <translation>变道：需要扭矩</translation>
     </message>
     <message>
         <source>LaneChange: Check lane exist</source>
-        <translation type="unfinished"></translation>
+        <translation>变道：检查车道存在</translation>
     </message>
     <message>
         <source>(0:No,1:Lane,2:+Edge)</source>
-        <translation type="unfinished"></translation>
+        <translation>(0:否,1:车道,2:+边缘)</translation>
     </message>
     <message>
         <source>Smart Speed Control(0)</source>
-        <translation type="unfinished"></translation>
+        <translation>智能速度控制(0)</translation>
     </message>
     <message>
         <source>0: off, 1:accel, 2:decel, 3: all</source>
-        <translation type="unfinished"></translation>
+        <translation>0: 关闭, 1:加速, 2:减速, 3: 全部</translation>
     </message>
     <message>
         <source>Model TurnSpeed Factor(0)</source>
-        <translation type="unfinished"></translation>
+        <translation>模型转弯速度系数(0)</translation>
     </message>
 </context>
 <context>
