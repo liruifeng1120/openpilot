@@ -132,8 +132,6 @@ class Soundd:
       elif self.lang == "main_zh-CHS":
         wavefile = wave.open(BASEDIR + "/selfdrive/assets/sounds_chs/" + filename, 'r')
       else:
-        wavefile = wave.open(BASEDIR + "/selfdrive/assets/sounds_chs/" + filename, 'r')
-      else:
         wavefile = wave.open(BASEDIR + "/selfdrive/assets/sounds_eng/" + filename, 'r')
 
       #assert wavefile.getnchannels() == 1
