@@ -10,7 +10,7 @@ from openpilot.system.manager.process import PythonProcess, NativeProcess, Daemo
 FLASK_AVAILABLE = importlib.util.find_spec("flask") is not None
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
-
+USBCAM = os.getenv("USE_USBCAM") is not None
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
 
@@ -78,13 +78,14 @@ def enable_connect(started, params, CP: car.CarParams) -> bool:
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
-  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not WEBCAM),
+  #NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
+  #NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not WEBCAM),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
   PythonProcess("logmessaged", "system.logmessaged", always_run, enabled=not WEBCAM),
 
-  NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
+  #NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
   PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
+  NativeProcess("usbcamerad", "tools/webcam", ["./camerad"], driverview, enabled=USBCAM),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
   PythonProcess("micd", "system.micd", iscar),
@@ -94,7 +95,7 @@ procs = [
   # https://github.com/tinygrad/tinygrad/blob/ac9c96dae1656dc220ee4acc39cef4dd449aa850/tinygrad/device.py#L26
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld.py"], only_onroad),
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld.py"], enable_dm),
-  NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad, enabled=not PC),
+  #NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], only_onroad, enabled=not PC),
   #NativeProcess("mapsd", "selfdrive/navd", ["./mapsd"], always_run),
   #PythonProcess("navmodeld", "selfdrive.modeld.navmodeld", only_onroad),
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
