@@ -79,16 +79,17 @@ procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
   #NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
-  #NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not WEBCAM),
+  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad, enabled=not PC),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
-  PythonProcess("logmessaged", "system.logmessaged", always_run, enabled=not WEBCAM),
+  PythonProcess("logmessaged", "system.logmessaged", always_run),
 
   #NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
-  PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
   NativeProcess("usbcamerad", "tools/webcam", ["./camerad"], driverview, enabled=USBCAM),
+  tiveProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not USBCAM and not WEBCAM),
+  PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
-  PythonProcess("micd", "system.micd", iscar),
+  PythonProcess("micd", "system.micd", iscar, enabled=not PC),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   # TODO: Make python process once TG allows opening QCOM from child pro
