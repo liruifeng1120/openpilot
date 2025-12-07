@@ -377,6 +377,8 @@ class CarrotMan:
     self.carrot_serv.right_blind = self.amap_navi.shared_data.right_blind
     self.carrot_serv.lidar_lblind = self.amap_navi.shared_data.lidar_lblind
     self.carrot_serv.lidar_rblind = self.amap_navi.shared_data.lidar_rblind
+    self.carrot_serv.lidar_car_lblind = self.amap_navi.shared_data.lidar_car_lblind
+    self.carrot_serv.lidar_car_rblind = self.amap_navi.shared_data.lidar_car_rblind
 
     #获取共享数据中的控制命令
     if self.shared_cmd_index_last != self.amap_navi.shared_data.cmd_index:
@@ -1276,6 +1278,8 @@ class CarrotServ:
     self.right_blind = False
     self.lidar_lblind = False
     self.lidar_rblind = False
+    self.lidar_car_lblind = False
+    self.lidar_car_rblind = False
     #new
     self.atcType = "none"
 
@@ -2142,8 +2146,8 @@ class CarrotServ:
     msg.carrotMan.roadCate = int(self.roadcate)
     msg.carrotMan.extBlinker = int(self.ext_blinker)
     msg.carrotMan.extState = int(self.ext_state)
-    msg.carrotMan.leftBlind = (2 if self.left_blind else 0) + (1 if self.lidar_lblind else 0)
-    msg.carrotMan.rightBlind = (2 if self.right_blind else 0) + (1 if self.lidar_rblind else 0)
+    msg.carrotMan.leftBlind = (4 if self.lidar_car_lblind else 0) + (2 if self.left_blind else 0) + (1 if self.lidar_lblind else 0)
+    msg.carrotMan.rightBlind = (4 if self.lidar_car_rblind else 0) + (2 if self.right_blind else 0) + (1 if self.lidar_rblind else 0)
     #new
 
     msg.carrotMan.xPosSpeed = float(v_ego_kph) #float(self.nPosSpeed)
@@ -2242,7 +2246,7 @@ class CarrotServ:
       self.nSdiPlusBlockSpeed = int(json.get("nSdiPlusBlockSpeed", 0))
       self.nSdiPlusBlockDist = int(json.get("nSdiPlusBlockDist", 0))
       if self.roadType < 0:
-        self.roadcate = int(json.get("roadcate", 0))
+        self.roadcate = int(json.get("roadcate", 8))
 
       ## GuidePoint
       self.nTBTDist = int(json.get("nTBTDist", 0))

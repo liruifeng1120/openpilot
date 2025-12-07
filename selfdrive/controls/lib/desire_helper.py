@@ -252,6 +252,7 @@ class DesireHelper:
     self.lane_change_state_last = LaneChangeState.off
     self.lane_change_state_prev = LaneChangeState.off
     self.driver_lane_change_delay = 0.0
+    self.disableBlindSpot = False
     #new
 
   def lane_change_audio(self, enable, turn_type, param=0):
@@ -407,6 +408,7 @@ class DesireHelper:
       #self.blinkerMode = self.params.get_int("BlinkerMode")
       #self.autoLaneChangeMinSpeed = self.params.get_int("AutoLaneChangeMinSpeed")
       #self.turnToLaneChange = self.params.get_int("TurnToLaneChange")
+      self.disableBlindSpot = self.params.get_bool("DisableBlindSpot")
       #new
     self.frame += 1
     lane_change_state = self.lane_change_state
@@ -613,14 +615,14 @@ class DesireHelper:
       else:
         object_detected = False
       #self.object_detected_count = max(1, self.object_detected_count + 1) if object_detected else min(-1, self.object_detected_count - 1)
-      if object_detected or carrot_blind: #检测到
+      if (object_detected and not self.disableBlindSpot) or carrot_blind: #检测到
         self.object_detected_count = 1
       else:
         self.object_detected_count -= 1
         if self.object_detected_count < self.min_object_detected_count:
           self.object_detected_count = self.min_object_detected_count
 
-      if object_detected or carrot_blind:
+      if (object_detected and not self.disableBlindSpot) or carrot_blind:
         self.object_detected_count_new = 1
       else:
         self.object_detected_count_new -= 1
@@ -898,7 +900,10 @@ class DesireHelper:
         }
         torque_cond, blindspot_cond = dir_map.get(self.lane_change_direction, (False, False))
         torque_applied = carstate.steeringPressed and torque_cond
-        blindspot_detected = blindspot_cond
+        if not self.disableBlindSpot:
+          blindspot_detected = blindspot_cond
+        else:
+          blindspot_detected = False
 
         #int(2.0 / DT_MDL) 实际上是 2秒内连续帧的计数阈值, 如果 lane_exist_counter < 2秒的帧数 → 说明侧边车道线检测不到或存在不稳定
         #说明车道线不可见或者车道线不稳定，则允许自动变道
