@@ -46,6 +46,7 @@ function install_ubuntu_common_requirements() {
     libglfw3-dev \
     libglib2.0-0 \
     libjpeg-dev \
+    libturbojpeg \
     libqt5charts5-dev \
     libncurses5-dev \
     libssl-dev \
