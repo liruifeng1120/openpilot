@@ -229,7 +229,7 @@ class RadarInterface(RadarInterfaceBase):
         self.updated_messages = set()
 
         # ---------- 日志 ----------
-        self.log_path = "~/.comma/byd_debug/byd_radar_complete_data.log
+        self.log_path = "~/.comma/byd_debug/byd_radar_complete_data.log"
         
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
 
