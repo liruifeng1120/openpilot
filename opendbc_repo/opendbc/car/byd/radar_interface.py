@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 import time
 import os
@@ -228,7 +229,8 @@ class RadarInterface(RadarInterfaceBase):
         self.updated_messages = set()
 
         # ---------- 日志 ----------
-        self.log_path = "/tmp/byd_debug/byd_radar_complete_data.log"
+        self.log_path = "~/.comma/byd_debug/byd_radar_complete_data.log
+        
         os.makedirs(os.path.dirname(self.log_path), exist_ok=True)
 
         # ---------- 参数 ----------
