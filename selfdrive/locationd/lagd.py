@@ -270,7 +270,7 @@ class LateralLagEstimator:
     turning = np.abs(self.yaw_rate) >= self.min_yr
     sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK and self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK
     la_valid = np.abs(la_actual_pose) <= self.max_lat_accel and np.abs(la_desired - la_actual_pose) <= self.max_lat_accel_diff
-    calib_valid = True
+    calib_valid = self.calib_valid
 
     if not self.lat_active:
       self.last_lat_inactive_t = self.t
