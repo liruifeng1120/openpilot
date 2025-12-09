@@ -116,9 +116,8 @@ class CarState(CarStateBase):
         ret.vEgoRaw = float(self.speed_kph * CV.KPH_TO_MS) # KPH to m/s
         ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
-        # 注释掉CAN总线的yawRate数据，使用JY62陀螺仪数据
+        # 注释掉CAN总线的yawRate数据，完全使用JY62陀螺仪数据
         # ret.yawRate = cp.vl["YAW_RATE"]["YawRate"] - cp.vl["YAW_RATE"]["YawRateOffset"]
-        ret.yawRate = 0.0  # 由JY62提供实际的yawRate数据
 
         ret.standstill = (speed_raw == 0)
 
