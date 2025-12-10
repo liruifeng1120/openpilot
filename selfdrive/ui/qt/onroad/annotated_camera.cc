@@ -176,8 +176,11 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   left_front_blind = meta.getLeftFrontBlind();
   right_front_blind = meta.getRightFrontBlind();
 
-  carrot_left_blind = carrot_man.getLeftBlind();
-  carrot_right_blind = carrot_man.getRightBlind();
+  //carrot_left_blind = carrot_man.getLeftBlind();
+  //carrot_right_blind = carrot_man.getRightBlind();
+  auto amapNavi = sm["amapNavi"].getAmapNavi();
+  bool carrot_left_blind = amapNavi.getLeftBlind();
+  bool carrot_right_blind = amapNavi.getRightBlind();
 
   steerOverride = car_state.getSteeringPressed();
   gasOverride = car_state.getGasPressed();

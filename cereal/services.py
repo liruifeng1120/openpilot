@@ -74,6 +74,7 @@ _services: dict[str, tuple] = {
   "userFlag": (True, 0., 1),
   "microphone": (True, 10., 10),
   "carrotMan": (True, 0.),
+  "amapNavi": (True, 0.),
 
   "controlsStateSP": (True, 100., 10),
   "longitudinalPlanSP": (True, 20., 5),

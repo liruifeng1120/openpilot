@@ -2342,7 +2342,8 @@ struct Event {
     e2eLongStateSP @112 :Custom.E2eLongStateSP;
     modelV2SP @113 :Custom.ModelDataV2SP;
     carrotMan @114 :Custom.CarrotMan;
-    customReserved8 @115 :Custom.CustomReserved8;
+    amapNavi @115 :Custom.AmapNavi;
+    #customReserved8 @115 :Custom.CustomReserved8;
     customReserved9 @116 :Custom.CustomReserved9;
 
     # *********** legacy + deprecated ***********

@@ -214,7 +214,7 @@ def main(demo=False):
   if custom_model and model_capabilities & ModelCapabilities.NoO:
     extended_svs += ["navModelDEPRECATED", "navInstruction"]
   pm = PubMaster(["modelV2", "modelV2SP", "cameraOdometry"])
-  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "carrotMan", "radarState"] + extended_svs)
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "carrotMan", "radarState", "amapNavi"] + extended_svs)
 
   publish_state = PublishState()
 
@@ -248,7 +248,7 @@ def main(demo=False):
   # TODO this needs more thought, use .2s extra for now to estimate other delays
   steer_delay = CP.steerActuatorDelay + .2
 
-  DH = DesireHelper()
+  DH = DesireHelper(sm)
 
   while True:
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame

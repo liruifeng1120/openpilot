@@ -247,7 +247,9 @@ struct CarrotMan @0xb86e6369214c01c8 {
 	rightBlind @40 : Int32;
 }
 
-struct CustomReserved8 @0xf416ec09499d9d19 {
+struct AmapNavi @0xf416ec09499d9d19 {
+	leftBlind @0 : Int32;
+	rightBlind @1 : Int32;
 }
 
 struct CustomReserved9 @0xa1680744031fdb2d {
