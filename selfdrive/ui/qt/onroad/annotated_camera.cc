@@ -140,6 +140,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const auto ltp = sm["liveTorqueParameters"].getLiveTorqueParameters();
   const auto lateral_plan_sp = sm["lateralPlanSPDEPRECATED"].getLateralPlanSPDEPRECATED();
   const auto carrot_man = sm["carrotMan"].getCarrotMan();
+  const auto amapNavi = sm["amapNavi"].getAmapNavi();
   const auto meta = sm["modelV2"].getModelV2().getMeta();
   car_params = sm["carParams"].getCarParams();
 
@@ -178,9 +179,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   //carrot_left_blind = carrot_man.getLeftBlind();
   //carrot_right_blind = carrot_man.getRightBlind();
-  auto amapNavi = sm["amapNavi"].getAmapNavi();
-  bool carrot_left_blind = amapNavi.getLeftBlind();
-  bool carrot_right_blind = amapNavi.getRightBlind();
+  carrot_left_blind = amapNavi.getLeftBlind();
+  carrot_right_blind = amapNavi.getRightBlind();
 
   steerOverride = car_state.getSteeringPressed();
   gasOverride = car_state.getGasPressed();
