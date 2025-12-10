@@ -24,5 +24,5 @@ git add -f .
 
 VERSION="sunnypilot_v0971_$(date +%y%m%d)"
 git commit -m $VERSION
-git branch -m "nav-0971"
-git push -f origin "nav-0971"
+git branch -m "nav097"
+git push -f origin "nav097"
