@@ -134,12 +134,12 @@ class CarInterface(CarInterfaceBase):
 
         return ret
 
-  @staticmethod
-  def init(CP, can_recv, can_send):
-    # disable radar if BYD longitudinal control is enabled on radar-ACC car
-    if CP.flags & BydFlags.DISABLE_RADAR.value:
-      communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
-      disable_ecu(can_recv, can_send, bus=CanBus.MPC, addr=0x7D0, com_cont_req=communication_control)
+    @staticmethod
+    def init(CP, can_recv, can_send):
+        # disable radar if BYD longitudinal control is enabled on radar-ACC car
+        if CP.flags & BydFlags.DISABLE_RADAR.value:
+            communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+            disable_ecu(can_recv, can_send, bus=CanBus.MPC, addr=0x7D0, com_cont_req=communication_control)
 
 
 # byd tuning suggestions
