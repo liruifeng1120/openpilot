@@ -91,6 +91,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         showFullScreen();
       }
       return true;
+    } else if (keyEvent->key() == Qt::Key_Escape) {
+      // Exit the application when ESC is pressed
+      qApp->quit();
+      return true;
     }
   }
 
