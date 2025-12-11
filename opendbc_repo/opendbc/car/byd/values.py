@@ -47,6 +47,10 @@ class BydSafetyFlags(IntFlag):
   QIN_PLUS_DMI = 0x8
   YUAN_PLUS_DMI_ATTO3 = 0x10 #yuan plus is atto3
 
+class BydFlags(IntFlag):
+  # Detection flags
+  DISABLE_RADAR = 1
+
 
 @dataclass
 class BydCarDocs(CarDocs):
@@ -145,11 +149,24 @@ MPC_ACC_CAR = {CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM}
 # power train canbus contains mrr radar info
 PT_RADAR_CAR = {CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM}
 
+# All BYD models use radar for longitudinal control
+RADAR_ACC_CAR = {
+    CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM,
+    CAR.BYD_TANG_DMI_21, CAR.BYD_SONG_PLUS_DMI_21, CAR.BYD_SONG_PLUS_DMI_22, 
+    CAR.BYD_SONG_PLUS_DMI_23, CAR.BYD_SONG_PRO_DMI_22, CAR.BYD_QIN_PLUS_DMI_23, 
+    CAR.BYD_YUAN_PLUS_DMI_22
+}
+
 # use torque lat control, otherwise use angle mode
 TORQUE_LAT_CAR = {CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM, CAR.BYD_SONG_PLUS_DMI_21}
 
-# use experimental long mode
-EXP_LONG_CAR = {CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM, CAR.BYD_SONG_PLUS_DMI_21}
+# use experimental long mode for all BYD models
+EXP_LONG_CAR = {
+    CAR.BYD_HAN_DM_20, CAR.BYD_HAN_EV_20, CAR.BYD_TANG_DM,
+    CAR.BYD_TANG_DMI_21, CAR.BYD_SONG_PLUS_DMI_21, CAR.BYD_SONG_PLUS_DMI_22, 
+    CAR.BYD_SONG_PLUS_DMI_23, CAR.BYD_SONG_PRO_DMI_22, CAR.BYD_QIN_PLUS_DMI_23, 
+    CAR.BYD_YUAN_PLUS_DMI_22
+}
 
 DBC = CAR.create_dbc_map()
 

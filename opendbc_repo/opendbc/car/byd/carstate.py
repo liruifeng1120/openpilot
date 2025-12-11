@@ -14,7 +14,7 @@ from opendbc.car.common.conversions import Conversions as CV
 #from opendbc.car.common.numpy_fast import mean
 from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.interfaces import CarStateBase
-from opendbc.car.byd.values import DBC, CanBus, LKASConfig, CarControllerParams
+from opendbc.car.byd.values import DBC, CanBus, LKASConfig, CarControllerParams, RADAR_ACC_CAR, BydFlags
 
 import os
 BYD_RADAR = os.getenv("BYD_RADAR") is not None
@@ -258,7 +258,10 @@ class CarState(CarStateBase):
             ("ACC_CMD", 50),
             ("ACC_MPC_STATE", 50),
         ]
-        if BYD_RADAR:
+        
+        # Only parse radar messages if radar is not disabled
+        radar_available = CP.carFingerprint in RADAR_ACC_CAR and not CP.flags & BydFlags.DISABLE_RADAR.value
+        if BYD_RADAR and radar_available:
             cam_messages.append(("RADAR_MRR", 60))
 
         return {

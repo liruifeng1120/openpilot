@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 from math import exp
 
-from opendbc.car import get_safety_config, get_friction, structs
+from opendbc.car import get_safety_config, get_friction, structs, uds
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD, LatControlInputs
-from opendbc.car.byd.values import CAR, CanBus, BydSafetyFlags, MPC_ACC_CAR, TORQUE_LAT_CAR, EXP_LONG_CAR, \
-                                PLATFORM_HANTANG_DMEV, PLATFORM_TANG_DMI, PLATFORM_SONG_PLUS_DMI, PLATFORM_QIN_PLUS_DMI, PLATFORM_YUAN_PLUS_DMI_ATTO3
+from opendbc.car.byd.values import CAR, CanBus, BydSafetyFlags, BydFlags, MPC_ACC_CAR, TORQUE_LAT_CAR, EXP_LONG_CAR, \
+                                PLATFORM_HANTANG_DMEV, PLATFORM_TANG_DMI, PLATFORM_SONG_PLUS_DMI, PLATFORM_QIN_PLUS_DMI, PLATFORM_YUAN_PLUS_DMI_ATTO3, \
+                                RADAR_ACC_CAR
 from opendbc.car.byd.carcontroller import CarController
 from opendbc.car.byd.carstate import CarState
 from opendbc.car.byd.radar_interface import RadarInterface
+from opendbc.car.disable_ecu import disable_ecu
 
 ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
@@ -105,8 +107,13 @@ class CarInterface(CarInterfaceBase):
 
         use_experimental_long = candidate in EXP_LONG_CAR
 
+        # BYD radar disable logic similar to Toyota
+        # Enable radar disable when experimental longitudinal is enabled on radar-ACC cars
+        if experimental_long and candidate in RADAR_ACC_CAR:
+            ret.flags |= BydFlags.DISABLE_RADAR.value
+
         ret.alphaLongitudinalAvailable = use_experimental_long
-        ret.openpilotLongitudinalControl = experimental_long and ret.alphaLongitudinalAvailable
+        ret.openpilotLongitudinalControl = experimental_long and ret.alphaLongitudinalAvailable or bool(ret.flags & BydFlags.DISABLE_RADAR.value)
 
         ret.longitudinalTuning.kpBP, ret.longitudinalTuning.kiBP = [[0.],  [0.]]
         ret.longitudinalTuning.kpV,  ret.longitudinalTuning.kiV  = [[1.5], [0.3]]
@@ -126,6 +133,13 @@ class CarInterface(CarInterfaceBase):
             ret.dashcamOnly = True
 
         return ret
+
+  @staticmethod
+  def init(CP, can_recv, can_send):
+    # disable radar if BYD longitudinal control is enabled on radar-ACC car
+    if CP.flags & BydFlags.DISABLE_RADAR.value:
+      communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
+      disable_ecu(can_recv, can_send, bus=CanBus.MPC, addr=0x7D0, com_cont_req=communication_control)
 
 
 # byd tuning suggestions
