@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-if TICI:
-  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-  os.environ['QCOM'] = '1'
-else:
-  os.environ['GPU'] = '1'
+os.environ['DEV'] = 'QCOM' if TICI else 'GPU'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 import time
