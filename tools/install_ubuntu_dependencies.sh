@@ -81,7 +81,8 @@ function install_ubuntu_lts_latest_requirements() {
     qt5-qmake \
     qtbase5-dev-tools \
     python3-dev \
-    python3-venv
+    python3-venv \
+    python3-flask
   cd $(dirname "$(readlink -f "$0")")
   $SUDO dpkg -i libicu66_66.1-2ubuntu2.1_amd64.deb libicu-dev_66.1-2ubuntu2.1_amd64.deb icu-devtools_66.1-2ubuntu2.1_amd64.deb
 }
