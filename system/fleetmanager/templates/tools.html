@@ -30,8 +30,8 @@ Tools
   <h1>参数导入/导出</h1>
   <div class="textarea-container">
     <textarea id="toggleValuesBox" placeholder='在此输入或粘贴要设置的参数...'></textarea>
-    <button type="button" id="retrieveButton">读取参数</button>
-    <button type="button" id="submitButton">保存参数</button>
+    <button type="button" id="retrieveButton">从OP读取参数</button>
+    <button type="button" id="submitButton">写入参数到OP</button>
   </div>
 </div>
 
@@ -46,7 +46,7 @@ Tools
       .then(data => {
         toggleValuesBox.value = JSON.stringify(data, null, 2);
       })
-      .catch(error => console.error('Error fetching toggle values:', error));
+      .catch(error => console.error('读取参数失败:', error));
   });
 
   submitButton.addEventListener('click', function() {
@@ -54,8 +54,8 @@ Tools
     try {
       inputData = JSON.parse(toggleValuesBox.value);
     } catch (error) {
-      alert('Invalid JSON format');
-      console.error('Error parsing JSON input:', error);
+      alert('输入的参数无效');
+      console.error('输入的参数无效:', error);
       return;
     }
 
@@ -67,12 +67,12 @@ Tools
     .then(response => response.json().then(data => ({ status: response.status, body: data })))
     .then(result => {
       if (result.status === 200) {
-        alert('Values stored successfully.');
+        alert('参数写入OP成功.');
       } else {
-        alert('Error storing values: ' + result.body.error);
+        alert('参数写入OP失败: ' + result.body.error);
       }
     })
-    .catch(error => console.error('Error storing toggle values:', error));
+    .catch(error => console.error('输入的参数无效:', error));
   });
 </script>
 {% endblock %}
