@@ -18,7 +18,7 @@ NetworkLocation = structs.CarParams.NetworkLocation
 NON_LINEAR_TORQUE_PARAMS = {
   CAR.BYD_HAN_DM_20: [1.807, 1.674, 0.04],
   CAR.BYD_HAN_EV_20: [1.807, 1.674, 0.04],
-  CAR.BYD_SONG_PLUS_DMI_21: [1.807, 1.674, 0.19]
+  CAR.BYD_SONG_PLUS_DMI_21: [1.807, 1.674, 0.04]
 }
 
 import os
