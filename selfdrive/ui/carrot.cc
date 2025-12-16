@@ -2115,6 +2115,7 @@ public:
     float cpuTemp = 0.0f;
     float cpuUsage = 0.0f;
     float gpuUsage = 0.0f;
+    float gpuTemp = 0.0f;
     int   memoryUsage = 0;
     float freeSpace = 0.0f;
     float voltage = 0.0f;
@@ -2356,7 +2357,7 @@ public:
             ui_fill_rect(s->vg, { dx - 65, dy - 38, 130, 90 }, (memoryUsage > 85 && blink_timer <= 8) ? COLOR_RED : mode_color, 15, 2);
             if (disp_timer < 120) {
                 ui_draw_text(s, dx, dy-5, "GPU", 25, COLOR_WHITE, BOLD);
-                sprintf(str, "%.0f%%", gpuUsage);
+                sprintf(str, "%.0f\u00B0C", gpuTemp);
                 ui_draw_text(s, dx, dy + 40, str, 40, COLOR_WHITE, BOLD);
             } else {
                 ui_draw_text(s, dx, dy-5, "MEM", 25, COLOR_WHITE, BOLD);
@@ -2522,6 +2523,7 @@ public:
         memoryUsage = deviceState.getMemoryUsagePercent();
         const auto cpuTempC = deviceState.getCpuTempC();
         const auto cpuUsagePercent = deviceState.getCpuUsagePercent();
+        const auto gpuTempC = deviceState.getGpuTempC();
         gpuUsage = deviceState.getGpuUsagePercent();
         cpuTemp = 0.0f;
         if (cpuTempC.size() > 0) {
@@ -2529,6 +2531,13 @@ public:
                 cpuTemp += cpuTempC[i];
             }
             cpuTemp /= static_cast<float>(cpuTempC.size());
+        }
+        gpuTemp = 0.0f;
+        if (gpuTempC.size() > 0) {
+            for (int i = 0; i < gpuTempC.size(); i++) {
+                gpuTemp += gpuTempC[i];
+            }
+            gpuTemp /= static_cast<float>(gpuTempC.size());
         }
         cpuUsage = 0.0f;
         if (cpuUsagePercent.size() > 0) {
