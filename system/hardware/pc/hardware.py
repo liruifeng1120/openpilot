@@ -4,11 +4,11 @@ import os
 import subprocess
 import glob
 from cereal import log
-from openpilot.system.hardware.base import HardwareBase, LPABase, ThermalConfig, ThermalZone
+from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
+# from openpilot.system.hardware.lpa.base import LPABase  # 注释掉这一行
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
-
 
 class Pc(HardwareBase):
   def get_os_version(self):
@@ -31,9 +31,6 @@ class Pc(HardwareBase):
 
   def get_network_info(self):
     return None
-
-  def get_sim_lpa(self) -> LPABase:
-    raise NotImplementedError("SIM LPA not implemented for PC")
 
   def get_network_type(self):
     return NetworkType.wifi
@@ -77,6 +74,10 @@ class Pc(HardwareBase):
       'data_connected': False
     }
 
+  def get_sim_lpa(self):
+    # PC环境不支持SIM LPA，直接返回None或抛异常
+    return None
+
   def get_network_strength(self, network_type):
     return NetworkStrength.unknown
 
@@ -93,42 +94,56 @@ class Pc(HardwareBase):
     cpu_zones = []
     gpu_zones = []
 
-    # 扫描CPU热区
-    for i in range(10):
-        zone_path = f'/sys/class/thermal/thermal_zone{i}'
-        if os.path.exists(f'{zone_path}/temp'):
-            try:
-                with open(f'{zone_path}/type') as f:
-                    zone_type = f.read().strip()
-                cpu_zones.append(ThermalZone(zone_type))
-            except:
-                cpu_zones.append(ThermalZone(f'thermal_zone{i}'))
+    # 扫描所有 hwmon 目录
+    for hwmon in glob.glob('/sys/class/hwmon/hwmon*'):
+      name_path = os.path.join(hwmon, 'name')
+      if not os.path.exists(name_path):
+        continue
 
-    # 尝试添加GPU热区（基于您的系统信息）
-    # 虽然您的 /sys/class/drm/card0/device/gpu_busy_percent 显示0
-    # 但可能存在GPU温度传感器
-    gpu_thermal_paths = [
-        '/sys/class/drm/card0/device/hwmon/hwmon*/temp1_input',
-        '/sys/class/hwmon/hwmon*/temp*_label'  # 查找标记为GPU的温度传感器
-    ]
+      with open(name_path) as f:
+        dev_name = f.read().strip().lower()
 
-    for pattern in gpu_thermal_paths:
-        for path in glob.glob(pattern):
-            try:
-                # 检查是否是GPU相关的温度传感器
-                if 'gpu' in path.lower() or 'card' in path.lower():
-                    gpu_zones.append(ThermalZone(f'gpu_thermal_{len(gpu_zones)}'))
-            except:
-                pass
+      # 判断这是不是 CPU 或 GPU 的温度源
+      is_cpu = 'k10temp' in dev_name or 'coretemp' in dev_name
+      is_gpu = 'amdgpu' in dev_name
 
+      # 查找该 hwmon 下的所有温度传感器
+      for temp_input in glob.glob(os.path.join(hwmon, 'temp*_input')):
+
+        # 获取 temp label
+        label_path = temp_input.replace('_input', '_label')
+        if os.path.exists(label_path):
+          with open(label_path) as f:
+            zone_type = f.read().strip()
+        else:
+          zone_type = os.path.basename(temp_input)
+
+        # 创建 ThermalZone 实例（保持兼容）
+        zone = ThermalZone(zone_type)
+
+        # 重写 read()，直接读取 hwmon 文件，而不用 thermal_zone*
+        zone.read = (lambda p=temp_input: int(open(p).read().strip()) / 1000.0)
+
+        # 分类
+        if is_cpu:
+          cpu_zones.append(zone)
+
+        if is_gpu:
+          gpu_zones.append(zone)
+
+    # 如果啥都没扫到，为兼容旧逻辑保底
     if not cpu_zones:
-        cpu_zones.append(ThermalZone('thermal_zone0'))
+      cpu_zones.append(ThermalZone('thermal_zone0'))
+
+    # CPU 显示 GPU 温度
+    final_cpu = gpu_zones if gpu_zones else cpu_zones
+    final_gpu = gpu_zones if gpu_zones else None
 
     return ThermalConfig(
-        cpu=cpu_zones,
-        gpu=gpu_zones if gpu_zones else None,  # 只有找到GPU热区才添加
-        memory=None,  # PC环境通常没有独立的内存温度传感器
-        pmic=None     # PC环境没有PMIC
+      cpu=final_cpu,
+      gpu=final_gpu,
+      memory=None,
+      pmic=None
     )
 
   def set_screen_brightness(self, percentage):
