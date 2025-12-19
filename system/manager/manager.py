@@ -224,8 +224,15 @@ def manager_init() -> None:
 
   # set unset params
   for k, v in default_params:
-    if params.get(k) is None:
-      params.put(k, v)
+    try:
+      if params.get(k) is None:
+        params.put(k, v)
+    except Exception:
+      print(f"Warning: Failed to set parameter {k}")
+      try:
+        params.put(k, v)
+      except Exception:
+        print(f"Error: Could not set parameter {k}")
 
   # Create folders needed for msgq
   try:
@@ -303,9 +310,12 @@ def manager_thread() -> None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  if params.get("HardwareC3xLite"):
-    ignore += ["micd", "soundd", "loggerd"]
-    params.put("RecordAudio", "0")
+  try:
+    if params.get("HardwareC3xLite"):
+      ignore += ["micd", "soundd", "loggerd"]
+      params.put("RecordAudio", "0")
+  except Exception:
+    pass
 
   sm = messaging.SubMaster(['deviceState', 'carParams'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
