@@ -254,7 +254,8 @@ export function NavDestination() {
     const hasAMap = !!state.amap1Key && !!state.amap2Key;
     state.missingKeys = !hasMapbox;
     state.canToggleProvider = hasMapbox && hasAMap;
-    state.searchProvider = hasMapbox ? "mapbox" : "";
+    // 默认搜索引擎为 AMap，如果已配置
+    state.searchProvider = hasAMap ? "amap" : (hasMapbox ? "mapbox" : "");
     if (state.missingKeys) return;
     state.lastPosition = {
       latitude: parseFloat(data.lastPosition.latitude),
@@ -305,18 +306,97 @@ export function NavDestination() {
           access_token: state.mapboxPublic,
           session_token: sessionToken,
           q: val,
-          limit: 4
+          limit: 10
         });
         const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`);
         const data = await res.json();
         state.suggestions = JSON.stringify(data.suggestions);
       } else {
-        const auto = new AMap.Autocomplete({ city: "auto" });
-        auto.search(val, (status, result) => {
-          if (status === "complete" && result.tips) {
-            state.suggestions = JSON.stringify(result.tips);
+        try {
+          // 使用高德地图Web服务API进行搜索（服务端调用）
+          const params = new URLSearchParams({
+            key: state.amap1Key,  // Web服务API Key
+            keywords: val,
+            city: '全国',         // 搜索全国范围
+            output: 'json',
+            offset: 20,           // 返回结果数量
+            page: 1
+          });
+          const apiUrl = `https://restapi.amap.com/v3/place/text?${params}`;
+          console.log('发送高德API请求:', apiUrl);
+
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+
+          console.log('高德Web服务API完整响应:', data);
+          console.log('API状态:', data.status, '结果数量:', data.count, '建议:', data.info);
+          
+
+          if (data.status === '1' && data.pois && data.pois.length > 0) {
+            // 转换高德API返回格式为前端期望的格式
+            const suggestions = data.pois.map(poi => {
+              const [gcj_lng, gcj_lat] = poi.location.split(',').map(Number);
+
+              // 将GCJ-02坐标转换为WGS-84坐标（Mapbox使用）
+              let wgs_lng = gcj_lng;
+              let wgs_lat = gcj_lat;
+
+              // 检查是否在中国境内
+              if (gcj_lng >= 72.004 && gcj_lng <= 137.8347 && gcj_lat >= 0.8293 && gcj_lat <= 55.8271) {
+                // 简化的GCJ-02转WGS-84转换公式
+                const PI = Math.PI;
+                const a = 6378245.0; // 长半轴
+                const ee = 0.00669342162296594323; // 偏心率平方
+
+                // 转换函数
+                const transformLat = (x, y) => {
+                  let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+                  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+                  ret += (20.0 * Math.sin(y * PI) + 40.0 * Math.sin(y / 3.0 * PI)) * 2.0 / 3.0;
+                  ret += (160.0 * Math.sin(y / 12.0 * PI) + 320 * Math.sin(y * PI / 30.0)) * 2.0 / 3.0;
+                  return ret;
+                };
+
+                const transformLon = (x, y) => {
+                  let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+                  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+                  ret += (20.0 * Math.sin(x * PI) + 40.0 * Math.sin(x / 3.0 * PI)) * 2.0 / 3.0;
+                  ret += (150.0 * Math.sin(x / 12.0 * PI) + 300.0 * Math.sin(x / 30.0 * PI)) * 2.0 / 3.0;
+                  return ret;
+                };
+
+                const dLat = transformLat(gcj_lng - 105.0, gcj_lat - 35.0);
+                const dLon = transformLon(gcj_lng - 105.0, gcj_lat - 35.0);
+                const radLat = gcj_lat / 180.0 * PI;
+                const magic = Math.sin(radLat);
+                const sqrtMagic = Math.sqrt(1 - ee * magic * magic);
+
+                wgs_lat = gcj_lat - (dLat * 180.0) / (a * (1 - ee) / (magic * sqrtMagic) * PI);
+                wgs_lng = gcj_lng - (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * PI);
+              }
+
+              return {
+                name: poi.name,
+                address: poi.address || poi.pname + poi.cityname + poi.adname + poi.address,
+                location: { lng: wgs_lng, lat: wgs_lat },  // 使用WGS-84坐标
+                full_address: [poi.pname, poi.cityname, poi.adname, poi.address].filter(Boolean).join(''),
+                pname: poi.pname,
+                cityname: poi.cityname,
+                adname: poi.adname
+              };
+            });
+
+            state.suggestions = JSON.stringify(suggestions.slice(0, 10));
+          } else {
+            console.warn('高德地图搜索返回空结果或错误:', data);
+            state.suggestions = "[]";
+            showSnackbar(data.info || '未找到匹配的地址');
           }
-        });
+        } catch (error) {
+          console.error('高德地图Web服务API调用失败:', error);
+          state.suggestions = "[]";
+          showSnackbar('高德地图搜索服务暂时不可用');
+        }
       }
     }
   }
@@ -443,38 +523,101 @@ export function NavDestination() {
     const newVal = e.target.value.trim();
     searchFieldState.value = e.target.value;
     clearTimeout(window.searchTimeout);
-    window.searchTimeout = setTimeout(async () => {
-      const val = newVal;
-      if (val.length < 3) {
-        if (val.length === 0) {
+    
+    // 添加输入提示功能
+    if (state.searchProvider === "amap" && newVal.length >= 1) {
+      // 使用高德地图输入提示API
+      window.searchTimeout = setTimeout(async () => {
+        const val = newVal;
+        if (val.length < 1) {
+          if (val.length === 0) {
+            state.suggestions = "[]";
+          }
+          return;
+        }
+        state.selectedRoute = null;
+        state.confirmedRoute = null;
+        state.suggestions = "[]";
+        
+        try {
+          const params = new URLSearchParams({
+            key: state.amap1Key,
+            keywords: val,
+            city: '全国',
+            output: 'json',
+            offset: 10,
+            page: 1
+          });
+          const apiUrl = `https://restapi.amap.com/v3/assistant/inputtips?${params}`;
+          
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+          
+          if (data.status === '1' && data.tips && data.tips.length > 0) {
+            // 转换高德API返回格式为前端期望的格式
+            const suggestions = data.tips.map(tip => {
+              return {
+                name: tip.name,
+                address: tip.address || tip.district,
+                location: tip.location ? {
+                  lng: parseFloat(tip.location.split(',')[0]),
+                  lat: parseFloat(tip.location.split(',')[1])
+                } : null,
+                full_address: tip.district ? tip.district + (tip.address || '') : (tip.address || ''),
+                district: tip.district,
+                id: tip.id
+              };
+            });
+            
+            state.suggestions = JSON.stringify(suggestions);
+          } else {
+            state.suggestions = "[]";
+          }
+        } catch (error) {
+          console.error('高德地图输入提示API调用失败:', error);
           state.suggestions = "[]";
         }
-        return;
-      }
-      state.selectedRoute = null;
-      state.confirmedRoute = null;
-      state.suggestions = "[]";
-      if (state.searchProvider === "mapbox") {
-        const prox = `${state.lastPosition.longitude},${state.lastPosition.latitude}`;
-        const params = new URLSearchParams({
-          proximity: prox,
-          access_token: state.mapboxPublic,
-          session_token: sessionToken,
-          q: val,
-          limit: 4
-        });
-        const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`);
-        const data = await res.json();
-        state.suggestions = JSON.stringify(data.suggestions);
-      } else {
-        const auto = new AMap.Autocomplete({ city: "auto" });
-        auto.search(val, (status, result) => {
-          if (status === "complete" && result.tips) {
-            state.suggestions = JSON.stringify(result.tips);
+      }, 300); // 更快的响应时间
+    } else {
+      // 原有的搜索逻辑
+      window.searchTimeout = setTimeout(async () => {
+        const val = newVal;
+        if (val.length < 3) {
+          if (val.length === 0) {
+            state.suggestions = "[]";
           }
-        });
-      }
-    }, 800);
+          return;
+        }
+        state.selectedRoute = null;
+        state.confirmedRoute = null;
+        state.suggestions = "[]";
+        if (state.searchProvider === "mapbox") {
+          const prox = `${state.lastPosition.longitude},${state.lastPosition.latitude}`;
+          const params = new URLSearchParams({
+            proximity: prox,
+            access_token: state.mapboxPublic,
+            session_token: sessionToken,
+            q: val,
+            limit: 10
+          });
+          const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`);
+          const data = await res.json();
+          state.suggestions = JSON.stringify(data.suggestions);
+        } else {
+          // 对于AMap，当输入少于1个字符时，保持原来的逻辑
+          if (val.length >= 1) {
+            const auto = new AMap.Autocomplete({ city: "auto" });
+            auto.search(val, (status, result) => {
+              if (status === "complete" && result.tips) {
+                state.suggestions = JSON.stringify(result.tips);
+              }
+            });
+          } else {
+            state.suggestions = "[]";
+          }
+        }
+      }, 800);
+    }
   }
 
   async function selectSuggestion(sugg) {
@@ -545,246 +688,6 @@ export function NavDestination() {
       style: "mapbox://styles/frogsgomoo/cmcfv151j000o01rcdxebhl76"
     });
     new mapboxgl.Marker().setLngLat([state.lastPosition.longitude, state.lastPosition.latitude]).addTo(map);
-
-    // Add context menu CSS
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/assets/css/context-menu.css';
-    document.head.appendChild(link);
-    // Create context menu container
-    const contextMenu = document.createElement('div');
-    contextMenu.id = 'map-context-menu';
-    contextMenu.className = 'context-menu';
-
-    // 根据坐标设置菜单语言的函数
-    const setMenuLanguageByCoordinates = (lng, lat) => {
-      // 使用简单的经纬度范围判断是否在中国区域
-      // 中国的大致经纬度范围：东经73°-135°，北纬18°-54°
-      const isChina = lng >= 73 && lng <= 135 && lat >= 18 && lat <= 54;
-
-      contextMenu.innerHTML = `
-        <div class="context-menu-coordinates">
-          <div class="coordinates-title">${isChina ? '当前位置坐标' : 'Current Location'}</div>
-          <div class="coordinates-value" id="context-menu-coordinates"></div>
-        </div>
-        <div class="context-menu-divider"></div>
-        <div class="context-menu-item" data-action="navigate">🚗 ${isChina ? '导航到目的地' : 'Navigate to Destination'}</div>
-        <div class="context-menu-item" data-action="favorite">❤️ ${isChina ? '添加到收藏点' : 'Add to Favorites'}</div>
-        <div class="context-menu-item" data-action="home">🏠 ${isChina ? '添加为家地址' : 'Set as Home'}</div>
-        <div class="context-menu-item" data-action="work">💼 ${isChina ? '添加为工作地址' : 'Set as Work'}</div>
-      `;
-    };
-
-    // 默认显示中文菜单
-    contextMenu.innerHTML = `
-      <div class="context-menu-coordinates">
-        <div class="coordinates-title">当前位置坐标</div>
-        <div class="coordinates-value" id="context-menu-coordinates"></div>
-      </div>
-      <div class="context-menu-divider"></div>
-      <div class="context-menu-item" data-action="navigate">🚗 导航到目的地</div>
-      <div class="context-menu-item" data-action="favorite">❤️ 添加到收藏点</div>
-      <div class="context-menu-item" data-action="home">🏠 添加为家地址</div>
-      <div class="context-menu-item" data-action="work">💼 添加为工作地址</div>
-    `;
-    document.body.appendChild(contextMenu);
-
-    // Create position marker
-    const positionMarker = document.createElement('div');
-    positionMarker.id = 'position-marker';
-    positionMarker.className = 'position-marker';
-    document.body.appendChild(positionMarker);
-
-    // Handle menu item clicks
-    contextMenu.addEventListener('click', (e) => {
-      const menuItem = e.target.closest('.context-menu-item');
-      if (menuItem) {
-        const action = menuItem.dataset.action;
-        const lng = parseFloat(contextMenu.dataset.lng);
-        const lat = parseFloat(contextMenu.dataset.lat);
-
-        const destination = {
-          name: 'Selected Location',
-          longitude: lng,
-          latitude: lat,
-          routeId: null
-        };
-
-        switch (action) {
-          case 'navigate':
-            initiateNavigation(destination);
-            break;
-          case 'favorite':
-            // 直接调用收藏API创建新的收藏点，确保包含所有必要字段
-            fetch("/api/navigation/favorite", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: 'Selected Location',
-                longitude: lng,
-                latitude: lat,
-                routeId: 'manual_' + Date.now(), // 添加唯一的routeId
-                is_home: false,
-                is_work: false
-              })
-            })
-            .then(() => {
-              showSnackbar("已添加到收藏点！");
-              loadFavoritesAlphabetically();
-            })
-            .catch(() => showSnackbar("添加到收藏点失败..."));
-            break;
-          case 'home':
-            // 直接调用收藏API设置为家地址，确保包含所有必要字段
-            fetch("/api/navigation/favorite", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: 'Selected Location',
-                longitude: lng,
-                latitude: lat,
-                routeId: 'manual_' + Date.now(), // 添加唯一的routeId
-                is_home: true,
-                is_work: false
-              })
-            })
-            .then(() => {
-              showSnackbar("家地址设置成功！");
-              loadFavoritesAlphabetically();
-            })
-            .catch(() => showSnackbar("设置家地址失败..."));
-            break;
-          case 'work':
-            // 直接调用收藏API设置为工作地址，确保包含所有必要字段
-            fetch("/api/navigation/favorite", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                name: 'Selected Location',
-                longitude: lng,
-                latitude: lat,
-                routeId: 'manual_' + Date.now(), // 添加唯一的routeId
-                is_home: false,
-                is_work: true
-              })
-            })
-            .then(() => {
-              showSnackbar("工作地址设置成功！");
-              loadFavoritesAlphabetically();
-            })
-            .catch(() => showSnackbar("设置工作地址失败..."));
-            break;
-        }
-
-        hideContextMenu();
-      }
-
-      // 不再处理额外的按钮点击，功能已整合到菜单项中
-    });
-
-    // Right-click menu for desktop
-    map.on('contextmenu', (e) => {
-      e.preventDefault();
-      showContextMenu(e.lngLat.lng, e.lngLat.lat, e.point.x, e.point.y);
-    });
-
-    // Long press menu for mobile
-    let longPressTimer = null;
-    let longPressCoords = null;
-
-    map.getCanvas().addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        const touch = e.touches[0];
-        const point = map.unproject([touch.clientX, touch.clientY]);
-        longPressCoords = { lng: point.lng, lat: point.lat };
-
-        longPressTimer = setTimeout(() => {
-          showContextMenu(
-            longPressCoords.lng,
-            longPressCoords.lat,
-            touch.clientX,
-            touch.clientY
-          );
-        }, 800); // 800ms long press
-      }
-    });
-
-    // Clear long press timer on touch end or move
-    ['touchend', 'touchmove', 'touchcancel'].forEach(eventType => {
-      map.getCanvas().addEventListener(eventType, () => {
-        clearTimeout(longPressTimer);
-        longPressTimer = null;
-        longPressCoords = null;
-      });
-    });
-
-    // Hide menu when clicking elsewhere
-    document.addEventListener('click', (e) => {
-      if (!contextMenu.contains(e.target) && e.target.id !== 'map') {
-        hideContextMenu();
-      }
-    });
-
-    function showContextMenu(lng, lat, x, y) {
-      // 根据坐标设置菜单语言
-      setMenuLanguageByCoordinates(lng, lat);
-
-      // 修正位置计算，考虑页面滚动和偏移
-      const scrollX = window.scrollX || window.pageXOffset;
-      const scrollY = window.scrollY || window.pageYOffset;
-
-      // Update menu position and data - use CSS class for proper styling
-      contextMenu.style.display = 'block';
-      contextMenu.style.visibility = 'visible';
-      contextMenu.classList.add('visible');
-
-      // 设置坐标显示
-      const coordinatesElement = document.getElementById('context-menu-coordinates');
-      if (coordinatesElement) {
-        coordinatesElement.textContent = `经度: ${lng.toFixed(6)}, 纬度: ${lat.toFixed(6)}`;
-      }
-
-      // 获取菜单尺寸
-      const menuRect = contextMenu.getBoundingClientRect();
-
-      // 计算初始位置（右侧显示）
-      let menuLeft = x + scrollX;
-      let menuTop = y + scrollY;
-
-      // 检查右侧边界
-      if (menuLeft + menuRect.width > window.innerWidth) {
-        // 如果右侧超出，改为左侧显示
-        menuLeft = x + scrollX - menuRect.width;
-      }
-
-      // 检查底部边界
-      if (menuTop + menuRect.height > window.innerHeight) {
-        // 如果底部超出，改为上方显示
-        menuTop = y + scrollY - menuRect.height;
-      }
-
-      // 设置菜单位置
-      contextMenu.style.left = `${menuLeft}px`;
-      contextMenu.style.top = `${menuTop}px`;
-      contextMenu.dataset.lng = lng;
-      contextMenu.dataset.lat = lat;
-
-      // Update position marker - 与菜单同步移动
-      positionMarker.style.display = 'block';
-      positionMarker.style.left = `${menuLeft + (menuRect.width / 2)}px`; // 居中显示
-      positionMarker.style.top = `${menuTop + (menuRect.height / 2)}px`;
-
-      // Force reflow to ensure menu renders properly
-      contextMenu.offsetHeight;
-    }
-
-    function hideContextMenu() {
-      contextMenu.style.display = 'none';
-      contextMenu.style.visibility = 'hidden';
-      contextMenu.classList.remove('visible');
-      positionMarker.style.display = 'none';
-    }
-
     map.on("load", () => {
       map.flyTo({
         center: [state.lastPosition.longitude, state.lastPosition.latitude],
