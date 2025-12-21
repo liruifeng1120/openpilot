@@ -15,7 +15,8 @@
   justify-content: center;
   padding: var(--border-radius-xl);
   transition: box-shadow 0.2s, border-color 0.2s;
-  width: 100%;
+  width: 600px;
+  height: auto; /* 高度自适应 */
 }
 
 #search-field:focus {
@@ -31,10 +32,12 @@
 #searchSuggestions p {
   font-size: var(--font-size-sm);
   margin: 0;
-  max-width: calc(100% - 8rem);
+  max-width: 100%; /* 完全移除固定减去值 */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex-grow: 1; /* 让文本占据尽可能多的空间 */
+  margin-right: var(--padding-sm); /* 添加一点右边距，避免和按钮太近 */
 }
 
 #searchSuggestions .suggestion-item {
@@ -44,7 +47,7 @@
   box-sizing: border-box;
   color: var(--text-color);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start; /* 改为左对齐，让文本优先显示 */
   padding: var(--border-radius-xl);
   position: relative;
   width: 100%;
@@ -505,55 +508,6 @@
   gap: var(--padding-sm);
   justify-content: flex-start;
   padding-left: var(--padding-base);
-}
-
-/* 右键菜单样式 */
-.context-menu-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-}
-
-.context-menu {
-  position: absolute;
-  background-color: var(--secondary-bg);
-  border: 1px solid var(--track-color);
-  border-radius: var(--border-radius-md);
-  box-shadow: var(--shadow-md);
-  padding: 8px 0;
-  pointer-events: auto;
-  opacity: 0;
-  transform: translateY(-10px);
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
-  min-width: 120px;
-  z-index: 10000;
-}
-
-.context-menu.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.context-menu-item {
-  padding: 8px 16px;
-  cursor: pointer;
-  display: block;
-  white-space: nowrap;
-  color: var(--text-color);
-  border-bottom: 1px solid var(--track-color);
-  transition: background-color 0.2s;
-}
-
-.context-menu-item:hover {
-  background-color: var(--input-bg);
-}
-
-.context-menu-item:last-child {
-  border-bottom: none;
 }
 
 .spinner {
