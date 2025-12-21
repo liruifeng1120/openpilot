@@ -12,6 +12,17 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
+  # 安全地获取model_v2数据
+  model_v2 = sm['modelV2'] if sm else None
+  # 如果无法获取model_v2，使用apply_curvature作为替代
+  if model_v2 is None:
+    model_v2 = type('mock', (), {'action': type('action', (), {'desiredCurvature': apply_curvature})})()
+  # 根据曲率差值动态调整期望曲率
+  diff = abs(model_v2.action.desiredCurvature - current_curvature)
+  # 动态增益因子，根据差异大小调整（调整参数使控制更平滑）
+  gain = min(1.3, 1.0 + diff * 0.015)
+  apply_curvature = apply_curvature * gain
+  
   # No blending at low speed due to lack of torque wind-up and inaccurate current curvature
   if v_ego_raw > 9:
     apply_curvature = clip(apply_curvature, current_curvature - CarControllerParams.CURVATURE_ERROR,
