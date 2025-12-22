@@ -11,14 +11,9 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
-  # 安全地获取model_v2数据
-  model_v2 = sm['modelV2'] if sm else None
-  # 如果无法获取model_v2，使用apply_curvature作为替代
-  if model_v2 is None:
-    model_v2 = type('mock', (), {'action': type('action', (), {'desiredCurvature': apply_curvature})})()
+def apply_ford_curvature_limits(model_raw_curvature, apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
   # 根据曲率差值动态调整期望曲率
-  diff = abs(model_v2.action.desiredCurvature - current_curvature)
+  diff = abs(model_raw_curvature - current_curvature)
   # 动态增益因子，根据差异大小调整（调整参数使控制更平滑）
   gain = min(1.3, 1.0 + diff * 0.015)
   apply_curvature = apply_curvature * gain
@@ -112,7 +107,9 @@ class CarController(CarControllerBase):
           self.steerold_angle = abs(CS.out.steeringAngleDeg)
           self.human_turn = 0
           ramp_type = 0
-        apply_curvature = apply_ford_curvature_limits(actuators.curvature, self.apply_curvature_last, current_curvature, CS.out.vEgoRaw)
+        # 使用模型原始输出的曲率值（未经过任何处理）
+        model_raw_curvature = CC.latOutput.curvature if CC.latOutput else actuators.curvature
+        apply_curvature = apply_ford_curvature_limits(model_raw_curvature, actuators.curvature, self.apply_curvature_last, current_curvature, CS.out.vEgoRaw)
       else:
         apply_curvature = 0.
         ramp_type = 0
