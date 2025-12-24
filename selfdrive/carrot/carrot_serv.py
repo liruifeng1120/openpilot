@@ -280,6 +280,7 @@ class CarrotServ:
     self.lb_vrel = None
     self.rf_vrel = None
     self.rb_vrel = None
+    self.atc_speed_delta = None
     #new
     self.atcType = "none"
 
@@ -726,15 +727,15 @@ class CarrotServ:
     d = lf_drel_mm * 0.001  # mm -> m，前车为正
     v_rel = lf_vrel  # v_front - v_ego
 
-    # 前车很远，不用干预
+    # 前车很远(45米外)，不用干预
     if d > 45.0:
       return 0.0
 
-    # 距离 -> 可容忍“负相对速度”
+    # 距离 -> 前车要比自己快的“相对速度”，否则就减速
     D_POINTS = np.array([10.0, 20.0, 30.0, 40.0])
-    V_POINTS = np.array([-0.5, -1.0, -2.0, -3.0])  # m/s
+    V_POINTS = np.array([3.0, 2.0, 1.0, 0.5])  # m/s
 
-    # 距离极近，直接减速
+    # 距离极近(10米以内)，直接减速
     if d < D_POINTS[0]:
       return -1.5  # m/s，保守减速
 
@@ -768,7 +769,7 @@ class CarrotServ:
 
     # 距离 -> 容忍相对速度 曲线
     D_POINTS = np.array([10.0, 20.0, 30.0, 40.0])
-    V_POINTS = np.array([0.0, 1.0, 3.0, 4.0])
+    V_POINTS = np.array([0.0, 1.5, 2.5, 4.0])
 
     # 距离太小，直接减速
     if d < D_POINTS[0]:
@@ -781,9 +782,9 @@ class CarrotServ:
 
     # ---------- 计算 delta_v ----------
     if v_rel > v_allow + MARGIN:
-      delta_v = 0.0  # 它太快，加速没用
+      delta_v = 0.0  # 它太快，不加速，等后车超过自己
     elif v_rel > v_allow:
-      delta_v = -0.5  # 临界，轻减速
+      delta_v = -0.5  # 临界，轻减速，让后车加速超过自己
     else:
       delta_v = v_allow - v_rel  # 加速拉开距离
 
@@ -821,7 +822,6 @@ class CarrotServ:
     return delta_v
 
   def update_auto_turn(self, v_ego_kph, sm, x_turn_info, x_dist_to_turn, check_steer=False):
-    v_ego = sm["carState"].vEgo
     turn_speed = self.autoTurnControlSpeedTurn
     fork_speed = self.nRoadLimitSpeed
     stop_speed = 1
@@ -880,7 +880,9 @@ class CarrotServ:
     atc_start_dist = mapping["start"]
     atc_type_org = atc_type
     atc_speed_org = atc_speed
+    atc_speedup_enable = False
     atc_speed_up = False
+    delta_v = None
 
     #导航给出在转弯距离大于开始转弯距离时，进入准备阶段
     if x_dist_to_turn > atc_start_dist:
@@ -893,71 +895,73 @@ class CarrotServ:
 
       if (atc_type in ["turn left", "turn right"]) and (x_dist_to_turn > start_turn_dist):
         atc_type = "atc left" if "left" in atc_type else "atc right" #类型为atc left/right只是进入转弯准备状态，并不是真的在执行转弯
+        atc_speedup_enable = True
       elif atc_type in ["fork left", "fork right"]: #说明x_dist_to_turn>do_fork_dist并且说明x_dist_to_turn <=atc_start_dist
-        #new
+        #atc_dist = do_speed_decal_dist #替换减速距离
+        if (fork_dist_offset > 0) and (x_dist_to_turn > do_fork_dist): #设置了提前变道距离，并且剩余距离大于进入匝道口距离，则执行提前变道流程
+          atc_type = "atc left" if "left" in atc_type else "atc right"
+          atc_speedup_enable = True
+        elif (do_fork_nav_dist > 0) and (x_dist_to_turn <= do_fork_nav_dist): #设置了导航距离控制转弯后，如果距离小于设置值是立即变道
+          atc_type += " now"
+        if x_dist_to_turn < do_speed_decal_dist: #距离路口的距离小于设定值时要开始减速了，因为到匝道口前nRoadLimitSpeed其实没有变，所以只能用这种方法进行减速
+          atc_speedup_enable = False
+          if auto_decel_rate > 0 and check_steer: #设置了减速比率
+            if atc_speed > decel_speed_min: #只有车速大于最小设定速度时才允许降速
+              atc_speed = max(decel_speed_min, atc_speed*auto_decel_rate)
+              self.atc_speed_decal = atc_speed #保存进匝道减速的目标速度
+              self.fork_speed_keep_time = int(fork_speed_keep_time/DT_MDL) #重置保持时间
+        # 如果上面的条件都不成立，则atc_type直接就是查表得到的类型，即atc_type = mapping["type"]
+
+      if check_steer and atc_speedup_enable: #允许自动加减速
+        v_ego = sm["carState"].vEgo
         meta = sm["modelV2"].meta
         atc_left_bsd = True if (meta.leftFrontBlind & 16) else False
         atc_right_bsd = True if (meta.rightFrontBlind & 16) else False
         atc_bsd = atc_left_bsd if "left" in atc_type else atc_right_bsd
         left_bsd = True if "left" in atc_type else False
-        #new
-        #atc_dist = do_speed_decal_dist #替换减速距离
-        if (fork_dist_offset > 0) and (x_dist_to_turn > do_fork_dist): #设置了提前变道距离，并且剩余距离大于进入匝道口距离，则执行提前变道流程
-          atc_type = "atc left" if "left" in atc_type else "atc right"
-        elif (do_fork_nav_dist > 0) and (x_dist_to_turn <= do_fork_nav_dist): #设置了导航距离控制转弯后，如果距离小于设置值是立即变道
-          atc_type += " now"
-        if x_dist_to_turn < do_speed_decal_dist: #距离路口的距离小于设定值时要开始减速了，因为到匝道口前nRoadLimitSpeed其实没有变，所以只能用这种方法进行减速
-          if auto_decel_rate > 0: #设置了减速比率
-            if atc_speed > decel_speed_min: #只有车速大于60时才允许降速
-              atc_speed = max(decel_speed_min, atc_speed*auto_decel_rate)
-          if check_steer:
-            self.atc_speed_decal = atc_speed #保存进匝道减速的目标速度
-            self.fork_speed_keep_time = int(fork_speed_keep_time/DT_MDL) #重置时间
-        # 如果上面的条件都不成立，则atc_type直接就是查表得到的类型，即atc_type = mapping["type"]
-        elif check_steer and atc_bsd: #盲区阻止了自动变道
-          #if (self.enable_radar_tracks == 1 or self.enable_radar_tracks > 2) or (self.lidar_rvalid and self.lidar_lvalid): #原车雷达跟踪或激光雷达存在
-          if self.lidar_rvalid and self.lidar_lvalid: #激光雷达存在
-            delta_v = None
+        # 有盲区阻止了自动变道并且存在激光雷达
+        if atc_bsd and (self.lidar_rvalid and self.lidar_lvalid): # or (self.enable_radar_tracks == 1 or self.enable_radar_tracks > 2)
             if left_bsd: #左变道受阻
               if self.lf_drel is not None and self.lb_drel is not None and self.lf_vrel is not None and self.lb_vrel is not None: #前后均有车
                 delta_v = self.compute_delta_v_for_front_rear(self.lf_drel, self.lf_vrel, self.lb_drel, self.lb_vrel, v_ego)
-              elif self.lf_drel is not None: #前方有车，后方无车
+              elif self.lf_drel is not None and self.lf_vrel is not None: #前方有车，后方无车
                 delta_v = self.compute_delta_v_for_front(self.lf_drel, self.lf_vrel, v_ego)
               elif self.lb_drel is not None and self.lb_vrel is not None: #前方无车，后方有车
                 delta_v = self.compute_delta_v_for_rear(self.lb_drel, self.lb_vrel, v_ego)
             else: #右变道受阻
               if self.rf_drel is not None and self.rb_drel is not None and self.rf_vrel is not None and self.rb_vrel is not None: #前后均有车
                 delta_v = self.compute_delta_v_for_front_rear(self.rf_drel, self.rf_vrel, self.rb_drel, self.rb_vrel, v_ego)
-              elif self.rf_drel is not None: #前方有车，后方无车
+              elif self.rf_drel is not None and self.rf_vrel is not None: #前方有车，后方无车
                 delta_v = self.compute_delta_v_for_front(self.rf_drel, self.rb_drel, v_ego)
               elif self.rb_drel is not None and self.rb_vrel is not None: #前方无车，后方有车
                 delta_v = self.compute_delta_v_for_rear(self.rb_drel, self.rb_vrel, v_ego)
 
-            if auto_decel_rate > 0 and delta_v is not None:
+            if delta_v is not None:
               print("======================================")
-              if delta_v > 0:
-                atc_speed_up = True
               delta_v *=  3.6 #换成km/h
               print(f"atc_speed delta_v {delta_v:.1f} km/h")
               # 限制范围
               speed_max = self.nRoadLimitSpeed * 1.3
-              speed_min = self.nRoadLimitSpeed * 0.7
+              speed_min = self.nRoadLimitSpeed * 0.6
               print(f"max speed {speed_max:.1f} km/h, min speed {speed_min:.1f} km/h")
               # 初始化当前速度状态
-              if self.atc_speed_decal <= 0:
-                self.atc_speed_decal = atc_speed
+              if self.atc_speed_delta is None:
+                self.atc_speed_delta = 0
               # 限制每次循环增量
               max_delta = ACCEL_LIMIT * DT
               delta_v_applied = np.clip(delta_v, -max_delta, max_delta)
               print(f"delta_v_applied {delta_v_applied:.1f} km/h")
-              # 累积更新速度
-              self.atc_speed_decal = np.clip(self.atc_speed_decal + delta_v_applied, speed_min, speed_max)
-              atc_speed = self.atc_speed_decal
+              # 累积更新速度并限制
+              self.atc_speed_delta += delta_v_applied
+              atc_speed = np.clip(self.atc_speed_delta + atc_speed, speed_min, speed_max)
               print(f"final atc_speed {atc_speed:.1f} km/h")
-              # 更新计时器
-              self.fork_speed_keep_time = int(fork_speed_keep_time / DT_MDL)
+              print("======================================")
 
-    #是否保持进匝道时的速度
+    #清空atc_speed偏差值
+    if check_steer and (not atc_speedup_enable or delta_v is None):
+      self.atc_speed_delta = None
+
+    #速度保持
     if check_steer:
       if atc_type_org in ["fork left", "fork right"] and self.atc_speed_decal > 0:
         self.fork_speed_keep_time = min(-1, self.fork_speed_keep_time - 1)  # 保持速度的时间递减
