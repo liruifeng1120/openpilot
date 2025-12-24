@@ -774,13 +774,15 @@ class AmapNaviServ:
         if lidar_id == 0:
           if detect_side & 1:
             # 左前方
+            if lf_drel is None: lf_drel = old_info.get("lf_drel", None)  # 距离数据消抖
+            if lf_xrel is None: lf_xrel = old_info.get("lf_xrel", None)
             self.shared_data.main_lf_drel = lf_drel
             self.shared_data.main_lf_xrel = lf_xrel
-            if lf_drel is None: lf_drel = old_info.get("lf_drel", None)  # 距离数据消抖
             # 左后方
+            if lb_drel is None: lb_drel = old_info.get("lb_drel", None)  # 距离数据消抖
+            if lb_xrel is None: lb_xrel = old_info.get("lb_xrel", None)
             self.shared_data.main_lb_drel = lb_drel
             self.shared_data.main_lb_xrel = lb_xrel
-            if lb_drel is None: lb_drel = old_info.get("lb_drel", None)  # 距离数据消抖
 
             # 左前方和左后方距离均小于1米时
             lf_dreltmp = lf_drel if lf_drel is not None else 0.1
@@ -800,13 +802,15 @@ class AmapNaviServ:
                                                                 self.min_vrel_vego_time, self.min_drel_vego_time)
           if detect_side & 2:
             # 右前方
+            if rf_drel is None: rf_drel = old_info.get("rf_drel", None)  # 距离数据消抖
+            if rf_xrel is None: rf_xrel = old_info.get("rf_xrel", None)
             self.shared_data.main_rf_drel = rf_drel
             self.shared_data.main_rf_xrel = rf_xrel
-            if rf_drel is None: rf_drel = old_info.get("rf_drel", None)  # 距离数据消抖
             # 右后方
+            if rb_drel is None: rb_drel = old_info.get("rb_drel", None)  # 距离数据消抖
+            if rb_xrel is None: rb_xrel = old_info.get("rb_xrel", None)
             self.shared_data.main_rb_drel = rb_drel
             self.shared_data.main_rb_xrel = rb_xrel
-            if rb_drel is None: rb_drel = old_info.get("rb_drel", None)  # 距离数据消抖
 
             # 右前方和右后方距离均小于1米时
             rf_dreltmp = rf_drel if rf_drel is not None else 0.1
@@ -1327,9 +1331,9 @@ class AmapNaviServ:
 
       #前雷达盲区信号
       if self.shared_data.leftFrontBlind is not None:
-        msg['l_front_blind'] = self.shared_data.leftFrontBlind
+        msg['l_front_blind'] = self.shared_data.leftFrontBlind if self.shared_data.leftFrontBlind < 16 else (self.shared_data.leftFrontBlind - 16)
       if self.shared_data.rightFrontBlind is not None:
-        msg['r_front_blind'] = self.shared_data.rightFrontBlind
+        msg['r_front_blind'] = self.shared_data.rightFrontBlind if self.shared_data.rightFrontBlind < 16 else (self.shared_data.rightFrontBlind - 16)
 
       #雷达和摄像头盲区
       msg['lidar_lblind'] = self.left_blindspot()
@@ -1430,9 +1434,9 @@ class AmapNaviServ:
 
         # 如果字段存在才赋值
         if self.shared_data.leftFrontBlind is None and hasattr(meta, 'leftFrontBlind'):
-          msg['l_front_blind'] = meta.leftFrontBlind
+          msg['l_front_blind'] = meta.leftFrontBlind if meta.leftFrontBlind < 16 else (meta.leftFrontBlind - 16)
         if self.shared_data.rightFrontBlind is None and hasattr(meta, 'rightFrontBlind'):
-          msg['r_front_blind'] = meta.rightFrontBlind
+          msg['r_front_blind'] = meta.rightFrontBlind if meta.rightFrontBlind < 16 else (meta.rightFrontBlind - 16)
 
     #===============巡航状态处理==============
     if self.sm.alive['selfdriveState']:
