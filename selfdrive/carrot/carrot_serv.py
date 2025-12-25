@@ -997,6 +997,7 @@ class CarrotServ:
         if delta_v is not None:
           print("======================================")
           delta_v *= 3.6  # 换成km/h
+          print(f"atc_speed {atc_speed:.1f} km/h")
           print(f"atc_speed delta_v {delta_v:.1f} km/h")
           # 限制范围
           speed_max = self.nRoadLimitSpeed * 1.3
