@@ -1019,7 +1019,7 @@ class CarrotServ:
       # ==========================================================
 
     #清空atc_speed偏差值
-    if check_steer and (not atc_speedup_enable or delta_v is None):
+    if check_steer and (delta_v is None):
       if self.atc_speed_delta is not None:
         self.atc_speed_delta = None
         print("Clear self.atc_speed_delta")
