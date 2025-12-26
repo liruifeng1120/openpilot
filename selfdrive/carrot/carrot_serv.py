@@ -979,25 +979,32 @@ class CarrotServ:
     if check_steer and ((atc_speedup_enable and atc_left_right_bsd) or (not atc_speedup_enable and not atc_decel and driver_left_right_bsd)):  # 允许自动加减速
       left_bsd = (True if "left" in atc_type else False) if atc_left_right_bsd else (True if driver_left_bsd else False)
       if self.lidar_rvalid and self.lidar_lvalid:  #有激光雷达
+        print("======================================")
         if left_bsd:  # 左变道受阻
           if self.lf_drel is not None and self.lb_drel is not None and self.lf_vrel is not None and self.lb_vrel is not None:  # 前后均有车
             delta_v = self.compute_delta_v_for_front_rear(self.lf_drel, self.lf_vrel, self.lb_drel, self.lb_vrel,v_ego)
+            print(f"lf_drel {self.lf_drel:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h, lb_drel {self.lb_drel} m, lb_vrel {self.lb_vrel} km/h")
           elif self.lf_drel is not None and self.lf_vrel is not None:  # 前方有车，后方无车
             delta_v = self.compute_delta_v_for_front(self.lf_drel, self.lf_vrel, v_ego)
+            print(f"lf_drel {self.lf_drel:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h")
           elif self.lb_drel is not None and self.lb_vrel is not None:  # 前方无车，后方有车
             delta_v = self.compute_delta_v_for_rear(self.lb_drel, self.lb_vrel, v_ego)
+            print(f"lb_drel {self.lb_drel} m, lb_vrel {self.lb_vrel} km/h")
         else:  # 右变道受阻
           if self.rf_drel is not None and self.rb_drel is not None and self.rf_vrel is not None and self.rb_vrel is not None:  # 前后均有车
             delta_v = self.compute_delta_v_for_front_rear(self.rf_drel, self.rf_vrel, self.rb_drel, self.rb_vrel,v_ego)
+            print(f"rf_drel {self.rf_drel:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h, rb_drel {self.rb_drel} m, rb_vrel {self.rb_vrel} km/h")
           elif self.rf_drel is not None and self.rf_vrel is not None:  # 前方有车，后方无车
             delta_v = self.compute_delta_v_for_front(self.rf_drel, self.rf_vrel, v_ego)
+            print(f"rf_drel {self.rf_drel:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h")
           elif self.rb_drel is not None and self.rb_vrel is not None:  # 前方无车，后方有车
             delta_v = self.compute_delta_v_for_rear(self.rb_drel, self.rb_vrel, v_ego)
+            print(f"rb_drel {self.rb_drel} m, rb_vrel {self.rb_vrel} km/h")
 
         if delta_v is not None:
           print("======================================")
           delta_v *= 3.6  # 换成km/h
-          print(f"atc_speed {atc_speed:.1f} km/h")
+          print(f"atc_speed {atc_speed:.1f} km/h, v_ego_kph {v_ego*3.6:.1f} km/h")
           print(f"atc_speed delta_v {delta_v:.1f} km/h")
           # 限制范围
           speed_max = self.nRoadLimitSpeed * 1.3
