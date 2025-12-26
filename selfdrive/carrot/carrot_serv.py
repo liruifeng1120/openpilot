@@ -1016,6 +1016,7 @@ class CarrotServ:
           print(f"final atc_speed {atc_speed:.1f} km/h")
           if self.atc_speed_delta > 0:
             atc_speed_up = True
+          atc_desired = atc_speed
           print("======================================")
       # ==========================================================
 
