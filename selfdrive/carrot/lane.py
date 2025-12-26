@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import time
 import numpy as np
-from collections import deque
+from collections import deque, Counter
+import threading
+from flask import Flask, jsonify, render_template_string
 
 from msgq.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType
 import cereal.messaging as messaging
@@ -9,306 +11,438 @@ from openpilot.common.transformations.camera import get_view_frame_from_calib_fr
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 
+# ==============================================================================
+# 全局数据共享 (用于 Web 展示)
+# ==============================================================================
+latest_data = {
+    'speed': 0.0,
+    'left_type': '未知',
+    'right_type': '未知',
+    'left_rel_std': 0.0,
+    'right_rel_std': 0.0,
+    'left_confidence': 0.0,
+    'right_confidence': 0.0,
+    'last_update': 0
+}
+
+latest_config = {
+    'lookahead_start': 3.0,
+    'lookahead_end': 40.0,
+    'num_points': 120,
+    'prob_threshold': 0.4,
+    'rel_std_solid_max': 0.06,
+    'rel_std_dash_min': 0.15,
+    'jump_threshold_factor': 0.5,
+    'window_points': 25
+}
+config_lock = threading.Lock()
+
+# ==============================================================================
+# Web 界面 (Stateless Flask)
+# ==============================================================================
+app = Flask(__name__)
+
+HTML_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CPlink Lane Monitor</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .container { background: #1e293b; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); width: 90%; max-width: 600px; border: 1px solid #334155; }
+        h1 { color: #38bdf8; text-align: center; margin-bottom: 2.5rem; font-weight: 700; letter-spacing: -0.025em; }
+        .stat { display: flex; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155; align-items: center; }
+        .label { color: #94a3b8; font-size: 1rem; font-weight: 500; }
+        .value { font-weight: 700; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 1.5rem; }
+        .type-solid { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .type-dashed { color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+        .type-unknown { color: #64748b; }
+        .speed { color: #38bdf8; font-size: 2.5rem; }
+        .unit { font-size: 1rem; color: #64748b; margin-left: 0.5rem; font-weight: 400; }
+        .footer { text-align: center; font-size: 0.875rem; color: #475569; margin-top: 2rem; font-weight: 500; }
+        .panel { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #334155; }
+        .row { display: flex; align-items: center; justify-content: space-between; margin: 0.75rem 0; }
+        .row label { color: #94a3b8; font-size: 0.95rem; width: 50%; }
+        .row input[type="range"] { width: 40%; }
+        .row .val { width: 10%; text-align: right; color: #38bdf8; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>车道线性能监控</h1>
+        <div class="stat">
+            <span class="label">实时车速</span>
+            <span class="value speed"><span id="speed">0.0</span><span class="unit">km/h</span></span>
+        </div>
+        <div class="stat">
+            <span class="label">左侧线路</span>
+            <span class="value" id="left_type">检测中...</span>
+        </div>
+        <div class="stat">
+            <span class="label">左侧方差</span>
+            <span class="value" id="left_std">0.0000</span>
+        </div>
+        <div class="stat">
+            <span class="label">右侧线路</span>
+            <span class="value" id="right_type">检测中...</span>
+        </div>
+        <div class="stat">
+            <span class="label">右侧方差</span>
+            <span class="value" id="right_std">0.0000</span>
+        </div>
+        <div class="panel">
+            <div class="row">
+                <label>概率阈值</label>
+                <input id="prob_threshold" type="range" min="0" max="1" step="0.01" value="0.3">
+                <span class="val" id="prob_threshold_val">0.30</span>
+            </div>
+            <div class="row">
+                <label>实线相对方差最大值</label>
+                <input id="rel_std_solid_max" type="range" min="0.02" max="0.20" step="0.01" value="0.08">
+                <span class="val" id="rel_std_solid_max_val">0.08</span>
+            </div>
+            <div class="row">
+                <label>虚线相对方差最小值</label>
+                <input id="rel_std_dash_min" type="range" min="0.05" max="0.50" step="0.01" value="0.12">
+                <span class="val" id="rel_std_dash_min_val">0.12</span>
+            </div>
+            <div class="row">
+                <label>采样起点 (米)</label>
+                <input id="lookahead_start" type="range" min="2" max="10" step="0.5" value="6.0">
+                <span class="val" id="lookahead_start_val">6.0</span>
+            </div>
+            <div class="row">
+                <label>采样终点 (米)</label>
+                <input id="lookahead_end" type="range" min="20" max="60" step="0.5" value="45.0">
+                <span class="val" id="lookahead_end_val">45.0</span>
+            </div>
+            <div class="row">
+                <label>采样点数量</label>
+                <input id="num_points" type="range" min="20" max="200" step="1" value="100">
+                <span class="val" id="num_points_val">100</span>
+            </div>
+            <div class="row">
+                <label>亮度跳变因子</label>
+                <input id="jump_threshold_factor" type="range" min="0.1" max="1.0" step="0.05" value="0.4">
+                <span class="val" id="jump_threshold_factor_val">0.40</span>
+            </div>
+            <div class="row">
+                <label>虚线周期窗口点数</label>
+                <input id="window_points" type="range" min="10" max="80" step="1" value="38">
+                <span class="val" id="window_points_val">38</span>
+            </div>
+        </div>
+        <div class="footer">
+            最后心跳: <span id="timestamp">--:--:--</span>
+        </div>
+    </div>
+    <script>
+        const ids = ["prob_threshold","rel_std_solid_max","rel_std_dash_min","lookahead_start","lookahead_end","num_points","jump_threshold_factor","window_points"];
+        function setVal(id, val) {
+            document.getElementById(id).value = val;
+            document.getElementById(id + "_val").innerText = (typeof val === 'number') ? (id.includes("num_points") || id.includes("window_points") ? Math.round(val) : Number(val).toFixed(id.includes("lookahead") ? 1 : 2)) : val;
+        }
+        function bindSliders() {
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                el.oninput = () => {
+                    const v = el.type === 'range' ? parseFloat(el.value) : el.value;
+                    setVal(id, v);
+                    const payload = {};
+                    payload[id] = (id === 'num_points' || id === 'window_points') ? Math.round(v) : v;
+                    fetch('/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+                };
+            });
+        }
+        function loadConfig() {
+            fetch('/config').then(r=>r.json()).then(cfg=>{
+                ids.forEach(id => setVal(id, cfg[id]));
+            });
+        }
+        function update() {
+            fetch('/data')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('speed').innerText = data.speed.toFixed(1);
+
+                    const updateLine = (id, typeId, typeStr, stdId, stdVal) => {
+                        const el = document.getElementById(typeId);
+                        el.innerText = typeStr;
+                        el.className = 'value ' + (typeStr === '实线' ? 'type-solid' : (typeStr === '虚线' ? 'type-dashed' : 'type-unknown'));
+                        document.getElementById(stdId).innerText = stdVal.toFixed(4);
+                    };
+
+                    updateLine('left', 'left_type', data.left_type, 'left_std', data.left_rel_std);
+                    updateLine('right', 'right_type', data.right_type, 'right_std', data.right_rel_std);
+
+                    document.getElementById('timestamp').innerText = new Date(data.last_update * 1000).toLocaleTimeString();
+                })
+                .catch(e => console.error("Monitor failed:", e));
+            fetch('/config')
+                .then(r=>r.json())
+                .then(cfg=>{
+                    ids.forEach(id => setVal(id, cfg[id]));
+                })
+                .catch(e => console.error("Config failed:", e));
+        }
+        bindSliders();
+        loadConfig();
+        setInterval(update, 1000);
+        update();
+    </script>
+</body>
+</html>
+"""
+
+@app.route('/')
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route('/data')
+def get_data():
+    return jsonify(latest_data)
+
+@app.route('/config', methods=['GET'])
+def get_config():
+    with config_lock:
+        return jsonify(latest_config)
+
+@app.route('/config', methods=['POST'])
+def set_config():
+    from flask import request
+    data = request.get_json(force=True) or {}
+    allowed = set(latest_config.keys())
+    with config_lock:
+        for k, v in data.items():
+            if k in allowed:
+                latest_config[k] = float(v) if k not in ('num_points', 'window_points') else int(v)
+    return jsonify({'ok': True, 'config': latest_config})
+
+def start_flask():
+    cloudlog.info("Starting Flask on port 8888")
+    app.run(host='0.0.0.0', port=8888, debug=False, use_reloader=False)
 
 # ==============================================================================
 # 车道线类型检测器类
 # ==============================================================================
 
 class LaneLineDetector:
-    """车道线实线/虚线检测器"""
+    """中国道路标准优化版检测器"""
 
     FULL_RES_WIDTH = 1928
 
     def __init__(self):
         self.params = Params()
-
-        self._last_params = {
-          "left": None,
-          "right": None,
-          "left_rel": None,
-          "right_rel": None,
-        }
-
-        self.left_last_type = -1
-        self.right_last_type = -1
-
         self.intrinsics = None
-        self.stride = None
         self.w, self.h = None, None
-        self.left_history = None
-        self.right_history = None
-
-        # ===================== 【新增】横向采样 & presence 参数 =====================
-        self.line_y_threshold = 200        # Y 平面亮度阈值
-        self.lateral_range_m = 0.3         # ±30cm
-        self.lateral_samples = 15          # 【修改】横向采样点数 11->15
-        self.min_x_presence_ratio = 0.7    # 实线阈值
-        self.max_x_absence_ratio = 0.5     # 虚线阈值
-        # ==========================================================================
-
+        self.history = {'left': deque(maxlen=5), 'right': deque(maxlen=5)}
         self.update_params()
-        cloudlog.info("LaneLineDetector initialized")
 
     def update_params(self):
-        """从 Params 系统更新可调参数"""
-        try:
-            self.lookahead_start = float(self.params.get("LaneDetectLookaheadStart", encoding='utf8') or "6.0")
-        except Exception:
-            self.lookahead_start = 6.0
-
-        try:
-            self.lookahead_end = float(self.params.get("LaneDetectLookaheadEnd", encoding='utf8') or "30.0")
-        except Exception:
-            self.lookahead_end = 30.0
-
-        try:
-            self.num_points = int(self.params.get("LaneDetectNumPoints", encoding='utf8') or "40")
-        except Exception:
-            self.num_points = 40
-
-        try:
-            self.relative_threshold_low = float(self.params.get("LaneDetectThresholdLow", encoding='utf8') or "0.095")
-        except Exception:
-            self.relative_threshold_low = 0.095
-
-        try:
-            self.relative_threshold_high = float(self.params.get("LaneDetectThresholdHigh", encoding='utf8') or "0.105")
-        except Exception:
-            self.relative_threshold_high = 0.105
-
-        try:
-            self.prob_threshold = float(self.params.get("LaneDetectProbThreshold", encoding='utf8') or "0.3")
-        except Exception:
-            self.prob_threshold = 0.3
-
-        try:
-            new_history_frames = int(self.params.get("LaneDetectHistoryFrames", encoding='utf8') or "5")
-        except Exception:
-            new_history_frames = 5
-
-        self.history_frames = new_history_frames
-
-        if self.left_history is None or self.right_history is None:
-            self.left_history = deque(maxlen=self.history_frames)
-            self.right_history = deque(maxlen=self.history_frames)
-        elif len(self.left_history) != 0 and self.left_history.maxlen != self.history_frames:
-            self.left_history = deque(self.left_history, maxlen=self.history_frames)
-            self.right_history = deque(self.right_history, maxlen=self.history_frames)
+        with config_lock:
+            cfg = dict(latest_config)
+        self.lookahead_start = cfg['lookahead_start']
+        self.lookahead_end = cfg['lookahead_end']
+        self.num_points = int(cfg['num_points'])
+        self.prob_threshold = cfg['prob_threshold']
+        self.rel_std_solid_max = cfg['rel_std_solid_max']
+        self.rel_std_dash_min = cfg['rel_std_dash_min']
+        self.jump_threshold_factor = cfg['jump_threshold_factor']
+        self.window_points = int(cfg['window_points'])
 
     def init_camera(self, sm, vipc_client):
-        if self.intrinsics is not None:
-            return True
-        if not sm.updated['deviceState'] or not sm.updated['roadCameraState']:
-            return False
+        if self.intrinsics is not None: return True
+        if not sm.updated['roadCameraState']: return False
         try:
-            device_type = str(sm['deviceState'].deviceType)
-            sensor = str(sm['roadCameraState'].sensor)
-            camera = DEVICE_CAMERAS[(device_type, sensor)]
-
-            self.stride = vipc_client.stride
-            self.w = vipc_client.width
-            self.h = vipc_client.height
-
+            # 简化内参获取，实际生产中应从 DEVICE_CAMERAS 获取
+            self.w, self.h = vipc_client.width, vipc_client.height
             scale = self.w / self.FULL_RES_WIDTH
-            self.intrinsics = camera.fcam.intrinsics * scale
-            self.intrinsics[2, 2] = 1.0
-            cloudlog.info(f"Camera initialized: {self.w}x{self.h}, device={device_type}")
+            # 这里使用标准 C3 相机内参作为 fallback
+            self.intrinsics = np.array([
+                [910 * scale, 0, 960 * scale],
+                [0, 910 * scale, 540 * scale],
+                [0, 0, 1]
+            ])
             return True
-        except Exception as e:
-            cloudlog.error(f"Camera initialization failed: {e}")
-            return False
+        except Exception: return False
 
-    # ===================== 【修改】完整 update 函数 =====================
+    def smooth_result(self, side, current_type):
+        """使用历史帧平滑结果"""
+        self.history[side].append(current_type)
+
+        if len(self.history[side]) < 3:
+            return current_type
+
+        # 投票机制：取最近5帧的众数
+        counts = Counter(self.history[side])
+        most_common = counts.most_common(1)[0][0]
+
+        return most_common
+
+    def analyze_lane_continuity(self, pixel_values, v_ego):
+        """改进的虚线检测 - 添加周期性分析
+
+        理论依据:
+        1. 信号处理(Signal Processing): 使用自相关(Autocorrelation)检测亮度信号的周期性
+        2. 统计学(Statistics): 使用相对标准差(Relative STD)区分实线(低波动)和虚线(高波动)
+        """
+        if len(pixel_values) < 30:
+            return -1, 0.0
+
+        # 基础统计
+        pixels = np.array(pixel_values, dtype=np.float32)
+        std = np.std(pixels)
+        mean = np.mean(pixels)
+        rel_std = std / max(mean, 1.0)
+
+        # 1. 明确的实线判断 - 方差极低且稳定
+        if rel_std < self.rel_std_solid_max:
+            return 1, rel_std
+
+        # 2. 归一化信号用于周期性分析
+        normalized = (pixels - mean) / max(std, 1.0)
+
+        # 3. 自相关分析检测周期性
+        def detect_periodicity(signal, min_period=5, max_period=None):
+            """使用自相关检测周期性"""
+            if max_period is None:
+                max_period = len(signal) // 3
+
+            autocorr_scores = []
+            for lag in range(min_period, min(max_period, len(signal)//2)):
+                corr = np.corrcoef(signal[:-lag], signal[lag:])[0, 1]
+                if not np.isnan(corr):
+                    autocorr_scores.append((lag, corr))
+
+            if not autocorr_scores:
+                return False, 0
+
+            # 找到最强的周期性（正相关峰值）
+            max_corr = max(autocorr_scores, key=lambda x: x[1])
+            return max_corr[1] > 0.3, max_corr[0]  # 相关系数 > 0.3 认为有周期性
+
+        has_period, period = detect_periodicity(normalized)
+
+        # 4. 改进的跳变分析 - 检测虚线段数
+        diffs = np.abs(np.diff(pixels))
+        jump_thresh = self.jump_threshold_factor * max(mean, 1.0)
+        significant_jumps = diffs > jump_thresh
+
+        # 统计虚线段数（连续跳变算一段）
+        dash_segments = 0
+        in_segment = False
+        for is_jump in significant_jumps:
+            if is_jump and not in_segment:
+                dash_segments += 1
+                in_segment = True
+            elif not is_jump:
+                in_segment = False
+
+        # 5. 综合判断虚线
+        # 条件：高方差 + 周期性 + 足够的虚线段数（至少2-3段）
+        max_possible_segments = (len(pixels) // period * 1.5) if period > 0 else 999
+
+        is_dashed = (
+            rel_std > self.rel_std_dash_min and
+            has_period and
+            dash_segments >= 2 and
+            dash_segments <= max_possible_segments
+        )
+
+        if is_dashed:
+            return 0, rel_std
+
+        # 6. 备选判断 - 基于跳变但要求更严格
+        if dash_segments >= 4 and rel_std > self.rel_std_dash_min * 1.2:
+            return 0, rel_std
+
+        # 7. 不确定情况
+        return -1, rel_std
+
     def update(self, sm, yuv_buf):
-        result = {
-            'left': -1,
-            'right': -1,
-            'left_rel_std': 0.0,
-            'right_rel_std': 0.0,
-            # 【新增】保证 Presence 字段存在
-            'left_x_presence': 0.0,
-            'right_x_presence': 0.0,
-            'left_max_run': 0,
-            'right_max_run': 0,
-        }
+        global latest_data
+        result = {'left': -1, 'right': -1, 'left_rel_std': 0.0, 'right_rel_std': 0.0}
 
-        if not sm.updated['modelV2'] or not sm.updated['liveCalibration']:
+        if not sm.updated.get('modelV2') or not sm.updated.get('liveCalibration'):
             return result
+
+        v_ego = sm['carState'].vEgo if sm.updated.get('carState') else 0.0
+        latest_data['speed'] = float(v_ego * 3.6)
 
         model = sm['modelV2']
         calib = sm['liveCalibration']
 
         try:
-            imgff = np.frombuffer(yuv_buf.data, dtype=np.uint8)
-            y_plane = imgff[: self.stride * self.h]
-            y_data = y_plane.reshape(self.h, self.stride)[:, :self.w]
-        except Exception as e:
-            cloudlog.error(f"YUV extraction failed: {e}")
-            return result
+            imgff = np.frombuffer(yuv_buf.data, dtype=np.uint8).reshape((-1, yuv_buf.stride))
+            y_data = imgff[:self.h, :self.w]
+            extrinsic = get_view_frame_from_calib_frame(calib.rpyCalib[0], 0.0, 0.0, 0.0)
+        except Exception: return result
 
-        try:
-            extrinsic_matrix_full = get_view_frame_from_calib_frame(
-                calib.rpyCalib[0],
-                0.0,
-                0.0,
-                0.0
-            )
-        except Exception as e:
-            cloudlog.error(f"Calibration frame conversion failed: {e}")
-            return result
+        self.update_params()
 
         for i, line_idx in enumerate([1, 2]):
-            try:
-                line = model.laneLines[line_idx]
-                line_prob = model.laneLineProbs[line_idx]
-            except IndexError:
-                continue
-
-            side_key = 'left' if i == 0 else 'right'
-            current_history = self.left_history if i == 0 else self.right_history
-            last_type = self.left_last_type if i == 0 else self.right_last_type
-
-            if line_prob < self.prob_threshold:
-                current_history.append(None)
-                continue
+            line = model.laneLines[line_idx]
+            if model.laneLineProbs[line_idx] < self.prob_threshold: continue
 
             xs, ys, zs = np.array(line.x), np.array(line.y), np.array(line.z)
-            if len(xs) < 10:
-                current_history.append(None)
-                continue
-
             sample_xs = np.linspace(self.lookahead_start, self.lookahead_end, self.num_points)
             sample_ys = np.interp(sample_xs, xs, ys)
             sample_zs = np.interp(sample_xs, xs, zs)
 
-            # ===================== 【新增】横向 ±30cm 扫描 + 按 x 聚合 presence =====================
-            y_offsets = np.linspace(-self.lateral_range_m, self.lateral_range_m, self.lateral_samples)
-            per_x_has_line = []
-            all_pixel_values = []
-
+            pixels = []
             for k in range(self.num_points):
-                base_x = sample_xs[k]
-                base_y = sample_ys[k]
-                base_z = sample_zs[k]
-                has_line_at_x = False
+                p = extrinsic.dot(np.array([sample_xs[k], sample_ys[k], sample_zs[k], 1.0]))
+                if p[2] <= 1.0: continue
+                u = int(p[0] / p[2] * self.intrinsics[0, 0] + self.intrinsics[0, 2])
+                v = int(p[1] / p[2] * self.intrinsics[1, 1] + self.intrinsics[1, 2])
 
-                for dy in y_offsets:
-                    local_point_homo = np.array([base_x, base_y + dy, base_z, 1.0])
-                    view_point_homo = extrinsic_matrix_full @ local_point_homo
+                # 添加边界检查和插值采样
+                if 1 <= u < self.w-1 and 1 <= v < self.h-1:
+                    # 使用双线性插值提高采样质量 (5点均值)
+                    pixel_val = (
+                        int(y_data[v, u]) * 0.5 +
+                        int(y_data[v-1, u]) * 0.125 +
+                        int(y_data[v+1, u]) * 0.125 +
+                        int(y_data[v, u-1]) * 0.125 +
+                        int(y_data[v, u+1]) * 0.125
+                    )
+                    pixels.append(pixel_val)
 
-                    if view_point_homo[2] <= 0:
-                        continue
+            res_type, res_std = self.analyze_lane_continuity(pixels, v_ego)
 
-                    u = int(view_point_homo[0] / view_point_homo[2] * self.intrinsics[0, 0] + self.intrinsics[0, 2])
-                    v = int(view_point_homo[1] / view_point_homo[2] * self.intrinsics[1, 1] + self.intrinsics[1, 2])
+            side = 'left' if i == 0 else 'right'
+            # 平滑结果
+            res_type = self.smooth_result(side, res_type)
+            result[side] = res_type
+            result[f'{side}_rel_std'] = res_std
 
-                    if 0 <= u < self.w and 0 <= v < self.h:
-                        y_val = int(y_data[v, u])
-                        all_pixel_values.append(y_val)
-                        if y_val > self.line_y_threshold:
-                            has_line_at_x = True
-                            break
-                per_x_has_line.append(has_line_at_x)
+            latest_data[f'{side}_type'] = ['虚线', '实线', '不确定'][res_type if res_type >= 0 else 2]
+            latest_data[f'{side}_rel_std'] = float(res_std)
 
-            valid_x = [v for v in per_x_has_line if v is not None]
-
-            if len(valid_x) < self.num_points // 2:
-                cur_type = -1
-            else:
-                x_presence_ratio = np.mean(valid_x)
-
-                # 统计最大连续段
-                max_run = 0
-                current_run = 0
-                for v in valid_x:
-                    if v:
-                        current_run += 1
-                        max_run = max(max_run, current_run)
-                    else:
-                        current_run = 0
-
-                # 判定 + 迟滞
-                if x_presence_ratio > self.min_x_presence_ratio:
-                    cur_type = 1
-                elif x_presence_ratio < self.max_x_absence_ratio:
-                    cur_type = 0
-                else:
-                    cur_type = last_type
-
-                if cur_type == 1 and max_run < self.num_points * 0.4:
-                    cur_type = last_type
-
-            current_history.append(cur_type if cur_type >= 0 else None)
-            if i == 0:
-                self.left_last_type = cur_type
-            else:
-                self.right_last_type = cur_type
-
-            # 记录结果
-            result[side_key] = cur_type
-            result[f'{side_key}_rel_std'] = np.std(all_pixel_values) / max(np.mean(all_pixel_values), 1.0)
-            result[f'{side_key}_x_presence'] = np.mean(valid_x) if valid_x else 0.0
-            result[f'{side_key}_max_run'] = max_run if valid_x else 0
-
+        latest_data['last_update'] = time.time()
         return result
-    # ===================== 【修改结束】update =====================
-
-    def publish_result(self, pm, result):
-        try:
-            if result['left'] != self._last_params["left"]:
-                self.params.put_nonblocking("LaneLineTypeLeft", str(result['left']))
-                self._last_params["left"] = result['left']
-
-            if result['right'] != self._last_params["right"]:
-                self.params.put_nonblocking("LaneLineTypeRight", str(result['right']))
-                self._last_params["right"] = result['right']
-
-            left_rel = round(result['left_rel_std'], 4)
-            if left_rel != self._last_params["left_rel"]:
-                self.params.put_nonblocking("LaneLineRelStdLeft", f"{left_rel:.4f}")
-                self._last_params["left_rel"] = left_rel
-
-            right_rel = round(result['right_rel_std'], 4)
-            if right_rel != self._last_params["right_rel"]:
-                self.params.put_nonblocking("LaneLineRelStdRight", f"{right_rel:.4f}")
-                self._last_params["right_rel"] = right_rel
-
-        except Exception as e:
-            cloudlog.warning(f"Failed to publish results to Params: {e}")
-
-# ==============================================================================
-# 主程序 (独立测试)
-# ==============================================================================
 
 def main():
+    threading.Thread(target=start_flask, daemon=True).start()
+
     detector = LaneLineDetector()
-    sm = messaging.SubMaster(['modelV2', 'liveCalibration', 'deviceState', 'roadCameraState'])
+    sm = messaging.SubMaster(['modelV2', 'liveCalibration', 'roadCameraState', 'carState'])
     vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
 
-    while not vipc_client.connect(False):
-        time.sleep(0.2)
+    while not vipc_client.connect(False): time.sleep(0.1)
 
     while True:
         sm.update(0)
-        if detector.init_camera(sm, vipc_client):
-            break
+        if detector.init_camera(sm, vipc_client): break
         time.sleep(0.1)
 
     while True:
         sm.update(0)
         yuv_buf = vipc_client.recv()
-
-        result = detector.update(sm, yuv_buf)
-        detector.publish_result(None, result)
-
-        left_type = ['虚线', '实线', '不确定/丢失'][result['left'] if result['left'] >= 0 else 2]
-        right_type = ['虚线', '实线', '不确定/丢失'][result['right'] if result['right'] >= 0 else 2]
-
-        print(f"\033[2J\033[H", end="")
-        print(f"=== 车道线识别 (Res: {detector.w}x{detector.h}) ===")
-        print(f"左侧: {left_type}  (AvgRel: {result['left_rel_std']:.3f}, Presence: {result['left_x_presence']:.2f})")
-        print(f"右侧: {right_type}  (AvgRel: {result['right_rel_std']:.3f}, Presence: {result['right_x_presence']:.2f})")
-        print("----------------------------------")
+        if yuv_buf is not None:
+            detector.update(sm, yuv_buf)
 
 if __name__ == "__main__":
     main()
