@@ -1071,6 +1071,10 @@
         <source>ERRM</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>연비</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -1367,6 +1371,22 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Signal slowing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>AUTOHOLD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SOFTHOLD</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CARROT</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>E2E行驶中</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1993,6 +2013,17 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>MoreRelaxed</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>TurnInfoDrawer</name>
+    <message>
+        <source>TG</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>减速:%d</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

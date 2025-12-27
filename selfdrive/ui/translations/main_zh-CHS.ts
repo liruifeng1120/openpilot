@@ -1105,6 +1105,62 @@
         <source>ERRM</source>
         <translation>错误</translation>
     </message>
+    <message>
+        <source>AUTOHOLD</source>
+        <translation type="vanished">自动驻车</translation>
+    </message>
+    <message>
+        <source>SOFTHOLD</source>
+        <translation type="vanished">柔性保持</translation>
+    </message>
+    <message>
+        <source>CARROT</source>
+        <translation type="vanished">萝卜巡航</translation>
+    </message>
+    <message>
+        <source>Signal Error</source>
+        <translation type="vanished">信号错误</translation>
+    </message>
+    <message>
+        <source>Signal Ready</source>
+        <translation type="vanished">信号就绪</translation>
+    </message>
+    <message>
+        <source>Signal slowing</source>
+        <translation type="vanished">信号减速</translation>
+    </message>
+    <message>
+        <source>TG</source>
+        <translation type="vanished">通行</translation>
+    </message>
+    <message>
+        <source>减速:%d</source>
+        <translation type="vanished">减速:%d</translation>
+    </message>
+    <message>
+        <source>ETA</source>
+        <translation type="vanished">预计到达</translation>
+    </message>
+    <message>
+        <source>到达</source>
+        <translation type="vanished">到达</translation>
+    </message>
+    <message>
+        <source>分</source>
+        <translation type="vanished">分</translation>
+    </message>
+    <message>
+        <source>MIN</source>
+        <translation type="vanished">分钟</translation>
+    </message>
+    <message>
+        <source>E2E行驶中</source>
+        <translation type="vanished">E2E行驶中</translation>
+    </message>
+    <message>
+        <source>연비</source>
+        <translation>经济</translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -1403,6 +1459,22 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Signal slowing</source>
         <translation>信号减速</translation>
+    </message>
+    <message>
+        <source>AUTOHOLD</source>
+        <translation type="unfinished">自动驻车</translation>
+    </message>
+    <message>
+        <source>SOFTHOLD</source>
+        <translation type="unfinished">柔性保持</translation>
+    </message>
+    <message>
+        <source>CARROT</source>
+        <translation type="unfinished">萝卜巡航</translation>
+    </message>
+    <message>
+        <source>E2E行驶中</source>
+        <translation type="unfinished">E2E行驶中</translation>
     </message>
 </context>
 <context>
@@ -2390,6 +2462,33 @@ This may take up to a minute.</source>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>录制并存储麦克风音频。音频将包含在comma connect中的行车记录仪视频中。</translation>
+    </message>
+</context>
+<context>
+    <name>TurnInfoDrawer</name>
+    <message>
+        <source>TG</source>
+        <translation type="unfinished">通行</translation>
+    </message>
+    <message>
+        <source>减速:%d</source>
+        <translation type="unfinished">减速:%d</translation>
+    </message>
+    <message>
+        <source>到达</source>
+        <translation type="obsolete">到达</translation>
+    </message>
+    <message>
+        <source>ETA</source>
+        <translation type="obsolete">预计到达</translation>
+    </message>
+    <message>
+        <source>分</source>
+        <translation type="obsolete">分</translation>
+    </message>
+    <message>
+        <source>MIN</source>
+        <translation type="obsolete">分钟</translation>
     </message>
 </context>
 <context>

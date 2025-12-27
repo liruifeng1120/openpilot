@@ -733,7 +733,7 @@ public:
         bool draw_dist = false;
         float disp_size = 50;
         if (softHoldActive || brakeHoldActive || carrotCruise) {
-            sprintf(str, "%s", (brakeHoldActive) ? "AUTOHOLD" : (softHoldActive) ? "SOFTHOLD": "CARROT");
+            sprintf(str, "%s", (brakeHoldActive) ? tr("AUTOHOLD").toStdString().c_str() : (softHoldActive) ? tr("SOFTHOLD").toStdString().c_str(): tr("CARROT").toStdString().c_str());
             ui_draw_text(s, x, disp_y, str, disp_size, COLOR_WHITE, BOLD);
         }
         else if (longActive) {
@@ -755,7 +755,7 @@ public:
 #endif
             }
             else if (xState == 4) {     //XState.e2ePrepare
-				      ui_draw_text(s, x, disp_y, "E2E行驶中", disp_size, COLOR_WHITE, BOLD);
+				      ui_draw_text(s, x, disp_y, tr("E2E行驶中").toStdString().c_str(), disp_size, COLOR_WHITE, BOLD);
 			      }
             else if (xState == 0 || xState == 1 || xState == 2) {     //XState.lead
                 draw_dist = true;
@@ -1159,10 +1159,10 @@ protected:
             case 3: ui_draw_image(s, { bx - icon_size / 2, by - icon_size / 2, icon_size, icon_size }, "ic_lane_change_l", 1.0f); break;
             case 4: ui_draw_image(s, { bx - icon_size / 2, by - icon_size / 2, icon_size, icon_size }, "ic_lane_change_r", 1.0f); break;
             case 7: ui_draw_image(s, { bx - icon_size / 2, by - icon_size / 2, icon_size, icon_size }, "ic_turn_u", 1.0f); break;
-            case 6: ui_draw_text(s, bx, by + 20, "TG", 35, COLOR_WHITE, BOLD); break;
+            case 6: ui_draw_text(s, bx, by + 20, tr("TG").toStdString().c_str(), 35, COLOR_WHITE, BOLD); break;
             case 8: ui_draw_text(s, bx, by + 20, "目的地", 35, COLOR_WHITE, BOLD); break;
             default:
-                sprintf(str, "减速:%d", xTurnInfo);
+                sprintf(str, tr("减速:%d").toStdString().c_str(), xTurnInfo);
                 ui_draw_text(s, bx, by + 20, str, 35, COLOR_WHITE, BOLD);
                 break;
             }
@@ -1197,8 +1197,7 @@ protected:
             int remaining_minutes = (int)nGoPosTime / 60;
             local->tm_min += remaining_minutes;
             mktime(local);
-            bool is_kor = s->language == "main_ko";
-            sprintf(str, "%s: %.1f%s(%02d:%02d)", (is_kor)?"到达":"ETA", (float)nGoPosTime / 60., (is_kor)?"分":"MIN", local->tm_hour, local->tm_min);
+            sprintf(str, "到达: %.1f分(%02d:%02d)", (float)nGoPosTime / 60., local->tm_hour, local->tm_min);
             ui_draw_text(s, tbt_x + 190, tbt_y + 80, str, 50, COLOR_WHITE, BOLD);
             if (s->scene.is_metric) {
                 sprintf(str, "%.1f公里", nGoPosDist / 1000.);
@@ -2387,7 +2386,8 @@ public:
         const SubMaster& sm = *(s->sm);
 
         // draw gap info
-        char driving_mode_str[32] = "연비";
+        char driving_mode_str[32];
+        strcpy(driving_mode_str, tr("연비").toStdString().c_str());
         int driving_mode = myDrivingMode;// params.getInt("MyDrivingMode");
         NVGcolor mode_color = COLOR_GREEN_ALPHA(210);
         NVGcolor text_color = COLOR_WHITE;
