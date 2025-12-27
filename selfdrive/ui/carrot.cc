@@ -2102,7 +2102,9 @@ public:
                 }
             }
         }
+#endif
         makeDeviceInfo(s);
+        return true;  // 添加缺失的返回语句
 	}
     void drawRadarInfo(UIState* s) {
       char str[128];
