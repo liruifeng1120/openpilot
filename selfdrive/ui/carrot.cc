@@ -755,7 +755,7 @@ public:
 #endif
             }
             else if (xState == 4) {     //XState.e2ePrepare
-				      ui_draw_text(s, x, disp_y, "E2E주행중", disp_size, COLOR_WHITE, BOLD);
+				      ui_draw_text(s, x, disp_y, "E2E行驶中", disp_size, COLOR_WHITE, BOLD);
 			      }
             else if (xState == 0 || xState == 1 || xState == 2) {     //XState.lead
                 draw_dist = true;
@@ -1077,13 +1077,13 @@ protected:
             if (xSpdDist > 0) {
 
                 if (s->scene.is_metric) {
-                    if (xSpdDist < 1000) sprintf(str, "%d m", xSpdDist);
-                    else  sprintf(str, "%.1f km", xSpdDist / 1000.f);
+                    if (xSpdDist < 1000) sprintf(str, "%d米", xSpdDist);
+                    else  sprintf(str, "%.1f公里", xSpdDist / 1000.f);
                 }
                 else {
-                    // 1 미터 = 3.28084 피트로 계산
-                    if (xSpdDist < 1609) sprintf(str, "%d ft", (int)(xSpdDist * 3.28084)); // 1609m(1마일)보다 작으면 피트로 표시
-                    else sprintf(str, "%.1f mi", xSpdDist / 1609.34f); // 1609m 이상이면 마일로 표시
+                    // 1 米 = 3.28084 英尺换算
+                    if (xSpdDist < 1609) sprintf(str, "%d英尺", (int)(xSpdDist * 3.28084)); // 1609m(1英里)以下显示英尺
+                    else sprintf(str, "%.1f英里", xSpdDist / 1609.34f); // 1609m以上显示英里
                 }
                 ui_draw_text(s, bx, by + 120 * scale, str, 40 * scale, COLOR_WHITE, BOLD);
             }
@@ -1115,10 +1115,10 @@ protected:
         active_carrot = 2;
         nGoPosDist = 500000;
         nGoPosTime = 4 * 60 * 60;
-        szSdiDescr = "어린이 보호구역(스쿨존 시작 구간)";
+        szSdiDescr = "儿童保护区域(学校区域开始)";
         xTurnInfo = 1;
         xDistToTurn = 1000;
-        szPosRoadName = "구문천 1길 17";
+        szPosRoadName = "九川1街17号";
 #endif
 
         //if (active_carrot <= 1) return;
@@ -1160,19 +1160,19 @@ protected:
             case 4: ui_draw_image(s, { bx - icon_size / 2, by - icon_size / 2, icon_size, icon_size }, "ic_lane_change_r", 1.0f); break;
             case 7: ui_draw_image(s, { bx - icon_size / 2, by - icon_size / 2, icon_size, icon_size }, "ic_turn_u", 1.0f); break;
             case 6: ui_draw_text(s, bx, by + 20, "TG", 35, COLOR_WHITE, BOLD); break;
-            case 8: ui_draw_text(s, bx, by + 20, "목적지", 35, COLOR_WHITE, BOLD); break;
+            case 8: ui_draw_text(s, bx, by + 20, "目的地", 35, COLOR_WHITE, BOLD); break;
             default:
-                sprintf(str, "감속:%d", xTurnInfo);
+                sprintf(str, "减速:%d", xTurnInfo);
                 ui_draw_text(s, bx, by + 20, str, 35, COLOR_WHITE, BOLD);
                 break;
             }
             if (s->scene.is_metric) {
-              if (xDistToTurn < 1000) sprintf(str, "%d m", xDistToTurn);
-              else  sprintf(str, "%.1f km", xDistToTurn / 1000.f);
+              if (xDistToTurn < 1000) sprintf(str, "%d米", xDistToTurn);
+              else  sprintf(str, "%.1f公里", xDistToTurn / 1000.f);
             }
             else {
-              if (xDistToTurn < 1609) sprintf(str, "%d ft", (int)(xDistToTurn * 3.28084));
-              else sprintf(str, "%.1f mi", xDistToTurn / 1609.344f);
+              if (xDistToTurn < 1609) sprintf(str, "%d英尺", (int)(xDistToTurn * 3.28084));
+              else sprintf(str, "%.1f英里", xDistToTurn / 1609.344f);
             }
             ui_draw_text(s, bx, by + 120, str, 40, COLOR_WHITE, BOLD);
         }
@@ -1198,9 +1198,13 @@ protected:
             local->tm_min += remaining_minutes;
             mktime(local);
             bool is_kor = s->language == "main_ko";
-            sprintf(str, "%s: %.1f%s(%02d:%02d)", (is_kor)?"도착":"ETA", (float)nGoPosTime / 60., (is_kor)?"분":"MIN", local->tm_hour, local->tm_min);
+            sprintf(str, "%s: %.1f%s(%02d:%02d)", (is_kor)?"到达":"ETA", (float)nGoPosTime / 60., (is_kor)?"分":"MIN", local->tm_hour, local->tm_min);
             ui_draw_text(s, tbt_x + 190, tbt_y + 80, str, 50, COLOR_WHITE, BOLD);
-            sprintf(str, "%.1f%s", nGoPosDist / 1000. * ((s->scene.is_metric)?1:KM_TO_MILE), (s->scene.is_metric) ? "km" : "mile");
+            if (s->scene.is_metric) {
+                sprintf(str, "%.1f公里", nGoPosDist / 1000.);
+            } else {
+                sprintf(str, "%.1f英里", nGoPosDist / 1000. * KM_TO_MILE);
+            }
             ui_draw_text(s, tbt_x + 190 + 120, tbt_y + 130, str, 50, COLOR_WHITE, BOLD);
         }
         return 0;
@@ -2552,7 +2556,7 @@ public:
             }
             if (show_datetime == 1 || show_datetime == 3) {
                 //strftime(str, sizeof(str), "%m-%d-%a", local);
-                const char* weekdays_ko[] = { "일", "월", "화", "수", "목", "금", "토" };
+                const char* weekdays_ko[] = { "日", "一", "二", "三", "四", "五", "六" };
                 strftime(str, sizeof(str), "%m-%d", local); // 날짜만 가져옴
                 int weekday_index = local->tm_wday; // tm_wday: 0=일, 1=월, ..., 6=토
                 snprintf(str + strlen(str), sizeof(str) - strlen(str), "(%s)", weekdays_ko[weekday_index]);

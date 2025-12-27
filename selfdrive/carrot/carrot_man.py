@@ -232,8 +232,21 @@ class CarrotMan:
     self.is_metric = self.params.get_bool("IsMetric")
 
   def get_broadcast_address(self):
+    # 수정为支持PC의 다중 인터페이스 검출
     if PC:
-      iface = b'br0'
+        interfaces = ['wlan0', 'eth0', 'enp0s3', 'br0']  # 일반적인 PC 인터페이스들
+        for iface in interfaces:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                    ip = fcntl.ioctl(
+                        s.fileno(),
+                        0x8919,  # SIOCGIFBRDADDR
+                        struct.pack('256s', iface.encode('utf-8')[:15])
+                    )[20:24]
+                    return socket.inet_ntoa(ip)
+            except Exception:
+                continue
+        return "255.255.255.255"  # 대체 주소
     else:
       iface = b'wlan0'
     try:
