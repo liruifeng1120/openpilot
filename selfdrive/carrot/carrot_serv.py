@@ -1108,7 +1108,16 @@ class CarrotServ:
             self.bsd_v_ego_kph = None
             print("Clear self.atc_speed_delta")
           else:
-            atc_desired = max(30, v_ego_restore + self.atc_speed_delta)
+            if self.active_carrot >= 2:  # 开了导航
+              speed_max = min(140., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120],[2.0, 1.4, 1.3, 1.17]))
+              speed_min = max(15., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120],[0.5, 0.6, 0.65, 0.65]))
+            elif self.roadcate == 1 or self.roadcate == 0:  # 高速
+              speed_max = 140
+              speed_min = 60
+            else:  # 公路
+              speed_max = 85
+              speed_min = 30
+            atc_desired = max(30, np.clip(self.atc_speed_delta + v_ego_restore, speed_min, speed_max))
             if self.atc_speed_delta > 0:
               atc_speed_up = 1
             print(f"final atc_desired {atc_desired:.1f} km/h, total delta {self.atc_speed_delta:.1f} km/h")
