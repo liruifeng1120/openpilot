@@ -10,6 +10,8 @@ from openpilot.system.manager.process import PythonProcess, NativeProcess, Daemo
 FLASK_AVAILABLE = importlib.util.find_spec("flask") is not None
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
+USBCAM = os.getenv("USE_USBCAM") is not None
+
 
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
@@ -88,6 +90,7 @@ procs = [
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
   PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
+  NativeProcess("usbcamerad", "tools/webcam", ["./camerad"], driverview, enabled=USBCAM),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
   PythonProcess("micd", "system.micd", iscar),
