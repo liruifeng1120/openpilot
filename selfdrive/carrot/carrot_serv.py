@@ -28,7 +28,7 @@ BLINKER_RIGHT = 2
 BLINKER_BOTH = 3
 
 DT_NAV = 0.1
-ACCEL_LIMIT = 0.8*3.6  # m/s²*3.6=km/h，舒适加减速限制
+ACCEL_LIMIT = 1.5*3.6  # m/s²*3.6=km/h，舒适加减速限制
 RESTORE_ACCEL_LIMIT = 1.5*3.6
 
 nav_type_mapping = {
@@ -1061,7 +1061,7 @@ class CarrotServ:
           # 限制每次循环增量
           max_delta = ACCEL_LIMIT * DT_NAV
           delta_v_applied = np.clip(delta_v, -max_delta, max_delta)
-          print(f"delta_v step {delta_v_applied:.1f} km/h")
+          print(f"delta_v step {delta_v_applied:.1f} km/h, org v_ego_kph {self.bsd_v_ego_kph:.1f} km/h")
           # 累积更新速度并限制
           self.atc_speed_delta += delta_v_applied
           atc_desired = np.clip(self.atc_speed_delta + self.bsd_v_ego_kph, speed_min, speed_max)
@@ -1069,7 +1069,7 @@ class CarrotServ:
           print(f"final atc_desired {atc_desired:.1f} km/h, total delta {self.atc_speed_delta:.1f} km/h")
           if self.atc_speed_delta > 0:
             atc_speed_up = 1 if atc_left_right_bsd else 2
-          self.bsd_speed_keep_time = int(3 / DT_NAV)
+          self.bsd_speed_keep_time = int(2 / DT_NAV)
       # ==========================================================
 
     #清空atc_speed偏差值
@@ -1101,12 +1101,14 @@ class CarrotServ:
           else:
             self.atc_speed_delta = 0
 
+          print(f"v_ego_restore {v_ego_restore:.1f} km/h, v_ego org {self.bsd_v_ego_kph:.1f} km/h")
+
           if self.atc_speed_delta == 0:
             self.atc_speed_delta = None
             self.bsd_v_ego_kph = None
             print("Clear self.atc_speed_delta")
           else:
-            atc_desired = v_ego_restore + self.atc_speed_delta
+            atc_desired = max(30, v_ego_restore + self.atc_speed_delta)
             if self.atc_speed_delta > 0:
               atc_speed_up = 1
             print(f"final atc_desired {atc_desired:.1f} km/h, total delta {self.atc_speed_delta:.1f} km/h")
@@ -1190,6 +1192,8 @@ class CarrotServ:
     self.debugText = ""
     self.update_params()
     if sm.alive['carState'] and sm.alive['selfdriveState']:
+      controls_active = sm['selfdriveState'].active
+      v_cruise_kph = sm["carState"].vCruise
       CS = sm['carState']
       v_ego = CS.vEgo
       v_ego_kph = v_ego * 3.6
@@ -1198,6 +1202,8 @@ class CarrotServ:
       self.totalDistance = distanceTraveled
       if CS.speedLimit > 0 and self.active_carrot <= 1:
         self.nRoadLimitSpeed = CS.speedLimit
+      elif controls_active and v_cruise_kph < 150 and self.active_carrot <= 1: #未开导航时以巡航速度作为道路限速
+        self.nRoadLimitSpeed = v_cruise_kph
     else:
       v_ego = v_ego_kph = 0
       delta_dist = 0
