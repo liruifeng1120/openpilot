@@ -297,7 +297,13 @@ bool camera::read_frame(std::vector<void*>& buffers, std::vector<size_t>& buffer
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
     if (ioctl(m_fd, VIDIOC_DQBUF, &buf) == -1) {
-        std::cerr << "Dequeue buffer failed. " << m_fd << std::endl;
+        static uint64_t last_log_time = 0;
+        uint64_t current_time = nanos_since_boot();
+        // 只有在距离上次错误日志超过1秒时才输出错误
+        if (current_time - last_log_time > 1e9) {  // 1e9纳秒 = 1秒
+            std::cerr << "Dequeue buffer failed. " << m_fd << std::endl;
+            last_log_time = current_time;
+        }
         usleep(10);
         return false;
     }
