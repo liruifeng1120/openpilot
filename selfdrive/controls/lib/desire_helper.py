@@ -1007,11 +1007,11 @@ class DesireHelper:
                     if atc_desire_enabled: #自动变道
                       if auto_lane_change_trigger_no_bsd: #符合自动变道的条件
                         if self.atc_bsd == BLINKER_NONE:
-                          print("atc lane change bsd blocked")
+                          print(f"atc lane change bsd {'left' if blinker_state == BLINKER_LEFT else 'right'} blocked")
                         self.atc_bsd = blinker_state #自动变道被盲区阻止
                     elif driver_desire_enabled: #手动打灯变道
                       if self.atc_bsd == BLINKER_NONE:
-                        print("driver lane change bsd blocked")
+                        print(f'driver lane change bsd {'left' if blinker_state == BLINKER_LEFT else 'right'} blocked')
                       self.atc_bsd = blinker_state + BLINKER_BOTH  #手动变道被盲区阻止
               #盲区有车时重置变道延时计数器
               self.lane_change_disable_count = lane_change_interval
