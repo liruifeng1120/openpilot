@@ -28,7 +28,7 @@ BLINKER_RIGHT = 2
 BLINKER_BOTH = 3
 
 DT = 0.1
-ACCEL_LIMIT = 1.5*3.6  # m/s²，舒适加减速限制
+ACCEL_LIMIT = 0.8*3.6  # m/s²*3.6=km/h，舒适加减速限制
 
 nav_type_mapping = {
   12: ("turn", "left", 1),
@@ -966,8 +966,13 @@ class CarrotServ:
       atc_speedup_enable = False
 
     # ==========================================================
-    v_ego = sm["carState"].vEgo
+    carState = sm["carState"]
+    v_ego = carState.vEgo
+    v_ego_kph = v_ego*3.6
     meta = sm["modelV2"].meta
+    v_cruise_kph = 250
+    if hasattr(carState, 'vCruise'):
+      v_cruise_kph = carState.vCruise
     atc_left_bsd = True if (meta.atcBsd == 1) else False
     atc_right_bsd = True if (meta.atcBsd == 2) else False
     atc_left_right_bsd = atc_left_bsd or atc_right_bsd
@@ -1013,11 +1018,28 @@ class CarrotServ:
         if delta_v is not None:
           print("======================================")
           delta_v *= 3.6  # 换成km/h
-          print(f"atc_speed {atc_speed:.1f} km/h, v_ego_kph {v_ego*3.6:.1f} km/h")
-          print(f"atc_speed delta_v {delta_v:.1f} km/h")
+          print(f"delta_v {delta_v:.1f} km/h")
+          #判断是否无法加速(前方有车)
+          if self.active_carrot>=2: #开了导航
+            min_desire_speed_kph = min(v_cruise_kph, self.nRoadLimitSpeed, atc_desired)
+          else:
+            min_desire_speed_kph = min(v_cruise_kph, atc_desired)
+          if min_desire_speed_kph < 150:
+            print(f"min_desire_speed {min_desire_speed_kph:.1f} km/h")
+          if 150 > min_desire_speed_kph > (v_ego_kph + 5): #巡航速度有效，当前速度比巡航速度小5，说明无法进行加速
+            delta_v = -abs(delta_v)
+            print(f"new delta_v {delta_v:.1f} km/h")
+          print(f"atc_speed {atc_speed:.1f} km/h, v_ego_kph {v_ego_kph:.1f} km/h")
           # 限制范围
-          speed_max = min(140., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120], [2.0, 1.4, 1.3, 1.17]))
-          speed_min = max(15., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120], [0.5, 0.6, 0.65, 0.65]))
+          if self.active_carrot >= 2: #开了导航
+            speed_max = min(140., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120], [2.0, 1.4, 1.3, 1.17]))
+            speed_min = max(15., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120], [0.5, 0.6, 0.65, 0.65]))
+          elif self.roadcate == 1 or self.roadcate == 0: #高速
+            speed_max = 140
+            speed_min = 60
+          else: #公路
+            speed_max = 80
+            speed_min = 30
           print(f"max speed {speed_max:.1f} km/h, min speed {speed_min:.1f} km/h")
           # 初始化当前速度状态
           if self.atc_speed_delta is None:
