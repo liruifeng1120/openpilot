@@ -29,7 +29,8 @@ BLINKER_BOTH = 3
 
 DT_NAV = 0.1
 ACCEL_LIMIT = 1.5*3.6  # m/s²*3.6=km/h，舒适加减速限制
-RESTORE_ACCEL_LIMIT = 1.5*3.6
+RESTORE_UP_ACCEL_LIMIT = 3.0*3.6
+RESTORE_DOWN_ACCEL_LIMIT = 1.5*3.6
 
 nav_type_mapping = {
   12: ("turn", "left", 1),
@@ -285,6 +286,7 @@ class CarrotServ:
     self.atc_speed_delta = None
     self.bsd_v_ego_kph = None
     self.bsd_speed_keep_time = -1
+    self.atc_speed_delta_new = None
     #new
     self.atcType = "none"
 
@@ -847,7 +849,7 @@ class CarrotServ:
     atc_speed_up = 0
     atc_decel = False
     delta_v = None
-    speed_up_enable = False
+    speed_up_enable = True
 
     #导航给出在转弯距离大于开始转弯距离时，进入准备阶段
     if x_dist_to_turn > atc_start_dist:
@@ -941,18 +943,6 @@ class CarrotServ:
       atc_desired = min(atc_desired, self.calculate_current_speed(x_dist_to_turn - atc_dist, atc_speed, safe_sec, decel))
 
     # ==========================================================
-    # 计算理论请求速度
-    if check_steer:
-      if self.active_carrot >= 2:  # 开了导航
-        min_desire_speed_kph = min(v_cruise_kph, self.nRoadLimitSpeed, atc_desired)
-        print(f"min_desire_speed {min_desire_speed_kph:.1f} km/h, road_limit {self.nRoadLimitSpeed:.1f} km/h")
-      else:
-        min_desire_speed_kph = min(v_cruise_kph, atc_desired)
-        print(f"min_desire_speed {min_desire_speed_kph:.1f} km/h, active_carrot {self.active_carrot}")
-
-        if 150 > min_desire_speed_kph > (v_ego_kph + 5) and lead_one:  # 有前车，巡航速度有效，当前速度比巡航速度小5，说明无法进行加速
-          speed_up_enable = False
-
     # 盲区受阻标志
     atc_left_bsd = True if (meta.atcBsd == 1) else False
     atc_right_bsd = True if (meta.atcBsd == 2) else False
@@ -963,8 +953,18 @@ class CarrotServ:
     driver_left_right_bsd = driver_left_bsd or driver_right_bsd
 
     if check_steer and ((atc_bsd_adjust_enable and atc_left_right_bsd) or (not atc_bsd_adjust_enable and not atc_decel and driver_left_right_bsd)):  # 允许自动加减速
-      left_bsd = (True if "left" in atc_type else False) if atc_left_right_bsd else (True if driver_left_bsd else False)
       if self.lidar_rvalid and self.lidar_lvalid:  #有激光雷达
+        #计算理论巡航速度
+        if self.active_carrot >= 2:  # 开了导航
+          min_desire_speed_kph = min(v_cruise_kph, self.nRoadLimitSpeed, atc_desired)
+          print(f"min_desire_speed {min_desire_speed_kph:.1f} km/h, road_limit {self.nRoadLimitSpeed:.1f} km/h")
+        else:
+          min_desire_speed_kph = min(v_cruise_kph, atc_desired)
+          print(f"min_desire_speed {min_desire_speed_kph:.1f} km/h, active_carrot {self.active_carrot}")
+        if 150 > min_desire_speed_kph > (v_ego_kph + 2) and lead_one:  # 有前车，巡航速度有效，当前速度比巡航速度小5，说明无法进行加速
+          speed_up_enable = False
+
+        left_bsd = (True if "left" in atc_type else False) if atc_left_right_bsd else (True if driver_left_bsd else False)
         if left_bsd:  # 左变道受阻
           if self.lf_drel is not None and self.lb_drel is not None and self.lf_vrel is not None and self.lb_vrel is not None:  # 前后均有车
             delta_v = self.compute_delta_v_for_front_rear(self.lf_drel, self.lf_vrel, self.lb_drel, self.lb_vrel, v_ego, speed_up_enable)
@@ -1038,11 +1038,17 @@ class CarrotServ:
             self.bsd_speed_keep_time = int(2 / DT_NAV)
           else:
             self.bsd_speed_keep_time = 0 #减速的不需要保持时间
+          self.atc_speed_delta_new = None
       # ==========================================================
 
     #清空atc_speed偏差值
     if check_steer and (delta_v is None):
       if self.atc_speed_delta is not None and self.bsd_v_ego_kph is not None: #恢复叠加的加减速值（避免突然变化）
+        #重新计算实际已经执行了的加减速值
+        if self.atc_speed_delta_new is None:
+          self.atc_speed_delta_new = self.bsd_v_ego_kph - v_ego_kph
+          self.atc_speed_delta = self.atc_speed_delta_new
+
         self.bsd_speed_keep_time = min(-1, self.bsd_speed_keep_time - 1) #保持时间计数
         if self.bsd_speed_keep_time >= 0:
           atc_desired = self.bsd_v_ego_kph + self.atc_speed_delta
@@ -1050,7 +1056,7 @@ class CarrotServ:
             atc_speed_up = 1
           print("==============keep================")
           print(f"final atc_desired {atc_desired:.1f} km/h, total delta {self.atc_speed_delta:.1f} km/h, tick {self.bsd_speed_keep_time}")
-        else:
+        elif self.atc_speed_delta > 0: #之前是进行的提速，现在逐步恢复回原速度
           print("==============restore================")
           if self.active_carrot >= 2:  # 开了导航
             min_desire_speed_kph = min(v_cruise_kph, self.nRoadLimitSpeed, atc_desired)
@@ -1058,13 +1064,14 @@ class CarrotServ:
           else:
             min_desire_speed_kph = min(v_cruise_kph, atc_desired)
             print(f"min_desire_speed {min_desire_speed_kph:.1f} km/h, active_carrot {self.active_carrot}")
-
-          #要还原的速度
-          v_ego_restore = min(self.bsd_v_ego_kph, min_desire_speed_kph)
-          max_delta = RESTORE_ACCEL_LIMIT * DT_NAV
+          v_ego_restore = min(self.bsd_v_ego_kph, min_desire_speed_kph) #要还原的速度
+          if self.atc_speed_delta > 0:
+            max_delta = RESTORE_DOWN_ACCEL_LIMIT * DT_NAV
+          else:
+            max_delta = RESTORE_UP_ACCEL_LIMIT * DT_NAV
           if self.atc_speed_delta > 0 and self.atc_speed_delta > max_delta:
             self.atc_speed_delta -= max_delta
-          elif self.atc_speed_delta < 0 and self.atc_speed_delta < max_delta:
+          elif self.atc_speed_delta < 0 and self.atc_speed_delta < -max_delta:
             self.atc_speed_delta += max_delta
           else:
             self.atc_speed_delta = 0
@@ -1074,24 +1081,23 @@ class CarrotServ:
           if self.atc_speed_delta == 0:
             self.atc_speed_delta = None
             self.bsd_v_ego_kph = None
+            self.atc_speed_delta_new = None
             print("Clear self.atc_speed_delta")
           else:
-            if self.active_carrot >= 2:  # 开了导航
-              speed_max = min(140., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120],[2.0, 1.4, 1.3, 1.17]))
-              speed_min = max(15., self.nRoadLimitSpeed * np.interp(self.nRoadLimitSpeed, [30, 60, 100, 120],[0.5, 0.6, 0.65, 0.65]))
-            elif self.roadcate == 1 or self.roadcate == 0:  # 高速
-              speed_max = 140
-              speed_min = 60
-            else:  # 公路
-              speed_max = 85
-              speed_min = 30
-            atc_desired = max(30, np.clip(self.atc_speed_delta + v_ego_restore, speed_min, speed_max))
+            atc_desired = np.clip(self.atc_speed_delta + v_ego_restore, 25, 120)
             if self.atc_speed_delta > 0:
               atc_speed_up = 1
-            print(f"final atc_desired {atc_desired:.1f} km/h, total delta {self.atc_speed_delta:.1f} km/h")
-      else:
+            print(f"restore atc_desired {atc_desired:.1f} km/h, total delta {self.atc_speed_delta:.1f} km/h")
+        else: #之前是减速，现在直接一步恢复到位
+          self.atc_speed_delta = None
+          self.bsd_v_ego_kph = None
+          self.atc_speed_delta_new = None
+          print("Clear self.atc_speed_delta")
+      elif self.atc_speed_delta is not None or self.bsd_v_ego_kph is not None:
         self.atc_speed_delta = None
         self.bsd_v_ego_kph = None
+        self.atc_speed_delta_new = None
+        print("Clear self.atc_speed_delta")
 
     if (self.showDebugLog & 1) > 0 and check_steer:
       debugText = (f"***atc info: type=({x_turn_info}){atc_type_org},{atc_type},desire_speed={atc_desired:.1f},xdist={x_dist_to_turn:.1f},max_xdist={self.xDistToTurnMax:.1f}(cnt:{self.xDistToTurnMaxCnt})," +
