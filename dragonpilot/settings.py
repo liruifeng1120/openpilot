@@ -2,7 +2,7 @@ from dragonpilot.system.ui.lib.multilang import tr
 
 SETTINGS = [
   {
-    "title": "Toyota / Lexus",
+    "title": tr("Toyota / Lexus"),
     "condition": "brand == 'toyota'",
     "settings": [
       {
@@ -27,7 +27,7 @@ SETTINGS = [
     ],
   },
   {
-    "title": "VAG",
+    "title": tr("VAG"),
     "condition": "brand == 'volkswagen'",
     "settings": [
       {
@@ -52,14 +52,14 @@ SETTINGS = [
     ],
   },
   {
-    "title": "Mazda",
+    "title": tr("Mazda"),
     "condition": "brand == 'mazda'",
     "settings": [
 
     ],
   },
   {
-    "title": "Lateral",
+    "title": tr("Lateral"),
     "settings": [
       {
         "key": "dp_lat_alka",
@@ -112,7 +112,7 @@ SETTINGS = [
     ],
   },
   {
-    "title": "Longitudinal",
+    "title": tr("Longitudinal"),
     "condition": "openpilotLongitudinalControl",
     "settings": [
       {
@@ -137,7 +137,7 @@ SETTINGS = [
     ],
   },
   {
-    "title": "UI",
+    "title": tr("UI"),
     "settings": [
       {
         "key": "dp_ui_display_mode",
@@ -198,7 +198,7 @@ SETTINGS = [
     ],
   },
   {
-    "title": "Device",
+    "title": tr("Device"),
     "settings": [
       {
         "key": "dp_dev_is_rhd",
@@ -269,7 +269,6 @@ SETTINGS = [
         "title": lambda: tr("Disable Comma Connect"),
         "description": lambda: tr("Disable Comma connect service if you do not wish to upload / being tracked by the service."),
       },
-
     ],
   },
 ]

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dragonpilot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-19 09:07+0800\n"
+"POT-Creation-Date: 2025-12-27 21:53+0800\n"
 "PO-Revision-Date: 2025-12-18 12:30+0800\n"
 "Last-Translator: dragonpilot\n"
 "Language-Team: Thai\n"
@@ -25,6 +25,7 @@ msgstr "+ เปลี่ยนเลนอัตโนมัติหลัง�
 #, python-format
 msgid "0 min = Immediately"
 msgstr ""
+"0 นาที = ทันที"
 
 #: dragonpilot/settings.py:122
 #, python-format
@@ -115,6 +116,12 @@ msgstr ""
 "หน่วงเวลาการเริ่มต้น loggerd "
 "และกระบวนการที่เกี่ยวข้องเมื่ออุปกรณ์เริ่มใช้งานบนถนน<br>ช่วยป้องกันการบันทึกช่วงเวลาแรกของการขับขี่ "
 "เพื่อปกป้องความเป็นส่วนตัวของตำแหน่งที่เริ่มต้นการเดินทาง"
+
+#: dragonpilot/settings.py:201
+#, python-format
+msgid "Device"
+msgstr ""
+"อุปกรณ์"
 
 #: dragonpilot/settings.py:269
 #, python-format
@@ -207,10 +214,22 @@ msgstr "ซ่อน HUD เมื่อความเร็วเกิน:"
 msgid "Lane Change Assist At:"
 msgstr "ช่วยเปลี่ยนเลนที่ความเร็ว:"
 
+#: dragonpilot/settings.py:62
+#, python-format
+msgid "Lateral"
+msgstr ""
+"ด้านข้าง"
+
 #: dragonpilot/settings.py:184
 #, python-format
 msgid "Lead"
 msgstr "รถคันหน้า"
+
+#: dragonpilot/settings.py:115
+#, python-format
+msgid "Longitudinal"
+msgstr ""
+"ควบคุมตามยาว"
 
 #: dragonpilot/settings.py:150
 #, python-format
@@ -226,6 +245,12 @@ msgstr "MAIN-"
 #, python-format
 msgid "MQB A0 SnG Mod"
 msgstr "การปรับแต่ง MQB A0 SnG"
+
+#: dragonpilot/settings.py:55
+#, python-format
+msgid "Mazda"
+msgstr ""
+"มาสด้า"
 
 #: dragonpilot/settings.py:151
 #, python-format
@@ -336,6 +361,18 @@ msgstr ""
 "เพื่อป้องกันหน้าจอไหม้ ซ่อนความเร็ว, ความเร็วสูงสุด และไอคอนพวงมาลัย/DM "
 "เมื่อรถเคลื่อนที่<br>ปิด = พฤติกรรมแบบเดิม<br>1 กม./ชม. = 0.6 ไมล์/ชม."
 
+#: dragonpilot/settings.py:5
+#, python-format
+msgid "Toyota / Lexus"
+msgstr ""
+"โทโยต้า / เล็กซัส"
+
+#: dragonpilot/settings.py:140
+#, python-format
+msgid "UI"
+msgstr ""
+"อินเทอร์เฟซผู้ใช้"
+
 #: dragonpilot/settings.py:214
 #, python-format
 msgid "Use Buzzer for audiable alerts."
@@ -355,6 +392,12 @@ msgstr "ใช้ UI แบบ MICI (comma four)"
 #, python-format
 msgid "Use Stock Longitudinal Control"
 msgstr "ใช้การควบคุมแนวยาวแบบเดิม"
+
+#: dragonpilot/settings.py:30
+#, python-format
+msgid "VAG"
+msgstr ""
+"VAG"
 
 #: dragonpilot/settings.py:231
 #, python-format
@@ -385,16 +428,19 @@ msgstr "dashy HUD"
 #, python-format
 msgid "km/h"
 msgstr ""
+"กม./ชม."
 
 #: dragonpilot/settings.py:245
 #, python-format
 msgid "min"
 msgstr ""
+"นาที"
 
 #: dragonpilot/settings.py:80
 #, python-format
 msgid "mph"
 msgstr ""
+"กม./ชม."
 
 #: dragonpilot/selfdrive/ui/mici/layouts/dashy_qrcode.py:18
 #, python-format
@@ -410,6 +456,7 @@ msgstr "สแกนเพื่อเข้าถึง"
 #, python-format
 msgid "sec"
 msgstr ""
+"วินาที"
 
 #, python-format
 #~ msgid " km/h"

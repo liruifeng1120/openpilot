@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dragonpilot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-19 09:07+0800\n"
+"POT-Creation-Date: 2025-12-27 21:53+0800\n"
 "PO-Revision-Date: 2025-12-18 12:30+0800\n"
 "Last-Translator: dragonpilot\n"
 "Language-Team: Chinese (Traditional)\n"
@@ -114,6 +114,12 @@ msgstr ""
 "當設備上路時延遲啟動記錄程式及相關程序。<br>這可防止行程開始時的位置被記錄，"
 "保護隱私。"
 
+#: dragonpilot/settings.py:201
+#, python-format
+msgid "Device"
+msgstr ""
+"裝置"
+
 #: dragonpilot/settings.py:269
 #, python-format
 msgid "Disable Comma Connect"
@@ -202,10 +208,22 @@ msgstr "行駛超過此速度時隱藏 HUD："
 msgid "Lane Change Assist At:"
 msgstr "變換車道輔助啟用速度："
 
+#: dragonpilot/settings.py:62
+#, python-format
+msgid "Lateral"
+msgstr ""
+"橫向"
+
 #: dragonpilot/settings.py:184
 #, python-format
 msgid "Lead"
 msgstr "前車"
+
+#: dragonpilot/settings.py:115
+#, python-format
+msgid "Longitudinal"
+msgstr ""
+"縱向控制"
 
 #: dragonpilot/settings.py:150
 #, python-format
@@ -221,6 +239,12 @@ msgstr "MAIN-"
 #, python-format
 msgid "MQB A0 SnG Mod"
 msgstr "MQB A0 走停修正"
+
+#: dragonpilot/settings.py:55
+#, python-format
+msgid "Mazda"
+msgstr ""
+"馬自達"
 
 #: dragonpilot/settings.py:151
 #, python-format
@@ -329,6 +353,18 @@ msgstr ""
 "為防止螢幕烙印，在車輛行駛時隱藏速度、最高速度和轉向/DM 圖示。<br>關閉 = 原廠"
 "行為<br>1 公里/時 = 0.6 英里/時"
 
+#: dragonpilot/settings.py:5
+#, python-format
+msgid "Toyota / Lexus"
+msgstr ""
+"豐田 / 凌志"
+
+#: dragonpilot/settings.py:140
+#, python-format
+msgid "UI"
+msgstr ""
+"使用者介面"
+
 #: dragonpilot/settings.py:214
 #, python-format
 msgid "Use Buzzer for audiable alerts."
@@ -349,6 +385,12 @@ msgstr "使用 MICI (comma four) 介面"
 msgid "Use Stock Longitudinal Control"
 msgstr "使用原廠縱向控制"
 
+#: dragonpilot/settings.py:30
+#, python-format
+msgid "VAG"
+msgstr ""
+"福斯汽車集團"
+
 #: dragonpilot/settings.py:231
 #, python-format
 msgid "Warning"
@@ -366,8 +408,8 @@ msgid ""
 "<device_ip>:5088 to access.<br><br>Enable this to use HUD feature (live "
 "streaming)."
 msgstr ""
-"dashy - dragonpilot 的控制中心。<br><br>請訪問 http://<device_ip>:5088 "
-"進入。<br><br>啟用此功能以使用 HUD 功能（即時串流）。"
+"dashy - dragonpilot 的控制中心。<br><br>請訪問 http://<device_ip>:5088 進入。"
+"<br><br>啟用此功能以使用 HUD 功能（即時串流）。"
 
 #: dragonpilot/settings.py:251
 #, python-format

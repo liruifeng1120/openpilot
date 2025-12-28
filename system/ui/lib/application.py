@@ -101,6 +101,7 @@ class FontWeight(StrEnum):
   BOLD = "Inter-Bold.fnt"
   SEMI_BOLD = "Inter-SemiBold.fnt"
   UNIFONT = "unifont.fnt"
+  CHINA = "china.fnt"
 
   # Small UI fonts
   DISPLAY_REGULAR = "Inter-Regular.fnt"
@@ -110,8 +111,16 @@ class FontWeight(StrEnum):
 
 def font_fallback(font: rl.Font) -> rl.Font:
   """Fall back to unifont for languages that require it."""
-  if multilang.requires_unifont():
-    return gui_app.font(FontWeight.UNIFONT)
+  # If font is already UNIFONT or CHINA (explicitly specified), keep it
+  unifont = gui_app.font(FontWeight.UNIFONT)
+  china_font = gui_app.font(FontWeight.CHINA)
+  if font.texture.id == unifont.texture.id or font.texture.id == china_font.texture.id:
+    return font
+
+  if multilang.requires_china():
+    return china_font
+  elif multilang.requires_unifont():
+    return unifont
   return font
 
 
@@ -591,6 +600,8 @@ class GuiApplication:
         fnt_path = fspath / font_weight_file
         font = rl.load_font(fnt_path.as_posix())
         if font_weight_file != FontWeight.UNIFONT:
+          rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        if font_weight_file == FontWeight.CHINA:
           rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[font_weight_file] = font
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])

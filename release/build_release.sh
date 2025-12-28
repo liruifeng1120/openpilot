@@ -62,11 +62,6 @@ scons -j$(nproc) --minimal
 #fi
 scons -j$(nproc) panda/
 
-# panda tici
-rm -f panda_tici/board/obj/panda.bin.signed
-rm -f panda_tici/board/obj/panda_h7.bin.signed
-scons -j$(nproc) panda_tici/
-
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then
   echo "submodules found:"

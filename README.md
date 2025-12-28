@@ -2,6 +2,10 @@
 
 [Read this in English](README_EN.md)
 
+## 🌍 翻译进度
+
+![](translation_badge.svg)
+
 # **🐲 dragonpilot - 賦予您的愛車「龍」之魂**
 
 **我們與您一同翱翔於更智慧、更貼心的駕駛旅程。**

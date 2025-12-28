@@ -65,6 +65,32 @@ def parse_po_file(file_path):
 
   return (total_translations, unfinished_translations)
 
+
+def parse_language_po_files(language_code):
+  """
+  Parse both app_ and dragonpilot_ .po files for a language and combine statistics.
+  Returns: (total_translations, unfinished_translations)
+  """
+  app_file_path = os.path.join(str(TRANSLATIONS_DIR), f"app_{language_code}.po")
+  dragonpilot_file_path = os.path.join(str(TRANSLATIONS_DIR), f"dragonpilot_{language_code}.po")
+  
+  total_translations = 0
+  unfinished_translations = 0
+  
+  # Parse app_ file if it exists
+  if os.path.exists(app_file_path):
+    app_total, app_unfinished = parse_po_file(app_file_path)
+    total_translations += app_total
+    unfinished_translations += app_unfinished
+  
+  # Parse dragonpilot_ file if it exists
+  if os.path.exists(dragonpilot_file_path):
+    dragonpilot_total, dragonpilot_unfinished = parse_po_file(dragonpilot_file_path)
+    total_translations += dragonpilot_total
+    unfinished_translations += dragonpilot_unfinished
+  
+  return (total_translations, unfinished_translations)
+
 if __name__ == "__main__":
   with open(LANGUAGES_FILE) as f:
     translation_files = json.load(f)
@@ -72,9 +98,7 @@ if __name__ == "__main__":
   badge_svg = []
   max_badge_width = 0  # keep track of max width to set parent element
   for idx, (name, file) in enumerate(translation_files.items()):
-    po_file_path = os.path.join(str(TRANSLATIONS_DIR), f"app_{file}.po")
-
-    total_translations, unfinished_translations = parse_po_file(po_file_path)
+    total_translations, unfinished_translations = parse_language_po_files(file)
 
     percent_finished = int(100 - (unfinished_translations / total_translations * 100.)) if total_translations > 0 else 0
     color = f"rgb{(94, 188, 0) if percent_finished == 100 else (248, 255, 50) if percent_finished > 90 else (204, 55, 27)}"

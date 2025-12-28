@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-19 09:07+0800\n"
+"POT-Creation-Date: 2025-12-27 21:53+0800\n"
 "PO-Revision-Date: 2025-12-18 12:21+0800\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -26,6 +26,7 @@ msgstr "+ Changement de voie automatique après :"
 #, python-format
 msgid "0 min = Immediately"
 msgstr ""
+"0 min = Immédiatement"
 
 #: dragonpilot/settings.py:122
 #, python-format
@@ -126,6 +127,12 @@ msgstr ""
 "instants d'un trajet, protégeant ainsi la confidentialité de la localisation "
 "au début d'un voyage."
 
+#: dragonpilot/settings.py:201
+#, python-format
+msgid "Device"
+msgstr ""
+"Appareil"
+
 #: dragonpilot/settings.py:269
 #, python-format
 msgid "Disable Comma Connect"
@@ -224,10 +231,22 @@ msgstr "Masquer le HUD au-dessus de :"
 msgid "Lane Change Assist At:"
 msgstr "Assistance au changement de voie à :"
 
+#: dragonpilot/settings.py:62
+#, python-format
+msgid "Lateral"
+msgstr ""
+"Latéral"
+
 #: dragonpilot/settings.py:184
 #, python-format
 msgid "Lead"
 msgstr "Précédent"
+
+#: dragonpilot/settings.py:115
+#, python-format
+msgid "Longitudinal"
+msgstr ""
+"Longitudinal"
 
 #: dragonpilot/settings.py:150
 #, python-format
@@ -243,6 +262,12 @@ msgstr "MAIN-"
 #, python-format
 msgid "MQB A0 SnG Mod"
 msgstr "Mod MQB A0 SnG"
+
+#: dragonpilot/settings.py:55
+#, python-format
+msgid "Mazda"
+msgstr ""
+"Mazda"
 
 #: dragonpilot/settings.py:151
 #, python-format
@@ -359,6 +384,18 @@ msgstr ""
 "icônes de direction/DM lorsque la voiture bouge.<br>Désactivé = Comportement "
 "d'origine<br>1 km/h = 0,6 mph"
 
+#: dragonpilot/settings.py:5
+#, python-format
+msgid "Toyota / Lexus"
+msgstr ""
+"Toyota / Lexus"
+
+#: dragonpilot/settings.py:140
+#, python-format
+msgid "UI"
+msgstr ""
+"Interface utilisateur"
+
 #: dragonpilot/settings.py:214
 #, python-format
 msgid "Use Buzzer for audiable alerts."
@@ -378,6 +415,12 @@ msgstr "Utiliser l'interface MICI (comma four)"
 #, python-format
 msgid "Use Stock Longitudinal Control"
 msgstr "Utiliser le contrôle longitudinal d'origine"
+
+#: dragonpilot/settings.py:30
+#, python-format
+msgid "VAG"
+msgstr ""
+"VAG"
 
 #: dragonpilot/settings.py:231
 #, python-format
@@ -409,16 +452,19 @@ msgstr "HUD dashy"
 #, python-format
 msgid "km/h"
 msgstr ""
+"km/h"
 
 #: dragonpilot/settings.py:245
 #, python-format
 msgid "min"
 msgstr ""
+"min"
 
 #: dragonpilot/settings.py:80
 #, python-format
 msgid "mph"
 msgstr ""
+"km/h"
 
 #: dragonpilot/selfdrive/ui/mici/layouts/dashy_qrcode.py:18
 #, python-format
@@ -434,6 +480,7 @@ msgstr "scanner pour accéder"
 #, python-format
 msgid "sec"
 msgstr ""
+"s"
 
 #, python-format
 #~ msgid " km/h"

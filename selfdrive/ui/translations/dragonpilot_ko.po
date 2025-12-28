@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dragonpilot\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-19 09:07+0800\n"
+"POT-Creation-Date: 2025-12-27 21:53+0800\n"
 "PO-Revision-Date: 2025-12-18 12:30+0800\n"
 "Last-Translator: dragonpilot\n"
 "Language-Team: Korean\n"
@@ -25,6 +25,7 @@ msgstr "+ 자동 차선 변경 지연 시간:"
 #, python-format
 msgid "0 min = Immediately"
 msgstr ""
+"0분 = 즉시"
 
 #: dragonpilot/settings.py:122
 #, python-format
@@ -115,6 +116,12 @@ msgid ""
 msgstr ""
 "기기가 도로 주행을 시작할 때 로거 및 관련 프로세스의 시작을 지연시킵니다.<br>"
 "이를 통해 주행 시작 시점의 위치가 기록되지 않아 개인정보를 보호합니다."
+
+#: dragonpilot/settings.py:201
+#, python-format
+msgid "Device"
+msgstr ""
+"장치"
 
 #: dragonpilot/settings.py:269
 #, python-format
@@ -209,10 +216,22 @@ msgstr "다음 속도 이상에서 HUD 숨기기:"
 msgid "Lane Change Assist At:"
 msgstr "차선 변경 보조 활성화 속도:"
 
+#: dragonpilot/settings.py:62
+#, python-format
+msgid "Lateral"
+msgstr ""
+"횡방향"
+
 #: dragonpilot/settings.py:184
 #, python-format
 msgid "Lead"
 msgstr "선행 차량"
+
+#: dragonpilot/settings.py:115
+#, python-format
+msgid "Longitudinal"
+msgstr ""
+"종방향"
 
 #: dragonpilot/settings.py:150
 #, python-format
@@ -228,6 +247,12 @@ msgstr "MAIN-"
 #, python-format
 msgid "MQB A0 SnG Mod"
 msgstr "MQB A0 정지 및 출발 모드"
+
+#: dragonpilot/settings.py:55
+#, python-format
+msgid "Mazda"
+msgstr ""
+"마즈다"
 
 #: dragonpilot/settings.py:151
 #, python-format
@@ -340,6 +365,18 @@ msgstr ""
 "화면 번인 방지를 위해 차량 주행 시 속도, 최고 속도 및 조향/DM 아이콘을 숨깁니"
 "다.<br>끄기 = 순정 동작<br>1 km/h = 0.6 mph"
 
+#: dragonpilot/settings.py:5
+#, python-format
+msgid "Toyota / Lexus"
+msgstr ""
+"토요타 / 렉서스"
+
+#: dragonpilot/settings.py:140
+#, python-format
+msgid "UI"
+msgstr ""
+"UI"
+
 #: dragonpilot/settings.py:214
 #, python-format
 msgid "Use Buzzer for audiable alerts."
@@ -359,6 +396,12 @@ msgstr "MICI (comma four) UI 사용"
 #, python-format
 msgid "Use Stock Longitudinal Control"
 msgstr "순정 종방향 제어 사용"
+
+#: dragonpilot/settings.py:30
+#, python-format
+msgid "VAG"
+msgstr ""
+"폭스바겐"
 
 #: dragonpilot/settings.py:231
 #, python-format
@@ -390,16 +433,19 @@ msgstr "dashy HUD"
 #, python-format
 msgid "km/h"
 msgstr ""
+"km/h"
 
 #: dragonpilot/settings.py:245
 #, python-format
 msgid "min"
 msgstr ""
+"분"
 
 #: dragonpilot/settings.py:80
 #, python-format
 msgid "mph"
 msgstr ""
+"시속"
 
 #: dragonpilot/selfdrive/ui/mici/layouts/dashy_qrcode.py:18
 #, python-format
@@ -415,6 +461,7 @@ msgstr "스캔하여 접속"
 #, python-format
 msgid "sec"
 msgstr ""
+"초"
 
 #, python-format
 #~ msgid " km/h"

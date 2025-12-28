@@ -22,26 +22,6 @@ from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.manager.vehicle_model_collector import VehicleModelCollector
 
-# rick - dynamically import panda
-import importlib
-
-# Pre-register panda_main as panda before loading it
-if HARDWARE.get_device_type() == "tici" and not os.environ.get("TICI_TRES") == "1":
-    target_mod = "panda_tici"
-else:
-    target_mod = "panda"
-
-print(f"panda dir: {target_mod}")
-
-_mod = importlib.import_module(target_mod)
-
-# 👇 Insert alias so "from panda import ..." inside panda_main works
-sys.modules["panda"] = _mod
-
-# Re-export everything
-globals().update({k: v for k, v in _mod.__dict__.items() if not k.startswith("_")})
-import time
-
 
 def manager_init() -> None:
   save_bootlog()

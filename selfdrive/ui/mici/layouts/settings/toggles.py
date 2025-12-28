@@ -5,9 +5,11 @@ from cereal import log
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.selfdrive.ui.mici.widgets.button import BigParamControl, BigMultiParamToggle
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.multilang import tr
 from openpilot.system.ui.widgets import NavWidget
 from openpilot.selfdrive.ui.layouts.settings.common import restart_needed_callback
 from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.hardware import HARDWARE
 
 PERSONALITY_TO_INT = log.LongitudinalPersonality.schema.enumerants
 
@@ -17,14 +19,19 @@ class TogglesLayoutMici(NavWidget):
     super().__init__()
     self.set_back_callback(back_callback)
 
-    self._personality_toggle = BigMultiParamToggle("driving personality", "LongitudinalPersonality", ["aggressive", "standard", "relaxed"])
-    self._experimental_btn = BigParamControl("experimental mode", "ExperimentalMode")
-    is_metric_toggle = BigParamControl("use metric units", "IsMetric")
-    ldw_toggle = BigParamControl("lane departure warnings", "IsLdwEnabled")
-    always_on_dm_toggle = BigParamControl("always-on driver monitor", "AlwaysOnDM")
-    record_front = BigParamControl("record & upload driver camera", "RecordFront", toggle_callback=restart_needed_callback)
-    record_mic = BigParamControl("record & upload mic audio", "RecordAudio", toggle_callback=restart_needed_callback)
-    enable_openpilot = BigParamControl("enable openpilot", "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
+    self._personality_toggle = BigMultiParamToggle(tr("driving personality"), "LongitudinalPersonality", [tr("aggressive"), tr("standard"), tr("relaxed")])
+    self._experimental_btn = BigParamControl(tr("experimental mode"), "ExperimentalMode")
+    is_metric_toggle = BigParamControl(tr("use metric units"), "IsMetric")
+    ldw_toggle = BigParamControl(tr("lane departure warnings"), "IsLdwEnabled")
+    always_on_dm_toggle = BigParamControl(tr("always-on driver monitor"), "AlwaysOnDM", toggle_callback=self._on_always_on_dm_toggle)
+    self._distraction_detection_level = BigMultiParamToggle(
+      tr("Distraction Detection Level"),
+      "DistractionDetectionLevel",
+      [tr("Strict"), tr("Moderate"), tr("Lenient")]
+    )
+    record_front = BigParamControl(tr("record & upload driver camera"), "RecordFront", toggle_callback=restart_needed_callback)
+    record_mic = BigParamControl(tr("record & upload mic audio"), "RecordAudio", toggle_callback=restart_needed_callback)
+    enable_openpilot = BigParamControl(tr("enable openpilot"), "OpenpilotEnabledToggle", toggle_callback=restart_needed_callback)
 
     self._scroller = Scroller([
       self._personality_toggle,
@@ -32,6 +39,7 @@ class TogglesLayoutMici(NavWidget):
       is_metric_toggle,
       ldw_toggle,
       always_on_dm_toggle,
+      self._distraction_detection_level,
       record_front,
       record_mic,
       enable_openpilot,
@@ -43,10 +51,20 @@ class TogglesLayoutMici(NavWidget):
       ("IsMetric", is_metric_toggle),
       ("IsLdwEnabled", ldw_toggle),
       ("AlwaysOnDM", always_on_dm_toggle),
+      ("DistractionDetectionLevel", self._distraction_detection_level),
       ("RecordFront", record_front),
       ("RecordAudio", record_mic),
       ("OpenpilotEnabledToggle", enable_openpilot),
     )
+
+    # dp - only append to tizi/tici
+    if not HARDWARE.get_device_type == 'mici':
+      dp_ui_mici = BigParamControl(tr("MICI UI"), "dp_ui_mici")
+      self._scroller.add_widget(dp_ui_mici)
+
+      temp_toggles = list(self._refresh_toggles)
+      temp_toggles.append(("dp_ui_mici", dp_ui_mici))
+      self._refresh_toggles = temp_toggles
 
     enable_openpilot.set_enabled(lambda: not ui_state.engaged)
     record_front.set_enabled(False if ui_state.params.get_bool("RecordFrontLock") else (lambda: not ui_state.engaged))
@@ -55,6 +73,9 @@ class TogglesLayoutMici(NavWidget):
     if ui_state.params.get_bool("ShowDebugInfo"):
       gui_app.set_show_touches(True)
       gui_app.set_show_fps(True)
+
+    # 初始设置分心检测级别的可见性
+    self._update_distraction_detection_visibility()
 
     ui_state.add_engaged_transition_callback(self._update_toggles)
 
@@ -71,6 +92,7 @@ class TogglesLayoutMici(NavWidget):
     super().show_event()
     self._scroller.show_event()
     self._update_toggles()
+    self._update_distraction_detection_visibility()
 
   def _update_toggles(self):
     ui_state.update_params()
@@ -78,13 +100,13 @@ class TogglesLayoutMici(NavWidget):
     # CP gating for experimental mode
     if ui_state.CP is not None:
       if ui_state.has_longitudinal_control:
-        self._experimental_btn.set_visible(True)
-        self._personality_toggle.set_visible(True)
+        self._experimental_btn.set_enabled(True)
+        self._personality_toggle.set_enabled(True)
       else:
         # no long for now
-        self._experimental_btn.set_visible(False)
+        self._experimental_btn.set_enabled(False)
         self._experimental_btn.set_checked(False)
-        self._personality_toggle.set_visible(False)
+        self._personality_toggle.set_enabled(False)
         ui_state.params.remove("ExperimentalMode")
 
     # Refresh toggles from params to mirror external changes
@@ -93,3 +115,13 @@ class TogglesLayoutMici(NavWidget):
 
   def _render(self, rect: rl.Rectangle):
     self._scroller.render(rect)
+
+  def _update_distraction_detection_visibility(self):
+    """根据AlwaysOnDM状态更新分心检测级别的可见性"""
+    always_on_dm_enabled = ui_state.params.get_bool("AlwaysOnDM")
+    self._distraction_detection_level.set_visible(always_on_dm_enabled)
+
+  def _on_always_on_dm_toggle(self, checked: bool):
+    """AlwaysOnDM切换时的回调"""
+    # 根据checked状态更新分心检测级别的可见性
+    self._update_distraction_detection_visibility()
