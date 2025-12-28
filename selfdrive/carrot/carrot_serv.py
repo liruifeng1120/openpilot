@@ -233,6 +233,7 @@ class CarrotServ:
     self.autoCurveSpeedLowerLimit = 30
     self.is_metric = True
     self.autoRoadSpeedLimitOffset = -1
+    self.autoSpeedUptoRoadSpeedLimit = 0
 
     self.sameSpiCamFilter = 0
     self.autoTurnDistOffset = 0
@@ -309,6 +310,7 @@ class CarrotServ:
       self.autoCurveSpeedLowerLimit = int(self.params.get("AutoCurveSpeedLowerLimit"))
       self.is_metric = self.params.get_bool("IsMetric")
       self.autoRoadSpeedLimitOffset = self.params.get_int("AutoRoadSpeedLimitOffset")
+      self.autoSpeedUptoRoadSpeedLimit = self.params.get_float("AutoSpeedUptoRoadSpeedLimit") * 0.01
 
       #new
       self.sameSpiCamFilter = self.params.get_int("SameSpiCamFilter")
@@ -1200,6 +1202,9 @@ class CarrotServ:
 
     self.debugText = ""
     self.update_params()
+    controls_active = False
+    v_cruise_kph = 255
+    cs_speed_limit = False
     if sm.alive['carState'] and sm.alive['selfdriveState']:
       controls_active = sm['selfdriveState'].active
       v_cruise_kph = sm["carState"].vCruise
@@ -1211,8 +1216,7 @@ class CarrotServ:
       self.totalDistance = distanceTraveled
       if CS.speedLimit > 0 and self.active_carrot <= 1:
         self.nRoadLimitSpeed = CS.speedLimit
-      elif controls_active and v_cruise_kph < 150 and self.active_carrot <= 1: #未开导航时以巡航速度作为道路限速
-        self.nRoadLimitSpeed = v_cruise_kph
+        cs_speed_limit = True
     else:
       v_ego = v_ego_kph = 0
       delta_dist = 0
@@ -1329,6 +1333,10 @@ class CarrotServ:
       else:
         limit_speed = atc_desired
 
+    if (controls_active and 30 < v_cruise_kph < 150 and self.active_carrot <= 1 #巡航已激活/巡航速度有效(小于150，大于30)/未开导航
+      and self.autoSpeedUptoRoadSpeedLimit > 0 and not cs_speed_limit):          # 未设置巡航速度跟随道路限速/无车辆自带限速时，把巡航速度作为道路限速
+      self.nRoadLimitSpeed = v_cruise_kph
+
     speed_n_sources = [
       (atc_desired, "atc"),
       (atc_desired_next, "atc2"),
@@ -1412,7 +1420,7 @@ class CarrotServ:
     msg = messaging.new_message('carrotMan')
     msg.valid = True
     msg.carrotMan.activeCarrot = self.active_carrot
-    msg.carrotMan.nRoadLimitSpeed = int(self.nRoadLimitSpeed) if (atc_speed_up == 0 or limit_speed >= 150) else int(limit_speed) #自动提高道路限速
+    msg.carrotMan.nRoadLimitSpeed = int(self.nRoadLimitSpeed) if (atc_speed_up == 0 or limit_speed >= 150 or limit_speed < self.nRoadLimitSpeed) else int(limit_speed) #自动提高道路限速
     msg.carrotMan.remote = remote_ip
     msg.carrotMan.xSpdType = int(self.xSpdType)
     msg.carrotMan.xSpdLimit = int(self.xSpdLimit)
