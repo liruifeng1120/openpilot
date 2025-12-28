@@ -323,6 +323,7 @@ class AmapNaviServ:
           rf_blind_mask = True
         if self.shared_data.main_rb_xrel is not None and self.shared_data.main_rb_xrel > laneWidthRight*1000.: #控测的目标侧面距离超过路宽，屏蔽盲区标志
           rb_blind_mask = True
+        '''
         if fork_left_right:
           if atc_blinker_state == BLINKER_LEFT:
             if self.shared_data.main_lf_drel is not None and self.shared_data.main_lf_drel > 5000: #左前方大于5米
@@ -334,6 +335,7 @@ class AmapNaviServ:
               rf_blind_mask = True
             if self.shared_data.main_rb_drel is not None and self.shared_data.main_rb_drel < -10000: #右后方大于10米
               rb_blind_mask = True
+        '''
 
       if self.dynamicBlindRange >= 2: #强制动态调整盲宽度
         if not lf_blind_mask:
