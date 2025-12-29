@@ -254,7 +254,8 @@ export function NavDestination() {
     const hasAMap = !!state.amap1Key && !!state.amap2Key;
     state.missingKeys = !hasMapbox;
     state.canToggleProvider = hasMapbox && hasAMap;
-    state.searchProvider = hasMapbox ? "mapbox" : "";
+    // 默认搜索引擎为 AMap，如果已配置
+    state.searchProvider = hasAMap ? "amap" : (hasMapbox ? "mapbox" : "");
     if (state.missingKeys) return;
     state.lastPosition = {
       latitude: parseFloat(data.lastPosition.latitude),
@@ -305,18 +306,97 @@ export function NavDestination() {
           access_token: state.mapboxPublic,
           session_token: sessionToken,
           q: val,
-          limit: 4
+          limit: 10
         });
         const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`);
         const data = await res.json();
         state.suggestions = JSON.stringify(data.suggestions);
       } else {
-        const auto = new AMap.Autocomplete({ city: "auto" });
-        auto.search(val, (status, result) => {
-          if (status === "complete" && result.tips) {
-            state.suggestions = JSON.stringify(result.tips);
+        try {
+          // 使用高德地图Web服务API进行搜索（服务端调用）
+          const params = new URLSearchParams({
+            key: state.amap1Key,  // Web服务API Key
+            keywords: val,
+            city: '全国',         // 搜索全国范围
+            output: 'json',
+            offset: 20,           // 返回结果数量
+            page: 1
+          });
+          const apiUrl = `https://restapi.amap.com/v3/place/text?${params}`;
+          console.log('发送高德API请求:', apiUrl);
+
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+
+          console.log('高德Web服务API完整响应:', data);
+          console.log('API状态:', data.status, '结果数量:', data.count, '建议:', data.info);
+          
+
+          if (data.status === '1' && data.pois && data.pois.length > 0) {
+            // 转换高德API返回格式为前端期望的格式
+            const suggestions = data.pois.map(poi => {
+              const [gcj_lng, gcj_lat] = poi.location.split(',').map(Number);
+
+              // 将GCJ-02坐标转换为WGS-84坐标（Mapbox使用）
+              let wgs_lng = gcj_lng;
+              let wgs_lat = gcj_lat;
+
+              // 检查是否在中国境内
+              if (gcj_lng >= 72.004 && gcj_lng <= 137.8347 && gcj_lat >= 0.8293 && gcj_lat <= 55.8271) {
+                // 简化的GCJ-02转WGS-84转换公式
+                const PI = Math.PI;
+                const a = 6378245.0; // 长半轴
+                const ee = 0.00669342162296594323; // 偏心率平方
+
+                // 转换函数
+                const transformLat = (x, y) => {
+                  let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+                  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+                  ret += (20.0 * Math.sin(y * PI) + 40.0 * Math.sin(y / 3.0 * PI)) * 2.0 / 3.0;
+                  ret += (160.0 * Math.sin(y / 12.0 * PI) + 320 * Math.sin(y * PI / 30.0)) * 2.0 / 3.0;
+                  return ret;
+                };
+
+                const transformLon = (x, y) => {
+                  let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+                  ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+                  ret += (20.0 * Math.sin(x * PI) + 40.0 * Math.sin(x / 3.0 * PI)) * 2.0 / 3.0;
+                  ret += (150.0 * Math.sin(x / 12.0 * PI) + 300.0 * Math.sin(x / 30.0 * PI)) * 2.0 / 3.0;
+                  return ret;
+                };
+
+                const dLat = transformLat(gcj_lng - 105.0, gcj_lat - 35.0);
+                const dLon = transformLon(gcj_lng - 105.0, gcj_lat - 35.0);
+                const radLat = gcj_lat / 180.0 * PI;
+                const magic = Math.sin(radLat);
+                const sqrtMagic = Math.sqrt(1 - ee * magic * magic);
+
+                wgs_lat = gcj_lat - (dLat * 180.0) / (a * (1 - ee) / (magic * sqrtMagic) * PI);
+                wgs_lng = gcj_lng - (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * PI);
+              }
+
+              return {
+                name: poi.name,
+                address: poi.address || poi.pname + poi.cityname + poi.adname + poi.address,
+                location: { lng: wgs_lng, lat: wgs_lat },  // 使用WGS-84坐标
+                full_address: [poi.pname, poi.cityname, poi.adname, poi.address].filter(Boolean).join(''),
+                pname: poi.pname,
+                cityname: poi.cityname,
+                adname: poi.adname
+              };
+            });
+
+            state.suggestions = JSON.stringify(suggestions.slice(0, 10));
+          } else {
+            console.warn('高德地图搜索返回空结果或错误:', data);
+            state.suggestions = "[]";
+            showSnackbar(data.info || '未找到匹配的地址');
           }
-        });
+        } catch (error) {
+          console.error('高德地图Web服务API调用失败:', error);
+          state.suggestions = "[]";
+          showSnackbar('高德地图搜索服务暂时不可用');
+        }
       }
     }
   }
@@ -443,38 +523,101 @@ export function NavDestination() {
     const newVal = e.target.value.trim();
     searchFieldState.value = e.target.value;
     clearTimeout(window.searchTimeout);
-    window.searchTimeout = setTimeout(async () => {
-      const val = newVal;
-      if (val.length < 3) {
-        if (val.length === 0) {
+    
+    // 添加输入提示功能
+    if (state.searchProvider === "amap" && newVal.length >= 1) {
+      // 使用高德地图输入提示API
+      window.searchTimeout = setTimeout(async () => {
+        const val = newVal;
+        if (val.length < 1) {
+          if (val.length === 0) {
+            state.suggestions = "[]";
+          }
+          return;
+        }
+        state.selectedRoute = null;
+        state.confirmedRoute = null;
+        state.suggestions = "[]";
+        
+        try {
+          const params = new URLSearchParams({
+            key: state.amap1Key,
+            keywords: val,
+            city: '全国',
+            output: 'json',
+            offset: 10,
+            page: 1
+          });
+          const apiUrl = `https://restapi.amap.com/v3/assistant/inputtips?${params}`;
+          
+          const response = await fetch(apiUrl);
+          const data = await response.json();
+          
+          if (data.status === '1' && data.tips && data.tips.length > 0) {
+            // 转换高德API返回格式为前端期望的格式
+            const suggestions = data.tips.map(tip => {
+              return {
+                name: tip.name,
+                address: tip.address || tip.district,
+                location: tip.location ? {
+                  lng: parseFloat(tip.location.split(',')[0]),
+                  lat: parseFloat(tip.location.split(',')[1])
+                } : null,
+                full_address: tip.district ? tip.district + (tip.address || '') : (tip.address || ''),
+                district: tip.district,
+                id: tip.id
+              };
+            });
+            
+            state.suggestions = JSON.stringify(suggestions);
+          } else {
+            state.suggestions = "[]";
+          }
+        } catch (error) {
+          console.error('高德地图输入提示API调用失败:', error);
           state.suggestions = "[]";
         }
-        return;
-      }
-      state.selectedRoute = null;
-      state.confirmedRoute = null;
-      state.suggestions = "[]";
-      if (state.searchProvider === "mapbox") {
-        const prox = `${state.lastPosition.longitude},${state.lastPosition.latitude}`;
-        const params = new URLSearchParams({
-          proximity: prox,
-          access_token: state.mapboxPublic,
-          session_token: sessionToken,
-          q: val,
-          limit: 4
-        });
-        const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`);
-        const data = await res.json();
-        state.suggestions = JSON.stringify(data.suggestions);
-      } else {
-        const auto = new AMap.Autocomplete({ city: "auto" });
-        auto.search(val, (status, result) => {
-          if (status === "complete" && result.tips) {
-            state.suggestions = JSON.stringify(result.tips);
+      }, 300); // 更快的响应时间
+    } else {
+      // 原有的搜索逻辑
+      window.searchTimeout = setTimeout(async () => {
+        const val = newVal;
+        if (val.length < 3) {
+          if (val.length === 0) {
+            state.suggestions = "[]";
           }
-        });
-      }
-    }, 800);
+          return;
+        }
+        state.selectedRoute = null;
+        state.confirmedRoute = null;
+        state.suggestions = "[]";
+        if (state.searchProvider === "mapbox") {
+          const prox = `${state.lastPosition.longitude},${state.lastPosition.latitude}`;
+          const params = new URLSearchParams({
+            proximity: prox,
+            access_token: state.mapboxPublic,
+            session_token: sessionToken,
+            q: val,
+            limit: 10
+          });
+          const res = await fetch(`https://api.mapbox.com/search/searchbox/v1/suggest?${params}`);
+          const data = await res.json();
+          state.suggestions = JSON.stringify(data.suggestions);
+        } else {
+          // 对于AMap，当输入少于1个字符时，保持原来的逻辑
+          if (val.length >= 1) {
+            const auto = new AMap.Autocomplete({ city: "auto" });
+            auto.search(val, (status, result) => {
+              if (status === "complete" && result.tips) {
+                state.suggestions = JSON.stringify(result.tips);
+              }
+            });
+          } else {
+            state.suggestions = "[]";
+          }
+        }
+      }, 800);
+    }
   }
 
   async function selectSuggestion(sugg) {
