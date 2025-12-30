@@ -1003,8 +1003,8 @@ class DesireHelper:
                 if hasattr(carstate, 'steeringAngleDeg'):
                   steer_angle = int(abs(carstate.steeringAngleDeg))
                 if steer_angle < 30 and blinker_state != BLINKER_NONE: #方向盘小于30度
-                  if ((2 <= lane_count < 10 and self.xroadcate == 1 and blinker_state == BLINKER_RIGHT) or #有应急车道高速/右变道/有2条车道
-                                                        (1 <= lane_count < 10 and self.xroadcate != 1)): #无应急车道的道路，有1条车道可变道
+                  if ((2 <= lane_count < 10 and self.xroadcate == 1 and blinker_state == BLINKER_RIGHT) or #高速右变道有2条车道可用
+                      (1 <= lane_count < 10 and (blinker_state == BLINKER_LEFT or self.xroadcate != 1))): #左变道或者非高速，有1条车道可用
                     if atc_desire_enabled: #自动变道
                       if auto_lane_change_trigger_no_bsd: #符合自动变道的条件
                         if self.atc_bsd == BLINKER_NONE:
