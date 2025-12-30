@@ -1006,20 +1006,20 @@ class CarrotServ:
           if radar_lf_drel is not None and radar_lf_vrel is not None:
             self.lf_drel = radar_lf_drel
             self.lf_vrel = radar_lf_vrel
-            print(f"radar: lf_drel {self.lf_drel * 0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h")
+            print(f"radar: lf_drel {self.lf_drel * 0.001:.1f} m, lf_vrel {self.lf_vrel*3.6:.1f} km/h")
           if self.lf_drel is not None and self.lf_vrel is not None and self.lb_drel is not None and self.lb_vrel is not None:  # 前后均有车
             delta_v = self.compute_delta_v_for_front_rear(self.lf_drel, self.lf_vrel, self.lb_drel, self.lb_vrel, v_ego, speed_up_enable, decel_priority)
-            print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h, lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel:.1f} km/h")
+            print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel*3.6:.1f} km/h, lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel*3.6:.1f} km/h")
           elif self.lf_drel is not None and self.lf_vrel is not None:  # 前方有车
             if (v_ego + self.lf_vrel) > 2: #目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_front(self.lf_drel, self.lf_vrel, v_ego, speed_up_enable, decel_priority)
-              print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h")
+              print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel*3.6:.1f} km/h")
             else:
               print(f"lf_vrel({self.lf_vrel:.1f}) too large, v_ego({v_ego:.1f})")
           elif self.lb_drel is not None and self.lb_vrel is not None:  # 后方有车
             if (v_ego + self.lb_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_rear(self.lb_drel, self.lb_vrel, v_ego, speed_up_enable, decel_priority)
-              print(f"lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel:.1f} km/h")
+              print(f"lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel*3.6:.1f} km/h")
             else:
               print(f"lb_vrel({self.lb_vrel:.1f}) too large, v_ego({v_ego:.1f})")
         else:  # 右变道受阻
@@ -1027,20 +1027,20 @@ class CarrotServ:
           if radar_rf_drel is not None and radar_rf_vrel is not None:
             self.rf_drel = radar_rf_drel
             self.rf_vrel = radar_rf_vrel
-            print(f"radar: rf_drel {self.rf_drel * 0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h")
+            print(f"radar: rf_drel {self.rf_drel * 0.001:.1f} m, rf_vrel {self.rf_vrel*3.6:.1f} m/h")
           if self.rf_drel is not None and self.rf_vrel is not None and self.rb_drel is not None and self.rb_vrel is not None:  # 前后均有车
             delta_v = self.compute_delta_v_for_front_rear(self.rf_drel, self.rf_vrel, self.rb_drel, self.rb_vrel, v_ego, speed_up_enable, decel_priority)
-            print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h, rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel:.1f} km/h")
+            print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel*3.6:.1f} km/h, rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel*3.6:.1f} km/h")
           elif self.rf_drel is not None and self.rf_vrel is not None:  # 前方有车，后方无车
             if (v_ego + self.rf_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_front(self.rf_drel, self.rf_vrel, v_ego, speed_up_enable, decel_priority)
-              print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h")
+              print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel*3.6:.1f} km/h")
             else:
               print(f"rf_vrel({self.rf_vrel:.1f}) too large, v_ego({v_ego:.1f})")
           elif self.rb_drel is not None and self.rb_vrel is not None:  # 前方无车，后方有车
             if (v_ego + self.rb_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_rear(self.rb_drel, self.rb_vrel, v_ego, speed_up_enable, decel_priority)
-              print(f"rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel:.1f} km/h")
+              print(f"rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel*3.6:.1f} km/h")
             else:
               print(f"rb_vrel({self.rb_vrel:.1f}) too large, v_ego({v_ego:.1f})")
 
