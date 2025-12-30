@@ -979,6 +979,7 @@ class DesireHelper:
             blinker_val_pre = atc_blinker_state
           else:
             blinker_val_pre = BLINKER_NONE
+            self.blinker_val = BLINKER_NONE
           if self.lane_change_state_prev != self.lane_change_state:
             self.lane_change_state_prev = self.lane_change_state
             print(f"---[{time.strftime('%H:%M:%S')}]Pre:ext_blinker prepare state:{blinker_val_pre},driver_desire_enabled={driver_desire_enabled},"
