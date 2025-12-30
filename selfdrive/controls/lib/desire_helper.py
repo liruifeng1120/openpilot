@@ -976,12 +976,12 @@ class DesireHelper:
         else:
           # 手动打灯(或者resp32控制的原车打灯)，不再通过外控制转身灯
           if ((not driver_desire_enabled or self.stockBlinkerCtrl == 1) and self.atc_turn_cnt >= 0) or self.carrot_blinker_state != BLINKER_NONE:
-            self.blinker_val = atc_blinker_state
+            blinker_val_pre = atc_blinker_state
           else:
-            self.blinker_val = BLINKER_NONE
+            blinker_val_pre = BLINKER_NONE
           if self.lane_change_state_prev != self.lane_change_state:
             self.lane_change_state_prev = self.lane_change_state
-            print(f"---[{time.strftime('%H:%M:%S')}]Pre:ext_blinker state:{self.blinker_val},driver_desire_enabled={driver_desire_enabled},"
+            print(f"---[{time.strftime('%H:%M:%S')}]Pre:ext_blinker prepare state:{blinker_val_pre},driver_desire_enabled={driver_desire_enabled},"
                   f"stockBlinkerCtrl={self.stockBlinkerCtrl},turn_cnt={self.atc_turn_cnt},carrot_blinker_state={self.carrot_blinker_state}")
           #此处根据条件决定是否进入开始变道或转弯的流程，lane_change_available为真时表示旁边车道或者路沿的宽度稳定大于2.5米
           if lane_change_available and self.lane_change_delay == 0: #允许变道并且没有延时时间要求
@@ -1026,7 +1026,7 @@ class DesireHelper:
             elif ((driver_desire_enabled and  #驾驶员打灯变道
                    self.driver_lane_change_delay == 0 and #没有命令打灯后的延时
                   (self.stockBlinkerCtrl == 0 or #未通过外挂控制原车Blinker
-                    self.blinker_val == BLINKER_NONE or not atc_desire_enabled or #没有esp32打灯或不在自动变道情况下
+                   (blinker_val_pre == BLINKER_NONE and self.blinker_val == BLINKER_NONE) or not atc_desire_enabled or #没有esp32打灯或不在自动变道情况下
                     (atc_desire_enabled and driver_blinker_state != atc_blinker_state)  #或者用户打的灯和自动变道的方向相反
                      or torque_applied #或者用户施加了方向盘扭矩
                      or (auto_lane_change_trigger and (lane_change_interval < 0.5 or self.lane_change_disable_count == 0 or not atc_left_right))) #或符合了自动变道条件
