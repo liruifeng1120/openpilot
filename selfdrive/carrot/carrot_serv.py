@@ -723,46 +723,54 @@ class CarrotServ:
 
     return new_lat, new_lon
 
-  def compute_delta_v_for_front(self, drel_mm, vrel, v_ego, speed_up_enable):
+  def compute_delta_v_for_front(self, drel_mm, vrel, v_ego, speed_up_enable, decel_priority):
     d = abs(drel_mm) * 0.001 #相对距离(m)
     v_rel = vrel  #相对速度m/s
     v_rel_abs = abs(v_rel)
 
     #计算追上前车的时间
     if v_rel < -0.5: #前车比自己慢
-      close_time = d/v_rel_abs
-      if close_time < 2 and not speed_up_enable: #2秒后可追上前车，并且车本可加速，加速10km/h追上前车
+      close_time = d/v_rel_abs #多少秒后可追上前车
+      if (close_time < 2 and d < 10) and speed_up_enable: #距离小于10m并且2秒后可追上前车，并且车本可加速，加速10km/h追上前车
         delta_v = 3.0
-      elif close_time < 3 and not speed_up_enable: #3秒后可追上前车，并且车本可加速，加速20km/h追上前车
+      elif (close_time < 4 or d < 15) and speed_up_enable and not decel_priority: #距离小于15m并且4秒后可追上前车，并且车本可加速，加速20km/h追上前车
         delta_v = 6.0
+      elif (close_time < 6 or d < 20) and speed_up_enable and not decel_priority: #距离小于20m并且6秒后可追上前车，并且车本可加速，加速32km/h追上前车
+        delta_v = 9.0
       else: # 追上前车比较费时或者本车无法加速，选择减速拉开距离
-        delta_v = -max(0, v_rel_abs + 3 + (min(0, 40.0 - d)/40.0)*3) #减速到比前车慢10~20km/h(40m~0m)
-    else: #前车比自己快，减速拉开距离
-      delta_v = -max(0, v_rel + 3 + (min(0, 40.0 - d) / 40.0) * 3)  # 减速到比后车快10~20km/h(40m~0m)
+        delta_v = -max(0, 3 + (min(0, 40.0 - d)/40.0) * 3 + v_rel_abs) #减速到比前车慢10~20km/h(40m~0m)
+    else: #前车比自己快
+      close_speed = d/2.0 + v_rel #计算需要加速多少才能在2秒内才能追上前车
+      if close_speed < 3 and speed_up_enable and not decel_priority: #加速10km/h即可以2秒内追上前车
+        delta_v = close_speed*2 + 3
+      else:
+        delta_v = -max(0, 3 + (min(0, 40.0 - d) / 40.0) * 3 - v_rel)  # 减速到比前车慢10~20km/h+vrel(40m~0m)
     return delta_v
 
-  def compute_delta_v_for_rear(self, drel_mm, vrel, v_ego, speed_up_enable):
+  def compute_delta_v_for_rear(self, drel_mm, vrel, v_ego, speed_up_enable, decel_priority):
     d = abs(drel_mm) * 0.001 #相对距离(m)
     v_rel = vrel  #相对速度m/s
 
-    #计算后车追上自己的时间
-    if v_rel > 0.5 or not speed_up_enable: #后车比自己快 或者 有前车无法加速
-      close_time = d/v_rel
-      if close_time < 2: #2秒后后车追上自己，对方太快了，维持当前速度不变
+    if v_rel > 0.5: #后车比自己快
+      close_time = d/v_rel #计算后车追上自己的时间
+      if close_time < 2: #2秒后后车追上自己，对方太快了或者距离很近，维持当前速度不变
         delta_v = 0.0
-      elif v_rel < 0: #后车比自己慢并且正前方有车无法加速
-        delta_v = 0.0
-      elif close_time < 3 or not speed_up_enable: #3秒后车追上自己，减速10km/h，让后车加速超过自己
-        delta_v = -3.0
-      else: # 加速拉开距离，加速的速度根据距离动态变化
+      #elif close_time < 3: #3秒后车追上自己，减速10km/h，让后车加速超过自己
+      #  delta_v = -3.0
+      elif speed_up_enable and not decel_priority: # 加速拉开距离，加速的速度根据距离动态变化
         delta_v = v_rel + 3 + (min(0, 40.0 - d)/40.0)*3 #加速到比后车快10~20km/h(40m~0m)
-    else: #后车比自己慢，并且本车可加速
-      delta_v = max(0, v_rel + 3 + (min(0, 40.0 - d) / 40.0) * 3)  # 加速到比后车快10~20km/h(40m~0m)
+      else: #不能加速或者减速优先
+        delta_v = -3.0
+    else: #后车比自己慢
+      if not speed_up_enable or decel_priority: #不能加速或者减速优先
+        delta_v = v_rel-3.0 if d < 10 else 0 #距离小于10米时减速让后车超过自己
+      else:
+        delta_v = max(0, v_rel + 3 + (min(0, 40.0 - d) / 40.0) * 3)  # 加速到比后车快10~20km/h(40m~0m)
     return delta_v
 
-  def compute_delta_v_for_front_rear(self, f_drel_mm, f_vrel, b_drel_mm, b_vrel, v_ego, speed_up_enable):
-    delta_v_front = self.compute_delta_v_for_rear(f_drel_mm, f_vrel, v_ego, speed_up_enable)
-    delta_v_rear = self.compute_delta_v_for_rear(b_drel_mm, b_vrel, v_ego, speed_up_enable)
+  def compute_delta_v_for_front_rear(self, f_drel_mm, f_vrel, b_drel_mm, b_vrel, v_ego, speed_up_enable, decel_priority):
+    delta_v_front = self.compute_delta_v_for_rear(f_drel_mm, f_vrel, v_ego, speed_up_enable, decel_priority)
+    delta_v_rear = self.compute_delta_v_for_rear(b_drel_mm, b_vrel, v_ego, speed_up_enable, decel_priority)
 
     if delta_v_rear < 0 and delta_v_front < 0: #前后目标计算出来都是要求减速
       delta_v = min(delta_v_rear, delta_v_front)
@@ -847,9 +855,10 @@ class CarrotServ:
     atc_speed_org = atc_speed
     atc_bsd_adjust_enable = False
     atc_speed_up = 0
-    atc_decel = False
+    atc_control = False
     delta_v = None
     speed_up_enable = True
+    decel_priority = False
 
     #导航给出在转弯距离大于开始转弯距离时，进入准备阶段
     if x_dist_to_turn > atc_start_dist:
@@ -860,14 +869,20 @@ class CarrotServ:
       if check_steer:
         self.atc_activate_count = max(0, self.atc_activate_count + 1)
 
-      if (atc_type in ["turn left", "turn right"]) and (x_dist_to_turn > start_turn_dist):
-        atc_type = "atc left" if "left" in atc_type else "atc right" #类型为atc left/right只是进入转弯准备状态，并不是真的在执行转弯
-        atc_bsd_adjust_enable = True
+      if atc_type in ["turn left", "turn right"]:
+        if x_dist_to_turn > start_turn_dist:
+          atc_type = "atc left" if "left" in atc_type else "atc right" #类型为atc left/right只是进入转弯准备状态，并不是真的在执行转弯
+          atc_bsd_adjust_enable = True
+          decel_priority = True
+        else:
+          atc_control = True
       elif atc_type in ["fork left", "fork right"]: #说明x_dist_to_turn>do_fork_dist并且说明x_dist_to_turn <=atc_start_dist
         #atc_dist = do_speed_decal_dist #替换减速距离
         if (fork_dist_offset > 0) and (x_dist_to_turn > do_fork_dist): #设置了提前变道距离，并且剩余距离大于进入匝道口距离，则执行提前变道流程
           atc_type = "atc left" if "left" in atc_type else "atc right"
           atc_bsd_adjust_enable = True
+          if x_dist_to_turn < 500: #小于500米时优先减速
+            decel_priority = True
         elif (do_fork_nav_dist > 0) and (x_dist_to_turn <= do_fork_nav_dist): #设置了导航距离控制转弯后，如果距离小于设置值是立即变道
           atc_type += " now"
         if x_dist_to_turn < do_speed_decal_dist: #距离路口的距离小于设定值时要开始减速了，因为到匝道口前nRoadLimitSpeed其实没有变，所以只能用这种方法进行减速
@@ -952,7 +967,7 @@ class CarrotServ:
     driver_right_bsd = True if (meta.atcBsd == 5) else False
     driver_left_right_bsd = driver_left_bsd or driver_right_bsd
 
-    if check_steer and ((atc_bsd_adjust_enable and atc_left_right_bsd) or (not atc_bsd_adjust_enable and not atc_decel and driver_left_right_bsd)):  # 允许自动加减速
+    if check_steer and ((atc_bsd_adjust_enable and atc_left_right_bsd) or (not atc_bsd_adjust_enable and not atc_control and driver_left_right_bsd)):  # 允许自动加减速
       if self.lidar_rvalid and self.lidar_lvalid:  #有激光雷达
         #计算理论巡航速度
         if self.active_carrot >= 2:  # 开了导航
@@ -961,45 +976,45 @@ class CarrotServ:
         else:
           min_desire_speed_kph = min(v_cruise_kph, atc_desired)
           print(f"min_desire_speed {min_desire_speed_kph:.1f} km/h, active_carrot {self.active_carrot}")
-        if 150 > min_desire_speed_kph > (v_ego_kph + 2) and lead_one:  # 有前车，巡航速度有效，当前速度比巡航速度小5，说明无法进行加速
+        if 150 > min_desire_speed_kph > (v_ego_kph + 2) and lead_one:  # 有前车，巡航速度有效，当前速度比巡航速度小2，说明无法进行加速
           speed_up_enable = False
 
         left_bsd = (True if "left" in atc_type else False) if atc_left_right_bsd else (True if driver_left_bsd else False)
         if left_bsd:  # 左变道受阻
           if self.lf_drel is not None and self.lb_drel is not None and self.lf_vrel is not None and self.lb_vrel is not None:  # 前后均有车
-            delta_v = self.compute_delta_v_for_front_rear(self.lf_drel, self.lf_vrel, self.lb_drel, self.lb_vrel, v_ego, speed_up_enable)
+            delta_v = self.compute_delta_v_for_front_rear(self.lf_drel, self.lf_vrel, self.lb_drel, self.lb_vrel, v_ego, speed_up_enable, decel_priority)
             print("======================================")
             print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h, lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel:.1f} km/h")
           elif self.lf_drel is not None and self.lf_vrel is not None:  # 前方有车
             print("======================================")
             if (v_ego + self.lf_vrel) > 2: #目标为非静止车辆或者非对向车辆
-              delta_v = self.compute_delta_v_for_front(self.lf_drel, self.lf_vrel, v_ego, speed_up_enable)
+              delta_v = self.compute_delta_v_for_front(self.lf_drel, self.lf_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h")
             else:
               print(f"lf_vrel({self.lf_vrel:.1f}) too large, v_ego({v_ego:.1f})")
           elif self.lb_drel is not None and self.lb_vrel is not None:  # 后方有车
             print("======================================")
             if (v_ego + self.lb_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
-              delta_v = self.compute_delta_v_for_rear(self.lb_drel, self.lb_vrel, v_ego, speed_up_enable)
+              delta_v = self.compute_delta_v_for_rear(self.lb_drel, self.lb_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel:.1f} km/h")
             else:
               print(f"lb_vrel({self.lb_vrel:.1f}) too large, v_ego({v_ego:.1f})")
         else:  # 右变道受阻
           if self.rf_drel is not None and self.rb_drel is not None and self.rf_vrel is not None and self.rb_vrel is not None:  # 前后均有车
-            delta_v = self.compute_delta_v_for_front_rear(self.rf_drel, self.rf_vrel, self.rb_drel, self.rb_vrel, v_ego, speed_up_enable)
+            delta_v = self.compute_delta_v_for_front_rear(self.rf_drel, self.rf_vrel, self.rb_drel, self.rb_vrel, v_ego, speed_up_enable, decel_priority)
             print("======================================")
             print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h, rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel:.1f} km/h")
           elif self.rf_drel is not None and self.rf_vrel is not None:  # 前方有车，后方无车
             print("======================================")
             if (v_ego + self.rf_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
-              delta_v = self.compute_delta_v_for_front(self.rf_drel, self.rf_vrel, v_ego, speed_up_enable)
+              delta_v = self.compute_delta_v_for_front(self.rf_drel, self.rf_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h")
             else:
               print(f"rf_vrel({self.rf_vrel:.1f}) too large, v_ego({v_ego:.1f})")
           elif self.rb_drel is not None and self.rb_vrel is not None:  # 前方无车，后方有车
             print("======================================")
             if (v_ego + self.rb_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
-              delta_v = self.compute_delta_v_for_rear(self.rb_drel, self.rb_vrel, v_ego, speed_up_enable)
+              delta_v = self.compute_delta_v_for_rear(self.rb_drel, self.rb_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel:.1f} km/h")
             else:
               print(f"rb_vrel({self.rb_vrel:.1f}) too large, v_ego({v_ego:.1f})")
