@@ -794,6 +794,24 @@ class CarrotServ:
       delta_v = 0
     return delta_v
 
+  def get_radar_front_info(self, sm):
+    lf_drel = lf_vrel = rf_drel = rf_vrel = None
+    if sm.alive['radarState']:
+      radar_state = sm['radarState']
+      # 左侧前车
+      if hasattr(radar_state, 'leadLeft') and radar_state.leadLeft and hasattr(radar_state.leadLeft,'status') and radar_state.leadLeft.status:
+        if hasattr(radar_state.leadLeft, 'dRel'):
+          lf_drel = max(0,int(radar_state.leadLeft.dRel*1000))
+        if hasattr(radar_state.leadLeft, 'vRel'):
+          lf_vrel = radar_state.leadLeft.vRel
+      # 右侧前车
+      if hasattr(radar_state, 'leadRight') and radar_state.leadRight and hasattr(radar_state.leadRight,'status') and radar_state.leadRight.status:
+        if hasattr(radar_state.leadRight, 'dRel'):
+          rf_drel = max(0,int(radar_state.leadRight.dRel*1000))
+        if hasattr(radar_state.leadRight, 'vRel'):
+          rf_vrel = radar_state.leadRight.vRel
+    return lf_drel, lf_vrel, rf_drel, rf_vrel
+
   def update_auto_turn(self, v_ego_kph, sm, x_turn_info, x_dist_to_turn, check_steer=False):
     turn_speed = self.autoTurnControlSpeedTurn
     fork_speed = self.nRoadLimitSpeed
@@ -979,40 +997,47 @@ class CarrotServ:
         if 150 > min_desire_speed_kph > (v_ego_kph + 2) and lead_one:  # 有前车，巡航速度有效，当前速度比巡航速度小2，说明无法进行加速
           speed_up_enable = False
 
+        # 获取原车雷达数据
+        radar_lf_drel, radar_lf_vrel, radar_rf_drel, radar_rf_vrel = self.get_radar_front_info(sm)
+
         left_bsd = (True if "left" in atc_type else False) if atc_left_right_bsd else (True if driver_left_bsd else False)
         if left_bsd:  # 左变道受阻
-          if self.lf_drel is not None and self.lb_drel is not None and self.lf_vrel is not None and self.lb_vrel is not None:  # 前后均有车
+          print("======================================")
+          if radar_lf_drel is not None and radar_lf_vrel is not None:
+            self.lf_drel = radar_lf_drel
+            self.lf_vrel = radar_lf_vrel
+            print(f"radar: lf_drel {self.lf_drel * 0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h")
+          if self.lf_drel is not None and self.lf_vrel is not None and self.lb_drel is not None and self.lb_vrel is not None:  # 前后均有车
             delta_v = self.compute_delta_v_for_front_rear(self.lf_drel, self.lf_vrel, self.lb_drel, self.lb_vrel, v_ego, speed_up_enable, decel_priority)
-            print("======================================")
             print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h, lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel:.1f} km/h")
           elif self.lf_drel is not None and self.lf_vrel is not None:  # 前方有车
-            print("======================================")
             if (v_ego + self.lf_vrel) > 2: #目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_front(self.lf_drel, self.lf_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"lf_drel {self.lf_drel*0.001:.1f} m, lf_vrel {self.lf_vrel:.1f} km/h")
             else:
               print(f"lf_vrel({self.lf_vrel:.1f}) too large, v_ego({v_ego:.1f})")
           elif self.lb_drel is not None and self.lb_vrel is not None:  # 后方有车
-            print("======================================")
             if (v_ego + self.lb_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_rear(self.lb_drel, self.lb_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"lb_drel {self.lb_drel*0.001:.1f} m, lb_vrel {self.lb_vrel:.1f} km/h")
             else:
               print(f"lb_vrel({self.lb_vrel:.1f}) too large, v_ego({v_ego:.1f})")
         else:  # 右变道受阻
-          if self.rf_drel is not None and self.rb_drel is not None and self.rf_vrel is not None and self.rb_vrel is not None:  # 前后均有车
+          print("======================================")
+          if radar_rf_drel is not None and radar_rf_vrel is not None:
+            self.rf_drel = radar_rf_drel
+            self.rf_vrel = radar_rf_vrel
+            print(f"radar: rf_drel {self.rf_drel * 0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h")
+          if self.rf_drel is not None and self.rf_vrel is not None and self.rb_drel is not None and self.rb_vrel is not None:  # 前后均有车
             delta_v = self.compute_delta_v_for_front_rear(self.rf_drel, self.rf_vrel, self.rb_drel, self.rb_vrel, v_ego, speed_up_enable, decel_priority)
-            print("======================================")
             print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h, rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel:.1f} km/h")
           elif self.rf_drel is not None and self.rf_vrel is not None:  # 前方有车，后方无车
-            print("======================================")
             if (v_ego + self.rf_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_front(self.rf_drel, self.rf_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"rf_drel {self.rf_drel*0.001:.1f} m, rf_vrel {self.rf_vrel:.1f} km/h")
             else:
               print(f"rf_vrel({self.rf_vrel:.1f}) too large, v_ego({v_ego:.1f})")
           elif self.rb_drel is not None and self.rb_vrel is not None:  # 前方无车，后方有车
-            print("======================================")
             if (v_ego + self.rb_vrel) > 2:  # 目标为非静止车辆或者非对向车辆
               delta_v = self.compute_delta_v_for_rear(self.rb_drel, self.rb_vrel, v_ego, speed_up_enable, decel_priority)
               print(f"rb_drel {self.rb_drel*0.001:.1f} m, rb_vrel {self.rb_vrel:.1f} km/h")
