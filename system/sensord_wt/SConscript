@@ -1,0 +1,42 @@
+Import('env', 'arch', 'common', 'messaging')
+
+# 共享的传感器源文件
+shared_sources = [
+  'sensors/serial.c',
+  'sensors/wit_c_sdk.c',
+  'sensors/wt_data_manager.cc',
+]
+
+# sensord_wt 特有的源文件
+wt_sensors = [
+  'sensors/wt_serial_sensor.cc',
+  'sensors/wt_accel.cc',
+  'sensors/wt_gyro.cc',
+  'sensors/wt_magn.cc',
+  'sensors/wt_temp.cc',
+]
+
+libs = [common, messaging, 'pthread']
+
+# 添加包含路径
+env.Append(CPPPATH=['sensors'])
+
+# 创建共享静态库
+shared_lib = env.StaticLibrary('wt_shared', shared_sources)
+
+# 编译 sensord_wt 主程序
+env.Program('sensord_wt', ['sensord_wt.cc'] + wt_sensors, LIBS=libs + [shared_lib])
+
+# 校准工具
+if arch != "Darwin":
+  calib_env = env.Clone()
+  calib_env.Append(CPPPATH=['sensors'])
+
+  # 校准工具只需要自己的源文件，共享库通过链接获得
+  calibration_sources = ['wt_calibration_tool.cpp']
+
+  wt_calibration_tool = calib_env.Program('wt_calibration_tool',
+                                         calibration_sources,
+                                         LIBS=['pthread', shared_lib])
+
+  calib_env.Install('$BUILD_ROOT/system/sensord_wt', wt_calibration_tool)
