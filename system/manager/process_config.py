@@ -57,6 +57,12 @@ def only_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
 def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started
 
+def dashy(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return int(params.get("dp_dev_dashy") or 0) > 0
+
+def dashy_with_video(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return int(params.get("dp_dev_dashy") or 0) == 2
+
 def enable_updated(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started and params.get_bool("SoftwareMenu")
 
@@ -132,6 +138,7 @@ procs = [
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
+  PythonProcess("dashy", "dragonpilot.dashy.backend.server", dashy),
 
   #PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", check_fleet, enabled=not PC),
   PythonProcess("fleet_manager", "selfdrive.frogpilot.fleetmanager.fleet_manager", check_fleet),
