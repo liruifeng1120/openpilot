@@ -1,17 +1,34 @@
 #!/usr/bin/env python3
 """
-OpenPilot 低 CPU 灰度视频流（稳定版）
+OpenPilot MJPEG 灰度视频流
+最低 CPU 稳定版（5FPS）
 """
 
 import time
 import threading
-import numpy as np
 import cv2
+import numpy as np
 from flask import Flask, Response, render_template_string
 
-# =====================
+# =============================
+# 配置
+# =============================
+FPS = 5
+INTERVAL = 1.0 / FPS
+JPEG_QUALITY = 50
+
+# =============================
+# 全局
+# =============================
+latest_jpeg = None
+frame_lock = threading.Lock()
+
+has_client = False
+client_lock = threading.Lock()
+
+# =============================
 # Flask
-# =====================
+# =============================
 app = Flask(__name__)
 
 HTML = """
@@ -19,101 +36,55 @@ HTML = """
 <html>
 <head>
 <meta charset="utf-8">
-<title>OpenPilot Gray Stream</title>
+<title>OpenPilot Gray Video (5FPS)</title>
 <style>
-body { margin:0; background:#000; overflow:hidden; }
-img { width:100vw; height:100vh; object-fit:contain; }
-#info {
-  position:fixed; left:10px; bottom:10px;
-  color:#0f0; font-family:monospace; font-size:12px;
+body {
+  margin: 0;
+  background: black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 </style>
 </head>
 <body>
-<img id="v" src="/video">
-<div id="info">connecting...</div>
-<script>
-const v = document.getElementById("v");
-const info = document.getElementById("info");
-let last = Date.now(), cnt = 0;
-
-v.onload = () => {
-  const now = Date.now();
-  const dt = now - last;
-  last = now;
-  cnt++;
-  info.textContent = `lat ${dt} ms | fps ${(1000/dt).toFixed(1)}`;
-  setTimeout(()=>v.src="/video?t="+Date.now(), 0);
-};
-v.onerror = ()=>setTimeout(()=>v.src="/video?t="+Date.now(), 200);
-</script>
+<img src="/video">
 </body>
 </html>
 """
 
-# =====================
-# 全局状态
-# =====================
-latest_jpeg = None
-frame_lock = threading.Lock()
+# =============================
+# Y → JPEG（修正版）
+# =============================
+def y_to_jpeg(buf, stride, w, h):
+    try:
+        data = np.frombuffer(buf, dtype=np.uint8)
 
-has_client = False
-last_client_ts = 0.0
+        # 只取 Y plane
+        y_plane = data[:h * stride]
+        y_plane = y_plane.reshape((h, stride))[:, :w]
 
-TARGET_W = 640          # 强烈建议 <= 640
-JPEG_QUALITY = 55       # CPU/画质最优点
-CLIENT_TIMEOUT = 2.0    # 秒：多久算“没人看”
+        ok, jpg = cv2.imencode(
+            ".jpg",
+            y_plane,
+            [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
+        )
+        return jpg.tobytes() if ok else None
+    except Exception as e:
+        print("Y->JPEG error:", e)
+        return None
 
-# =====================
-# Flask 路由
-# =====================
-@app.route("/")
-def index():
-    return render_template_string(HTML)
-
-@app.route("/video")
-def video():
-    global has_client, last_client_ts
-    has_client = True
-    last_client_ts = time.time()
-
-    def gen():
-        while True:
-            with frame_lock:
-                data = latest_jpeg
-            if data:
-                yield (b"--frame\r\n"
-                       b"Content-Type: image/jpeg\r\n\r\n" +
-                       data + b"\r\n")
-            time.sleep(0.005)  # 极低频，client 驱动
-    return Response(gen(),
-        mimetype="multipart/x-mixed-replace; boundary=frame")
-
-# =====================
-# 核心：Y → JPEG（最低 CPU）
-# =====================
-def y_to_jpeg_low_cpu(yuv, stride, w, h):
-    # 只取 Y plane（零拷贝）
-    y = np.frombuffer(yuv, dtype=np.uint8,
-                      count=stride*h).reshape(h, stride)[:, :w]
-
-    # resize（决定 CPU 的关键）
-    if w > TARGET_W:
-        nh = int(h * TARGET_W / w)
-        y = cv2.resize(y, (TARGET_W, nh),
-                      interpolation=cv2.INTER_AREA)
-
-    _, jpeg = cv2.imencode(
-        ".jpg", y,
-        [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
-    )
-    return jpeg.tobytes()
-
-# =====================
-# 相机线程
-# =====================
+# =============================
+# camera_thread（5FPS）
+# =============================
 def camera_thread():
-    global latest_jpeg, has_client
+    global latest_jpeg
 
     from msgq.visionipc.visionipc_pyx import (
         VisionIpcClient, VisionStreamType
@@ -130,57 +101,98 @@ def camera_thread():
             break
         time.sleep(1)
     else:
-        print("camera connect failed")
+        print("Camera connect failed")
         return
 
-    w, h, s = vipc.width, vipc.height, vipc.stride
-    print(f"camera {w}x{h} stride {s}")
+    w, h, stride = vipc.width, vipc.height, vipc.stride
+    print(f"Camera: {w}x{h}, stride={stride}")
 
-    enc_cnt = 0
-    t0 = time.time()
+    last_t = 0.0
 
     while True:
-        # ---- client gating（最重要）----
-        if not has_client or time.time() - last_client_ts > CLIENT_TIMEOUT:
-            has_client = False
-            time.sleep(0.05)
-            continue
-
         buf = vipc.recv()
         if not buf:
-            time.sleep(0.001)
             continue
 
-        jpeg = y_to_jpeg_low_cpu(buf.data, s, w, h)
+        now = time.time()
+        if now - last_t < INTERVAL:
+            continue
+
+        with client_lock:
+            if not has_client:
+                continue
+
+        last_t = now
+
+        jpeg = y_to_jpeg(buf.data, stride, w, h)
+        if not jpeg:
+            continue
+
         with frame_lock:
             latest_jpeg = jpeg
 
-        enc_cnt += 1
-        if time.time() - t0 > 5:
-            print(f"encode fps: {enc_cnt/5:.1f}")
-            enc_cnt = 0
-            t0 = time.time()
+# =============================
+# MJPEG generator（5FPS）
+# =============================
+def mjpeg_generator():
+    global has_client
 
-# =====================
+    with client_lock:
+        has_client = True
+
+    last_t = 0.0
+
+    try:
+        while True:
+            dt = time.time() - last_t
+            if dt < INTERVAL:
+                time.sleep(INTERVAL - dt)
+
+            with frame_lock:
+                frame = latest_jpeg
+
+            if frame is None:
+                continue
+
+            last_t = time.time()
+
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n" +
+                frame +
+                b"\r\n"
+            )
+    finally:
+        with client_lock:
+            has_client = False
+
+# =============================
+# 路由
+# =============================
+@app.route("/")
+def index():
+    return render_template_string(HTML)
+
+@app.route("/video")
+def video():
+    return Response(
+        mjpeg_generator(),
+        mimetype="multipart/x-mixed-replace; boundary=frame"
+    )
+
+# =============================
 # main
-# =====================
+# =============================
 def main():
-    print("="*60)
-    print("OpenPilot LOW CPU Gray Stream")
-    print("http://0.0.0.0:8888")
-    print("="*60)
+    t = threading.Thread(target=camera_thread, daemon=True)
+    t.start()
 
-    threading.Thread(
-        target=camera_thread,
-        daemon=True
-    ).start()
-
+    print("Server: http://<device-ip>:8888")
     app.run(
         host="0.0.0.0",
         port=8888,
         threaded=True,
-        debug=False,
-        use_reloader=False
+        debug=False
     )
 
 if __name__ == "__main__":
