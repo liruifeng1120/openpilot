@@ -58,10 +58,12 @@ def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started
 
 def dashy(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return int(params.get("dp_dev_dashy") or 0) > 0
+  #return int(params.get("dp_dev_dashy") or 0) > 0
+  return True
 
 def dashy_with_video(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return int(params.get("dp_dev_dashy") or 0) == 2
+  #return int(params.get("dp_dev_dashy") or 0) == 2
+  return True
 
 def enable_updated(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started and params.get_bool("SoftwareMenu")
