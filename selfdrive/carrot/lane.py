@@ -1,448 +1,368 @@
 #!/usr/bin/env python3
+"""
+OpenPilot 彩色视频流服务器
+正式版本 - 优化性能与颜色校正
+"""
+
 import time
-import numpy as np
-from collections import deque, Counter
 import threading
-from flask import Flask, jsonify, render_template_string
+import numpy as np
+from flask import Flask, Response, render_template_string
+import cv2
 
-from msgq.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType
-import cereal.messaging as messaging
-from openpilot.common.transformations.camera import get_view_frame_from_calib_frame, DEVICE_CAMERAS
-from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
-
-# ==============================================================================
-# 全局数据共享 (用于 Web 展示)
-# ==============================================================================
-latest_data = {
-    'speed': 0.0,
-    'left_type': '未知',
-    'right_type': '未知',
-    'left_rel_std': 0.0,
-    'right_rel_std': 0.0,
-    'left_confidence': 0.0,
-    'right_confidence': 0.0,
-    'last_update': 0
-}
-
-latest_config = {
-    'lookahead_start': 3.0,
-    'lookahead_end': 40.0,
-    'num_points': 120,
-    'prob_threshold': 0.4,
-    'rel_std_solid_max': 0.06,
-    'rel_std_dash_min': 0.15,
-    'jump_threshold_factor': 0.5,
-    'window_points': 25
-}
-config_lock = threading.Lock()
-
-# ==============================================================================
-# Web 界面 (Stateless Flask)
-# ==============================================================================
 app = Flask(__name__)
 
-HTML_TEMPLATE = """
+# 全局变量
+latest_jpeg = None
+latest_gray = None
+vipc_width = None
+vipc_height = None
+vipc_stride = None
+target_width = 416
+target_height = 416
+JPEG_QUALITY = 50
+gray_img = False
+
+# 请求统计
+req_lock = threading.Lock()
+req_count = 0
+req_window_start = time.time()
+REQ_WINDOW = 2.0   # 统计 2 秒内的请求数
+latest_req_count = 0
+req_frame_time = 0.05
+
+frame_lock = threading.Lock()
+last_snapshot_time = 0
+status_text = "waiting app connect..."
+status_lock = threading.Lock()
+
+HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CPlink Lane Monitor</title>
     <meta charset="utf-8">
+    <title>Lane Detect</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .container { background: #1e293b; padding: 2.5rem; border-radius: 1.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); width: 90%; max-width: 600px; border: 1px solid #334155; }
-        h1 { color: #38bdf8; text-align: center; margin-bottom: 2.5rem; font-weight: 700; letter-spacing: -0.025em; }
-        .stat { display: flex; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155; align-items: center; }
-        .label { color: #94a3b8; font-size: 1rem; font-weight: 500; }
-        .value { font-weight: 700; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 1.5rem; }
-        .type-solid { color: #ef4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
-        .type-dashed { color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
-        .type-unknown { color: #64748b; }
-        .speed { color: #38bdf8; font-size: 2.5rem; }
-        .unit { font-size: 1rem; color: #64748b; margin-left: 0.5rem; font-weight: 400; }
-        .footer { text-align: center; font-size: 0.875rem; color: #475569; margin-top: 2rem; font-weight: 500; }
-        .panel { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #334155; }
-        .row { display: flex; align-items: center; justify-content: space-between; margin: 0.75rem 0; }
-        .row label { color: #94a3b8; font-size: 0.95rem; width: 50%; }
-        .row input[type="range"] { width: 40%; }
-        .row .val { width: 10%; text-align: right; color: #38bdf8; font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+        body {
+            margin: 0;
+            background: black;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #text {
+            white-space: pre;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>车道线性能监控</h1>
-        <div class="stat">
-            <span class="label">实时车速</span>
-            <span class="value speed"><span id="speed">0.0</span><span class="unit">km/h</span></span>
-        </div>
-        <div class="stat">
-            <span class="label">左侧线路</span>
-            <span class="value" id="left_type">检测中...</span>
-        </div>
-        <div class="stat">
-            <span class="label">左侧方差</span>
-            <span class="value" id="left_std">0.0000</span>
-        </div>
-        <div class="stat">
-            <span class="label">右侧线路</span>
-            <span class="value" id="right_type">检测中...</span>
-        </div>
-        <div class="stat">
-            <span class="label">右侧方差</span>
-            <span class="value" id="right_std">0.0000</span>
-        </div>
-        <div class="panel">
-            <div class="row">
-                <label>概率阈值</label>
-                <input id="prob_threshold" type="range" min="0" max="1" step="0.01" value="0.3">
-                <span class="val" id="prob_threshold_val">0.30</span>
-            </div>
-            <div class="row">
-                <label>实线相对方差最大值</label>
-                <input id="rel_std_solid_max" type="range" min="0.02" max="0.20" step="0.01" value="0.08">
-                <span class="val" id="rel_std_solid_max_val">0.08</span>
-            </div>
-            <div class="row">
-                <label>虚线相对方差最小值</label>
-                <input id="rel_std_dash_min" type="range" min="0.05" max="0.50" step="0.01" value="0.12">
-                <span class="val" id="rel_std_dash_min_val">0.12</span>
-            </div>
-            <div class="row">
-                <label>采样起点 (米)</label>
-                <input id="lookahead_start" type="range" min="2" max="10" step="0.5" value="6.0">
-                <span class="val" id="lookahead_start_val">6.0</span>
-            </div>
-            <div class="row">
-                <label>采样终点 (米)</label>
-                <input id="lookahead_end" type="range" min="20" max="60" step="0.5" value="45.0">
-                <span class="val" id="lookahead_end_val">45.0</span>
-            </div>
-            <div class="row">
-                <label>采样点数量</label>
-                <input id="num_points" type="range" min="20" max="200" step="1" value="100">
-                <span class="val" id="num_points_val">100</span>
-            </div>
-            <div class="row">
-                <label>亮度跳变因子</label>
-                <input id="jump_threshold_factor" type="range" min="0.1" max="1.0" step="0.05" value="0.4">
-                <span class="val" id="jump_threshold_factor_val">0.40</span>
-            </div>
-            <div class="row">
-                <label>虚线周期窗口点数</label>
-                <input id="window_points" type="range" min="10" max="80" step="1" value="38">
-                <span class="val" id="window_points_val">38</span>
-            </div>
-        </div>
-        <div class="footer">
-            最后心跳: <span id="timestamp">--:--:--</span>
-        </div>
-    </div>
-    <script>
-        const ids = ["prob_threshold","rel_std_solid_max","rel_std_dash_min","lookahead_start","lookahead_end","num_points","jump_threshold_factor","window_points"];
-        function setVal(id, val) {
-            document.getElementById(id).value = val;
-            document.getElementById(id + "_val").innerText = (typeof val === 'number') ? (id.includes("num_points") || id.includes("window_points") ? Math.round(val) : Number(val).toFixed(id.includes("lookahead") ? 1 : 2)) : val;
-        }
-        function bindSliders() {
-            ids.forEach(id => {
-                const el = document.getElementById(id);
-                el.oninput = () => {
-                    const v = el.type === 'range' ? parseFloat(el.value) : el.value;
-                    setVal(id, v);
-                    const payload = {};
-                    payload[id] = (id === 'num_points' || id === 'window_points') ? Math.round(v) : v;
-                    fetch('/config', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
-                };
-            });
-        }
-        function loadConfig() {
-            fetch('/config').then(r=>r.json()).then(cfg=>{
-                ids.forEach(id => setVal(id, cfg[id]));
-            });
-        }
-        function update() {
-            fetch('/data')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('speed').innerText = data.speed.toFixed(1);
-
-                    const updateLine = (id, typeId, typeStr, stdId, stdVal) => {
-                        const el = document.getElementById(typeId);
-                        el.innerText = typeStr;
-                        el.className = 'value ' + (typeStr === '实线' ? 'type-solid' : (typeStr === '虚线' ? 'type-dashed' : 'type-unknown'));
-                        document.getElementById(stdId).innerText = stdVal.toFixed(4);
-                    };
-
-                    updateLine('left', 'left_type', data.left_type, 'left_std', data.left_rel_std);
-                    updateLine('right', 'right_type', data.right_type, 'right_std', data.right_rel_std);
-
-                    document.getElementById('timestamp').innerText = new Date(data.last_update * 1000).toLocaleTimeString();
-                })
-                .catch(e => console.error("Monitor failed:", e));
-            fetch('/config')
-                .then(r=>r.json())
-                .then(cfg=>{
-                    ids.forEach(id => setVal(id, cfg[id]));
-                })
-                .catch(e => console.error("Config failed:", e));
-        }
-        bindSliders();
-        loadConfig();
-        setInterval(update, 1000);
-        update();
-    </script>
+<div id="text">waiting app connect...</div>
+<script>
+    const el = document.getElementById("text");
+    function update() {
+        fetch("/status")
+            .then(r => r.text())
+            .then(t => el.textContent = t)
+            .catch(() => {});
+    }
+    update();
+    setInterval(update, 1000);   //每秒刷新一次
+</script>
 </body>
 </html>
 """
 
 @app.route('/')
 def index():
-    return render_template_string(HTML_TEMPLATE)
+    return render_template_string(HTML)
 
-@app.route('/data')
-def get_data():
-    return jsonify(latest_data)
+@app.route("/status")
+def status():
+    with status_lock:
+        return status_text
 
-@app.route('/config', methods=['GET'])
-def get_config():
-    with config_lock:
-        return jsonify(latest_config)
+@app.route("/roadrgb.jpg")
+def roadrgb():
+    """返回最新一帧 JPEG，用于 Android 单帧抓取"""
+    global latest_jpeg, last_snapshot_time, gray_img
+    global req_count, latest_req_count, req_frame_time, req_window_start
+    gray_img = False
+    last_snapshot_time = time.time()
 
-@app.route('/config', methods=['POST'])
-def set_config():
-    from flask import request
-    data = request.get_json(force=True) or {}
-    allowed = set(latest_config.keys())
-    with config_lock:
-        for k, v in data.items():
-            if k in allowed:
-                latest_config[k] = float(v) if k not in ('num_points', 'window_points') else int(v)
-    return jsonify({'ok': True, 'config': latest_config})
+    with req_lock:
+        now = time.time()
+        if now - req_window_start > REQ_WINDOW:
+            req_window_start = now
+            latest_req_count = req_count
+            if latest_req_count >= 1:
+              req_frame_time = 2.0 / latest_req_count
+              #print(f"request {latest_req_count}, interval {req_frame_time:.2f} s")
+            req_count = 0
+        req_count += 1
 
-def start_flask():
-    cloudlog.info("Starting Flask on port 8888")
-    app.run(host='0.0.0.0', port=8888, debug=False, use_reloader=False)
+    with frame_lock:
+        jpeg = latest_jpeg
+    # 如果没有帧，返回一张黑色占位图
+    if jpeg is None:
+        import numpy as np
+        import cv2
+        placeholder = np.zeros((target_height, target_width, 3), dtype=np.uint8)
+        _, jpeg = cv2.imencode('.jpg', placeholder)
+        jpeg = jpeg.tobytes()
 
-# ==============================================================================
-# 车道线类型检测器类
-# ==============================================================================
+    return Response(jpeg, mimetype="image/jpeg")
 
-class LaneLineDetector:
-    """中国道路标准优化版检测器"""
+@app.route("/roadgray.jpg")
+def roadgray():
+  """返回最新一帧灰度 JPEG，用于 Android 单帧抓取"""
+  global latest_gray, last_snapshot_time, gray_img
+  global req_count, latest_req_count, req_frame_time, req_window_start
+  gray_img = True
+  last_snapshot_time = time.time()
 
-    FULL_RES_WIDTH = 1928
+  with req_lock:
+    now = time.time()
+    if now - req_window_start > REQ_WINDOW:
+      req_window_start = now
+      latest_req_count = req_count
+      if latest_req_count >= 1:
+        req_frame_time = 2.0 / latest_req_count
+        #print(f"request {latest_req_count}, interval {req_frame_time:.2f} s")
+      req_count = 0
+    req_count += 1
 
-    def __init__(self):
-        self.params = Params()
-        self.intrinsics = None
-        self.w, self.h = None, None
-        self.history = {'left': deque(maxlen=5), 'right': deque(maxlen=5)}
-        self.update_params()
+  with frame_lock:
+    jpeg = latest_gray
 
-    def update_params(self):
-        with config_lock:
-            cfg = dict(latest_config)
-        self.lookahead_start = cfg['lookahead_start']
-        self.lookahead_end = cfg['lookahead_end']
-        self.num_points = int(cfg['num_points'])
-        self.prob_threshold = cfg['prob_threshold']
-        self.rel_std_solid_max = cfg['rel_std_solid_max']
-        self.rel_std_dash_min = cfg['rel_std_dash_min']
-        self.jump_threshold_factor = cfg['jump_threshold_factor']
-        self.window_points = int(cfg['window_points'])
+  if jpeg is None:
+    placeholder = np.zeros((target_height, target_width), dtype=np.uint8)
+    ok, jpeg = cv2.imencode(
+      ".jpg",
+      placeholder,
+      [cv2.IMWRITE_JPEG_QUALITY, JPEG_QUALITY]
+    )
+    jpeg = jpeg.tobytes() if ok else b""
 
-    def init_camera(self, sm, vipc_client):
-        if self.intrinsics is not None: return True
-        if not sm.updated['roadCameraState']: return False
-        try:
-            # 简化内参获取，实际生产中应从 DEVICE_CAMERAS 获取
-            self.w, self.h = vipc_client.width, vipc_client.height
-            scale = self.w / self.FULL_RES_WIDTH
-            # 这里使用标准 C3 相机内参作为 fallback
-            self.intrinsics = np.array([
-                [910 * scale, 0, 960 * scale],
-                [0, 910 * scale, 540 * scale],
-                [0, 0, 1]
-            ])
-            return True
-        except Exception: return False
+  return Response(jpeg, mimetype="image/jpeg")
 
-    def smooth_result(self, side, current_type):
-        """使用历史帧平滑结果"""
-        self.history[side].append(current_type)
+def y_to_jpeg(buf, w, h, stride, target_w, target_h, quality=70):
+  """
+  快速灰度 JPEG（Y plane）
+  - 整数下采样，低 CPU
+  - 中心裁剪到 target_w × target_h
+  - 避免 cv2.resize
+  """
+  try:
+    # 取 Y plane
+    data = np.frombuffer(buf, dtype=np.uint8)
+    y_plane = data[:h * stride].reshape(h, stride)[:, :w]
 
-        if len(self.history[side]) < 3:
-            return current_type
+    # 计算缩放比例（覆盖目标尺寸）
+    scale_x = target_w / w
+    scale_y = target_h / h
+    scale = max(scale_x, scale_y)
 
-        # 投票机制：取最近5帧的众数
-        counts = Counter(self.history[side])
-        most_common = counts.most_common(1)[0][0]
+    # 计算整数下采样步长
+    step_x = max(1, int(1 / scale))
+    step_y = max(1, int(1 / scale))
 
-        return most_common
+    # 下采样
+    y_ds = y_plane[0:h:step_y, 0:w:step_x]
+    ds_h, ds_w = y_ds.shape
 
-    def analyze_lane_continuity(self, pixel_values, v_ego):
-        """改进的虚线检测 - 添加周期性分析
+    # 中心裁剪
+    start_x = max(0, (ds_w - target_w) // 2)
+    start_y = max(0, (ds_h - target_h) // 2)
+    y_crop = y_ds[start_y:start_y + target_h, start_x:start_x + target_w]
 
-        理论依据:
-        1. 信号处理(Signal Processing): 使用自相关(Autocorrelation)检测亮度信号的周期性
-        2. 统计学(Statistics): 使用相对标准差(Relative STD)区分实线(低波动)和虚线(高波动)
-        """
-        if len(pixel_values) < 30:
-            return -1, 0.0
+    # 确保偶数尺寸（Skia 安全）
+    y_crop = y_crop[:target_h & ~1, :target_w & ~1]
 
-        # 基础统计
-        pixels = np.array(pixel_values, dtype=np.float32)
-        std = np.std(pixels)
-        mean = np.mean(pixels)
-        rel_std = std / max(mean, 1.0)
+    # JPEG 编码
+    ok, jpg = cv2.imencode(
+      ".jpg",
+      y_crop,
+      [cv2.IMWRITE_JPEG_QUALITY, quality]
+    )
+    return jpg.tobytes() if ok else None
 
-        # 1. 明确的实线判断 - 方差极低且稳定
-        if rel_std < self.rel_std_solid_max:
-            return 1, rel_std
+  except Exception as e:
+    print("Y->JPEG fast error:", e)
+    return None
 
-        # 2. 归一化信号用于周期性分析
-        normalized = (pixels - mean) / max(std, 1.0)
+def convert_yuv_to_bgr(yuv_data, width, height, stride):
+    """YUV NV12 转 BGR (OpenCV默认顺序)"""
+    try:
+        y_size = height * stride
+        y_plane = yuv_data[:y_size].reshape(height, stride)
+        uv_plane = yuv_data[y_size:y_size + (height//2) * stride].reshape(height//2, stride)
 
-        # 3. 自相关分析检测周期性
-        def detect_periodicity(signal, min_period=5, max_period=None):
-            """使用自相关检测周期性"""
-            if max_period is None:
-                max_period = len(signal) // 3
+        if stride > width:
+            y_plane = y_plane[:, :width]
+            uv_plane = uv_plane[:, :width]
 
-            autocorr_scores = []
-            for lag in range(min_period, min(max_period, len(signal)//2)):
-                corr = np.corrcoef(signal[:-lag], signal[lag:])[0, 1]
-                if not np.isnan(corr):
-                    autocorr_scores.append((lag, corr))
+        yuv_nv12 = np.vstack([y_plane, uv_plane])
+        bgr_img = cv2.cvtColor(yuv_nv12, cv2.COLOR_YUV2BGR_NV12)
+        return bgr_img
+    except:
+        return None
 
-            if not autocorr_scores:
-                return False, 0
+def yuv_nv12_to_small_bgr(yuv_data, width, height, stride, target_w, target_h):
+  """
+  用整数下采样先缩小 NV12，再转 BGR
+  """
+  y_size = height * stride
+  y_plane = yuv_data[:y_size].reshape(height, stride)[:, :width]
+  uv_plane = yuv_data[y_size:y_size + (height // 2) * stride].reshape(height // 2, stride)[:, :width]
 
-            # 找到最强的周期性（正相关峰值）
-            max_corr = max(autocorr_scores, key=lambda x: x[1])
-            return max_corr[1] > 0.3, max_corr[0]  # 相关系数 > 0.3 认为有周期性
+  # 计算下采样倍数，确保大于 target
+  scale_h = height // target_h
+  scale_w = width // target_w
+  scale = max(1, min(scale_h, scale_w))  # 整数倍采样
 
-        has_period, period = detect_periodicity(normalized)
+  # Y plane 下采样
+  y_small = y_plane[::scale, ::scale]
 
-        # 4. 改进的跳变分析 - 检测虚线段数
-        diffs = np.abs(np.diff(pixels))
-        jump_thresh = self.jump_threshold_factor * max(mean, 1.0)
-        significant_jumps = diffs > jump_thresh
+  # UV plane 下采样（每两行、两列采样）
+  uv_small = uv_plane[::scale, ::scale]
 
-        # 统计虚线段数（连续跳变算一段）
-        dash_segments = 0
-        in_segment = False
-        for is_jump in significant_jumps:
-            if is_jump and not in_segment:
-                dash_segments += 1
-                in_segment = True
-            elif not is_jump:
-                in_segment = False
+  # 合并回 NV12 小尺寸
+  nv12_small = np.vstack([y_small, uv_small])
 
-        # 5. 综合判断虚线
-        # 条件：高方差 + 周期性 + 足够的虚线段数（至少2-3段）
-        max_possible_segments = (len(pixels) // period * 1.5) if period > 0 else 999
+  # 转成 BGR
+  bgr_img = cv2.cvtColor(nv12_small, cv2.COLOR_YUV2BGR_NV12)
 
-        is_dashed = (
-            rel_std > self.rel_std_dash_min and
-            has_period and
-            dash_segments >= 2 and
-            dash_segments <= max_possible_segments
+  return bgr_img
+
+def encode_to_jpg(image, target_w, target_h, quality):
+  """
+  固定尺寸 + 低延迟 JPEG
+  """
+  # 固定尺寸 resize（不等比例）
+  if image.shape[1] != target_w or image.shape[0] != target_h:
+    image = cv2.resize(
+      image,
+      (target_w, target_h),
+      interpolation=cv2.INTER_AREA  #更快
+    )
+  # JPEG 编码（去掉 OPTIMIZE）
+  success, jpeg = cv2.imencode(
+    ".jpg",
+    image,
+    [cv2.IMWRITE_JPEG_QUALITY, quality]
+  )
+  return jpeg.tobytes() if success else None
+
+def camera_thread():
+  global latest_jpeg, latest_gray, status_text, gray_img
+  global vipc_width, vipc_height, vipc_stride
+
+  from msgq.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType
+
+  vipc_client = VisionIpcClient(
+    "camerad",
+    VisionStreamType.VISION_STREAM_ROAD,
+    False  # 非实时，更省 CPU
+  )
+
+  for _ in range(3):
+    if vipc_client.connect(False):
+      break
+    time.sleep(1)
+  else:
+    return
+
+  vipc_width = vipc_client.width
+  vipc_height = vipc_client.height
+  vipc_stride = vipc_client.stride
+
+  last_print = time.time()
+  frame_times = []
+
+  while True:
+    # 没客户端，不干活
+    if time.time() - last_snapshot_time > 2.0:
+      time.sleep(0.1)
+      continue
+
+    yuv_buf = vipc_client.recv()
+    if not yuv_buf:
+      time.sleep(0.05)
+      continue
+
+    start_time = time.time()
+
+    bgr = None
+    if gray_img: #只处理灰度图像
+      jpeg = y_to_jpeg(yuv_buf.data, vipc_width, vipc_height, vipc_stride, target_width, target_height, JPEG_QUALITY)
+      if jpeg is None:
+        time.sleep(0.05)
+        continue
+      with frame_lock:
+        latest_gray = jpeg
+    else:
+      bgr = convert_yuv_to_bgr(yuv_buf.data,vipc_width,vipc_height,vipc_stride) # YUV → BGR（临时）
+      #bgr = yuv_nv12_to_small_bgr(yuv_buf.data, vipc_width, vipc_height, vipc_stride, target_width, target_height)
+      if bgr is None:
+        time.sleep(0.05)
+        continue
+      # BGR → JPEG（唯一输出）
+      jpeg = encode_to_jpg(bgr, target_width, target_height, JPEG_QUALITY)
+      if jpeg is None:
+        time.sleep(0.05)
+        continue
+      with frame_lock:
+        latest_jpeg = jpeg
+
+    # 统计
+    t = time.time() - start_time
+    frame_times.append(t * 1000)
+
+    if time.time() - last_print > 2.0:
+      if frame_times:
+        text = (
+          f"JPEG {target_width}x{target_height} | "
+          f"avg {np.mean(frame_times):.1f} ms | "
+          f"FPS {len(frame_times) / 2:.1f}"
         )
+        #print(text)
+        with status_lock:
+          status_text = text
+      frame_times.clear()
+      last_print = time.time()
 
-        if is_dashed:
-            return 0, rel_std
+    # 显式释放（帮助 GC）
+    if bgr is not None:
+      del bgr
 
-        # 6. 备选判断 - 基于跳变但要求更严格
-        if dash_segments >= 4 and rel_std > self.rel_std_dash_min * 1.2:
-            return 0, rel_std
-
-        # 7. 不确定情况
-        return -1, rel_std
-
-    def update(self, sm, yuv_buf):
-        global latest_data
-        result = {'left': -1, 'right': -1, 'left_rel_std': 0.0, 'right_rel_std': 0.0}
-
-        if not sm.updated.get('modelV2') or not sm.updated.get('liveCalibration'):
-            return result
-
-        v_ego = sm['carState'].vEgo if sm.updated.get('carState') else 0.0
-        latest_data['speed'] = float(v_ego * 3.6)
-
-        model = sm['modelV2']
-        calib = sm['liveCalibration']
-
-        try:
-            imgff = np.frombuffer(yuv_buf.data, dtype=np.uint8).reshape((-1, yuv_buf.stride))
-            y_data = imgff[:self.h, :self.w]
-            extrinsic = get_view_frame_from_calib_frame(calib.rpyCalib[0], 0.0, 0.0, 0.0)
-        except Exception: return result
-
-        self.update_params()
-
-        for i, line_idx in enumerate([1, 2]):
-            line = model.laneLines[line_idx]
-            if model.laneLineProbs[line_idx] < self.prob_threshold: continue
-
-            xs, ys, zs = np.array(line.x), np.array(line.y), np.array(line.z)
-            sample_xs = np.linspace(self.lookahead_start, self.lookahead_end, self.num_points)
-            sample_ys = np.interp(sample_xs, xs, ys)
-            sample_zs = np.interp(sample_xs, xs, zs)
-
-            pixels = []
-            for k in range(self.num_points):
-                p = extrinsic.dot(np.array([sample_xs[k], sample_ys[k], sample_zs[k], 1.0]))
-                if p[2] <= 1.0: continue
-                u = int(p[0] / p[2] * self.intrinsics[0, 0] + self.intrinsics[0, 2])
-                v = int(p[1] / p[2] * self.intrinsics[1, 1] + self.intrinsics[1, 2])
-
-                # 添加边界检查和插值采样
-                if 1 <= u < self.w-1 and 1 <= v < self.h-1:
-                    # 使用双线性插值提高采样质量 (5点均值)
-                    pixel_val = (
-                        int(y_data[v, u]) * 0.5 +
-                        int(y_data[v-1, u]) * 0.125 +
-                        int(y_data[v+1, u]) * 0.125 +
-                        int(y_data[v, u-1]) * 0.125 +
-                        int(y_data[v, u+1]) * 0.125
-                    )
-                    pixels.append(pixel_val)
-
-            res_type, res_std = self.analyze_lane_continuity(pixels, v_ego)
-
-            side = 'left' if i == 0 else 'right'
-            # 平滑结果
-            res_type = self.smooth_result(side, res_type)
-            result[side] = res_type
-            result[f'{side}_rel_std'] = res_std
-
-            latest_data[f'{side}_type'] = ['虚线', '实线', '不确定'][res_type if res_type >= 0 else 2]
-            latest_data[f'{side}_rel_std'] = float(res_std)
-
-        latest_data['last_update'] = time.time()
-        return result
+    #是否需要延时
+    with req_lock:
+      _req_frame_time = req_frame_time
+    sleep_time = _req_frame_time - t if  _req_frame_time > t else 0
+    if sleep_time > 0:
+      time.sleep(sleep_time)
 
 def main():
-    threading.Thread(target=start_flask, daemon=True).start()
+    import logging
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
-    detector = LaneLineDetector()
-    sm = messaging.SubMaster(['modelV2', 'liveCalibration', 'roadCameraState', 'carState'])
-    vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
+    print("=" * 60)
+    print("车道线服务程序")
+    print("访问: http://0.0.0.0:8888")
+    print("=" * 60)
 
-    while not vipc_client.connect(False): time.sleep(0.1)
+    cam_thread = threading.Thread(target=camera_thread, daemon=True)
+    cam_thread.start()
 
-    while True:
-        sm.update(0)
-        if detector.init_camera(sm, vipc_client): break
-        time.sleep(0.1)
+    time.sleep(1)
 
-    while True:
-        sm.update(0)
-        yuv_buf = vipc_client.recv()
-        if yuv_buf is not None:
-            detector.update(sm, yuv_buf)
+    from werkzeug.serving import run_simple
+    run_simple('0.0.0.0', 8888, app, threaded=True, processes=1, use_reloader=False)
 
 if __name__ == "__main__":
     main()
