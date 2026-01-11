@@ -266,6 +266,8 @@ class CarrotServ:
     self.ext_blinker = BLINKER_NONE
     self.ext_state = 0
     self.desired_speed = 30
+    self.left_lane = False
+    self.right_lane = False
     self.left_blind = False
     self.right_blind = False
     self.lidar_lblind = False
@@ -1461,8 +1463,8 @@ class CarrotServ:
     msg.carrotMan.roadCate = int(self.roadcate)
     msg.carrotMan.extBlinker = int(self.ext_blinker)
     msg.carrotMan.extState = int(self.ext_state)
-    msg.carrotMan.leftBlind = (4 if self.lidar_car_lblind else 0) + (2 if self.left_blind else 0) + (1 if self.lidar_lblind else 0)
-    msg.carrotMan.rightBlind = (4 if self.lidar_car_rblind else 0) + (2 if self.right_blind else 0) + (1 if self.lidar_rblind else 0)
+    msg.carrotMan.leftBlind = (8 if self.left_lane else 0) + (4 if self.lidar_car_lblind else 0) + (2 if self.left_blind else 0) + (1 if self.lidar_lblind else 0)
+    msg.carrotMan.rightBlind = (8 if self.right_lane else 0) + (4 if self.lidar_car_rblind else 0) + (2 if self.right_blind else 0) + (1 if self.lidar_rblind else 0)
     #new
 
     msg.carrotMan.xPosSpeed = float(v_ego_kph) #float(self.nPosSpeed)
