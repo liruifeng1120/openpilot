@@ -9,6 +9,10 @@ from openpilot.system.mapd_manager import MAPD_PATH, COMMON_DIR
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
+import importlib.util
+FLASK_AVAILABLE = importlib.util.find_spec("flask") is not None
+OPENCV_AVAILABLE = importlib.util.find_spec("cv2") is not None
+
 def driverview(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started or params.get_bool("IsDriverViewEnabled")
 
@@ -36,6 +40,9 @@ def qcomgps(started, params, CP: car.CarParams) -> bool:
 
 def always_run(started, params, CP: car.CarParams) -> bool:
   return True
+
+def check_lane(started, params, CP: car.CarParams) -> bool:
+  return FLASK_AVAILABLE and OPENCV_AVAILABLE
 
 def only_onroad(started: bool, params, CP: car.CarParams) -> bool:
   return started
@@ -99,6 +106,7 @@ procs = [
   PythonProcess("fleet_manager", "system.fleetmanager.fleet_manager", always_run, enabled=not PC),
 
   PythonProcess("carrot_man", "selfdrive.carrot.carrot_man", always_run),#, enabled=not PC),
+  PythonProcess("lane", "selfdrive.carrot.lane", check_lane and only_onroad),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
