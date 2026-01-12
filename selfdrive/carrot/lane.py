@@ -381,6 +381,7 @@ def main():
 
     time.sleep(1)
 
+    from flask import Flask, Response, render_template_string
     app = Flask(__name__)
 
     @app.route('/')
