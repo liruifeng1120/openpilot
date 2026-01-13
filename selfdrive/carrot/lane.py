@@ -364,9 +364,9 @@ def main():
       print("Lane 视频流服务未启动（缺少依赖）")
       print("=" * 60)
       result = ensure_package()
-      if result is not None:
+      if result:
         break
-      time.sleep(10)
+      time.sleep(60)
 
     import logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
