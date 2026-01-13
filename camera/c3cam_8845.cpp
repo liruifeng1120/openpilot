@@ -181,6 +181,10 @@ std::vector<BlindSpotStatus> camera_blind_spots;
 LaneDebouncerSingleDirection left_checker(5);
 LaneDebouncerSingleDirection right_checker(5);
 
+// 全局变量用于ROI编辑状态（多窗口模式）
+int g_current_roi_idx = 0; // 0=左盲区, 1=右盲区
+int g_current_cam_id = 0;  // 当前摄像头ID
+
 // ---------------- YOLO 检测 ----------------
 struct DetectionResult {
     std::vector<cv::Rect> raw_boxes;   // 原始候选框（只经过 score 阈值过滤）
@@ -571,22 +575,35 @@ void load_rois(const std::string& filename){
 
 // ---------------- ROI 鼠标回调 ----------------
 void mouse_callback(int event, int x, int y, int flags, void* userdata) {
-    // userdata现在包含摄像头ID和ROI索引的组合信息
+    // userdata包含摄像头ID
     int* data = reinterpret_cast<int*>(userdata);
     int cam_id = data[0];  // 摄像头ID
-    int roi_idx = data[1]; // ROI索引 (0=左盲区, 1=右盲区)
-    
+
+    // 在多窗口模式下，使用全局变量 g_current_roi_idx 来决定编辑哪个盲区
+    // 首先检查当前窗口是否是正在编辑的摄像头
+    int roi_idx;
+    if (single_window) {
+        // 单窗口模式：从userdata获取roi_idx
+        roi_idx = data[1];
+    } else {
+        // 多窗口模式：检查是否是当前编辑的摄像头
+        if (cam_id != g_current_cam_id) {
+            return; // 不是当前编辑的摄像头，忽略鼠标事件
+        }
+        roi_idx = g_current_roi_idx; // 使用当前编辑的ROI索引
+    }
+
     // 确保有足够的ROI容器
     if (cam_id < 0) return;
     while (camera_rois.size() <= cam_id) {
         camera_rois.emplace_back();
     }
-    
+
     // 确保该摄像头有足够的ROI区域（至少2个用于左右盲区）
     while (camera_rois[cam_id].sub_rois.size() <= roi_idx) {
         camera_rois[cam_id].sub_rois.emplace_back();
     }
-    
+
     auto& roi = camera_rois[cam_id].sub_rois[roi_idx];
 
     auto distance = [](cv::Point a, cv::Point b) { return std::sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)); };
@@ -623,9 +640,9 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
         float min_dist = select_radius;
         for (int i = 0; i < roi.polygon.size(); i++) {
             float d = distance(roi.polygon[i], cv::Point(x, y));
-            if (d < min_dist) { 
-                min_dist = d; 
-                idx = i; 
+            if (d < min_dist) {
+                min_dist = d;
+                idx = i;
             }
         }
         if (idx != -1) {
@@ -650,6 +667,8 @@ void mouse_callback(int event, int x, int y, int flags, void* userdata) {
 void display_loop() {
     const int interval_ms = 100;  // 刷新间隔 100ms
     int key = 0;
+    // 使用全局变量 g_current_roi_idx 和 g_current_cam_id
+
     while (running) {
         auto start_time = std::chrono::steady_clock::now();
 
@@ -706,6 +725,12 @@ void display_loop() {
 
                 if (has_any_frame && combined.cols > 0 && combined.rows > 0) {
                     cv::imshow("All Cameras", combined);
+
+                    // 为单窗口模式注册鼠标回调
+                    static std::array<int, 2> single_window_roi_ids;
+                    single_window_roi_ids[0] = g_current_cam_id;
+                    single_window_roi_ids[1] = g_current_roi_idx;
+                    cv::setMouseCallback("All Cameras", mouse_callback, single_window_roi_ids.data());
                 }
             }
             else {
@@ -714,20 +739,15 @@ void display_loop() {
                     std::string window_name = "Camera " + std::to_string(i);
                     cv::imshow(window_name, shared_images[i]);
 
-                    // 为每个摄像头创建多个ROI区域的数据
-                    static std::vector<std::vector<std::array<int, 2>>> cam_roi_ids;
+                    // 为每个摄像头创建ROI区域数据（用于多窗口模式切换编辑）
+                    static std::vector<std::array<int, 2>> cam_roi_ids;
                     if(cam_roi_ids.size() <= i) cam_roi_ids.resize(i + 1);
-                    if(cam_roi_ids[i].size() < 2) cam_roi_ids[i].resize(2);
-                    
-                    // 第一个ROI区域（左盲区）
-                    cam_roi_ids[i][0][0] = i;  // cam_id
-                    cam_roi_ids[i][0][1] = 0;  // roi_idx (左盲区)
-                    cv::setMouseCallback(window_name, mouse_callback, cam_roi_ids[i][0].data());
-                    
-                    // 第二个ROI区域（右盲区）
-                    cam_roi_ids[i][1][0] = i;  // cam_id
-                    cam_roi_ids[i][1][1] = 1;  // roi_idx (右盲区)
-                    cv::setMouseCallback(window_name, mouse_callback, cam_roi_ids[i][1].data());
+
+                    // 存储当前摄像头的ID和当前编辑的ROI索引
+                    cam_roi_ids[i][0] = i;  // cam_id
+                    cam_roi_ids[i][1] = (g_current_cam_id == i) ? g_current_roi_idx : 0;  // roi_idx
+
+                    cv::setMouseCallback(window_name, mouse_callback, cam_roi_ids[i].data());
                 }
             }
         }
@@ -736,6 +756,21 @@ void display_loop() {
         if (key == 27) { // ESC
             dcout << "display_loop end" << std::endl;
             running = false;
+        }
+        
+        // 键盘快捷键切换编辑状态
+        if (key == 'l' || key == 'L') {
+            g_current_roi_idx = 0; // 切换到左盲区
+            std::cout << "[Edit] Camera " << g_current_cam_id << ": Switched to LEFT BLIND SPOT" << std::endl;
+        } else if (key == 'r' || key == 'R') {
+            g_current_roi_idx = 1; // 切换到右盲区
+            std::cout << "[Edit] Camera " << g_current_cam_id << ": Switched to RIGHT BLIND SPOT" << std::endl;
+        } else if (key == 'n' || key == 'N') {
+            // 切换摄像头
+            g_current_cam_id = (g_current_cam_id + 1) % shared_images.size();
+            g_current_roi_idx = 0; // 切换摄像头时重置为左盲区
+            std::cout << "[Edit] Switched to Camera " << g_current_cam_id << " [LEFT BLIND]" << std::endl;
+            std::cout << "[Edit] Tip: Press 'L' to edit LEFT blind, 'R' to edit RIGHT blind" << std::endl;
         }
 
     wait_next:
