@@ -1474,13 +1474,13 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
   // TODO: Fix empty spaces when curiving back on itself
   if (left_blindspot || right_blindspot) {
-    painter.setBrush(QColor::fromRgbF(1.0, 0.0, 0.0, 0.5));
+    painter.setBrush(QColor::fromRgbF(1.0, 0.0, 0.0, 0.2));
   }
   else if(left_front_blind || right_front_blind) {
-    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 0.0, 0.5));
+    painter.setBrush(QColor::fromRgbF(1.0, 1.0, 0.0, 0.2));
   }
   else if(carrot_left_blind || carrot_right_blind) {
-    painter.setBrush(QColor::fromRgbF(0.0, 0.0, 1.0, 0.5));
+    painter.setBrush(QColor::fromRgbF(0.0, 0.0, 1.0, 0.2));
   }
   if (left_blindspot || left_front_blind || carrot_left_blind) painter.drawPolygon(scene.lane_barrier_vertices[0]);
   if (right_blindspot || right_front_blind || carrot_right_blind) painter.drawPolygon(scene.lane_barrier_vertices[1]);
