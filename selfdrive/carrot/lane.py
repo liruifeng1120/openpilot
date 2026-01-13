@@ -292,7 +292,7 @@ def camera_thread():
       time.sleep(sleep_time)
 
 
-def ensure_package(max_retry=10, retry_delay=10):
+def ensure_package(max_retry=10, retry_delay=3):
   """
   确保 Python 包可用：
   - import 失败则自动 pip install
@@ -366,7 +366,20 @@ def main():
       result = ensure_package()
       if result:
         break
-      time.sleep(60)
+      while True:
+        try:
+          from flask import Flask, Response, render_template_string
+          break
+        except ImportError:
+          print(f"[ERROR] flask未安装，请手动执行命令pip install flask进行安装")
+        time.sleep(3)
+      while True:
+        try:
+          import cv2
+          break
+        except ImportError:
+          print(f"[ERROR] opencv未安装，请手动执行命令pip install opencv-python进行安装")
+        time.sleep(3)
 
     import logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
