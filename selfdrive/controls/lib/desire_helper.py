@@ -891,6 +891,16 @@ class DesireHelper:
 
         trigger_type = 0
         trigger_name = "none"
+        # 计算当前车速(km/h)
+        v_ego_kph = v_ego * 3.6
+        # 低速阈值：80km/h以下时允许手动打灯变道忽略盲区
+        low_speed_allow_manual = v_ego_kph < 80.0
+
+        # 调试日志
+        if (self.showDebugLog & 8) > 0 or (low_speed_allow_manual and driver_desire_enabled):
+          print(f"---[{time.strftime("%H:%M:%S")}]Manual lane change check: speed={v_ego_kph:.1f}km/h, "
+                f"low_speed={low_speed_allow_manual}, driver_desire={driver_desire_enabled}")
+
         if not desire_enabled or below_lane_change_speed:
           print(f"---[{time.strftime("%H:%M:%S")}]Pre:desire_enabled={desire_enabled} or below_lane_change_speed={below_lane_change_speed}")
           self.lane_change_state = LaneChangeState.off
@@ -910,7 +920,10 @@ class DesireHelper:
           #此处根据条件决定是否进入开始变道或转弯的流程，lane_change_available为真时表示旁边车道或者路沿的宽度稳定大于2.5米
           if lane_change_available and self.lane_change_delay == 0: #允许变道并且没有延时时间要求
             self.lane_change_delay_start = False
-            if (self.blindspot_detected_counter > 0 or side_object_detected) and not ignore_bsd:  # 有盲区（包括后盲区，侧盲区，前盲区）
+            # 低速(<80km/h)且手动打灯时，忽略盲区检测
+            should_ignore_bsd = ignore_bsd or (low_speed_allow_manual and driver_desire_enabled)
+
+            if (self.blindspot_detected_counter > 0 or side_object_detected) and not should_ignore_bsd:  # 有盲区（包括后盲区，侧盲区，前盲区）
               if torque_applied and not block_lanechange_bsd: #没有设置有盲区轻方向盘不允许变道
                 self.lane_change_state = LaneChangeState.laneChangeStarting
                 trigger_type = 1
@@ -980,7 +993,8 @@ class DesireHelper:
             else:
               trigger_type = -5
               trigger_name = "no trig"
-              if (self.blindspot_detected_counter > 0 or side_object_detected) and (0 == (self.frame % int(2/DT_MDL))):
+              # 低速(<80km/h)且手动打灯时，不播报盲区警告
+              if (self.blindspot_detected_counter > 0 or side_object_detected) and not low_speed_allow_manual and (0 == (self.frame % int(2/DT_MDL))):
                 self.lane_change_audio(True, 6, 0)  # 播报盲区有车
 
             if self.lane_change_state == LaneChangeState.laneChangeStarting:

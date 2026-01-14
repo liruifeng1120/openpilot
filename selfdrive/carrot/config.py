@@ -9,13 +9,13 @@ from common.params import Params
 
 class Config:
     """配置管理类"""
-    
+
     def __init__(self):
         """初始化配置参数"""
         self.params = Params()
         self.config = self._init_default_config()
         self.load_persistent_config()
-    
+
     def _init_default_config(self):
         """初始化默认配置"""
         return {
@@ -55,6 +55,9 @@ class Config:
             'SAFE_LANE_WIDTH': 2.8,
             'SIDE_LEAD_DISTANCE_MIN': 25.0,
             'SIDE_RELATIVE_SPEED_THRESHOLD': 25,
+
+            # 手动变道盲区忽略阈值
+            'MANUAL_BLINDSPOT_IGNORE_SPEED': 80.0,  # 车速低于此值(km/h)时，手动打灯变道可忽略盲区
 
             # 弯道检测参数
             'CURVATURE_THRESHOLD': 0.02,
