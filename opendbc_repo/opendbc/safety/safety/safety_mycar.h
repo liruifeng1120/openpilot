@@ -57,10 +57,10 @@ static bool car_tx_hook(const CANPacket_t *to_send) {
   return tx;
 }
 
-static bool car_fwd_hook(int bus, int addr) {
-  bool block_msg = false;
+static int car_fwd_hook(int bus, int addr) {
+  int block_msg = 0;
   if ( bus == 2 ) {
-     block_msg =   (addr == ACC_MPC_STATE);
+     block_msg = (addr == ACC_MPC_STATE);
   }
   return block_msg;
 }
@@ -68,7 +68,7 @@ static bool car_fwd_hook(int bus, int addr) {
 static safety_config car_init(uint16_t param) {
 
   static const CanMsg CAR_MSGS[] = {
-     {ACC_MPC_STATE,    0, 8, .check_relay = true},
+     {ACC_MPC_STATE,    0, 8},
   };
   static RxCheck car_checks[] = {
       {.msg = {{ACC_ADAS,     0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 100U}, { 0 }, { 0 }}},
