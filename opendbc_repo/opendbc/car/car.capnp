@@ -244,7 +244,7 @@ struct CarState {
   pcmCruiseGap @63 :Int16;      #0: can't read, 1,2,3,4: gap setting
   speedLimit @64 :Float32;
   speedLimitDistance @65 :Float32;
-  gearStep @66 :Int16;          
+  gearStep @66 :Int16;
   tpms @67 : Tpms;
   useLaneLineSpeed @68 : Float32;
   leftLatDist @69 : Float32;  # distance to left lane line
@@ -411,7 +411,7 @@ struct CarControl {
 
     jerk @9: Float32;  # m/s^3
     aTarget @10: Float32;  # m/s^2
-    yStd @11: Float32;  
+    yStd @11: Float32;
 
     enum LongControlState @0xe40f3a917d908282{
       off @0;
@@ -711,6 +711,7 @@ struct CarParams {
     rivian @33;
     volkswagenMeb @34;
     byd @35;
+    mycar @36;
   }
 
   enum SteerControlType {
