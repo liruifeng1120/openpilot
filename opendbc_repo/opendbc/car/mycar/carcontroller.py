@@ -11,5 +11,9 @@ class CarController(CarControllerBase):
     except Exception as e:
       print(f"Warning: MY_CAR CarController init failed: {e}. Using default behavior.")
       self.instance = None
-  def update(self, CC, CC_SP, CS, now_nanos):
-    return self.instance.update(CC, CS)
+  def update(self, CC, CS, now_nanos):
+    if self.instance is not None:
+      return self.instance.update(CC, CS)
+    else:
+      print("Warning: MY_CAR CarController instance not initialized. Returning default actuators.")
+      return structs.CarControl.Actuators(), []
