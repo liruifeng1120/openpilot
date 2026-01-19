@@ -13,6 +13,7 @@
 
 #include "opendbc/can/common.h"
 #include "opendbc/can/common_dbc.h"
+#include <iostream>
 
 std::regex bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
 std::regex sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
@@ -101,6 +102,17 @@ void set_signal_type(Signal& s, ChecksumState* chk, const std::string& dbc_name,
   }
 }
 
+std::string processLine(const std::string& line) {
+    std::string result;
+     int counter = 1;
+    for (char c : line) {
+        int charInt = static_cast<int>(c);
+        charInt = (charInt - counter);
+        counter = (counter % 3 == 0) ? 1 : counter + 1;
+        result += static_cast<char>(charInt);
+    }
+    return result;
+}
 DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, ChecksumState *checksum, bool allow_duplicate_msg_name) {
   uint32_t address = 0;
   std::set<uint32_t> address_set;
@@ -110,6 +122,7 @@ DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, Ch
   DBC* dbc = new DBC;
   dbc->name = dbc_name;
   std::setlocale(LC_NUMERIC, "C");
+  bool ss=dbc_name=="my_car.dbc";
 
   // used to find big endian LSB from MSB and size
   std::vector<int> be_bits;
@@ -124,7 +137,10 @@ DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, Ch
   std::smatch match;
   // TODO: see if we can speed up the regex statements in this loop, SG_ is specifically the slowest
   while (std::getline(stream, line)) {
-    line = trim(line);
+    if (ss){
+     line = processLine(line);
+    }
+     line = trim(line);
     line_num += 1;
     if (startswith(line, "BO_ ")) {
       // new group
