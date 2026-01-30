@@ -124,6 +124,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"UpdaterTargetBranch", {CLEAR_ON_MANAGER_START, STRING}},
     {"UpdaterLastFetchTime", {PERSISTENT, TIME}},
     {"Version", {PERSISTENT, STRING}},
+    {"device_go_off_road", {CLEAR_ON_MANAGER_START, BOOL}},
 
     // carrot
     {"LongitudinalPersonalityMax", {PERSISTENT, INT, "3"}},
@@ -240,6 +241,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
 
     {"RadarReactionFactor", {PERSISTENT, INT, "100"}},
     {"EnableRadarTracks", {PERSISTENT, INT, "0"}},
+    {"EnableEscc", {PERSISTENT, BOOL, "1"}},
     {"RadarLatFactor", {PERSISTENT, INT, "0"}},
     {"EnableCornerRadar", {PERSISTENT, INT, "0"}},
 
