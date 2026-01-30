@@ -145,6 +145,8 @@ procs = [
   PythonProcess("xiaoge_data", "selfdrive.carrot.xiaoge_data", enable_xiaoge_data),
   # c3x lite
   PythonProcess("beep", "selfdrive.controls.beep", c3x_lite, enabled=TICI),
+  PythonProcess("amap_navi", "selfdrive.carrot.amap_navi", always_run),
+  PythonProcess("lane", "selfdrive.carrot.lane", only_onroad),
 ]
 
 managed_processes = {p.name: p for p in procs}
