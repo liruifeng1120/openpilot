@@ -341,4 +341,5 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     // 断开连接自动关机功能
     {"EnableDisconnectShutdown", {PERSISTENT, BOOL, "0"}},
     {"DisconnectShutdownDelay", {PERSISTENT, INT, "30"}},
+    {"ShowDebugLog", {PERSISTENT, INT, "0"}},
 };
