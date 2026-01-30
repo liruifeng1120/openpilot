@@ -337,4 +337,5 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
 
     {"HardwareC3xLite", {PERSISTENT, INT, "0"}},
     {"ShareData", {PERSISTENT, INT, "0"}},
+    {"ShowDebugLog", {PERSISTENT, INT, "0"}},
 };
