@@ -219,6 +219,8 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   fan_controller = None
 
+  device_go_off_road = False
+
   restart_triggered_ts = 0.
 
   while not end_event.is_set():
@@ -337,13 +339,25 @@ def hardware_thread(end_event, hw_queue) -> None:
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
-    if False: #TICI and HARDWARE.get_device_type() == "tici":
+    if False:
       if not os.path.isfile("/persist/comma/living-in-the-moment"):
         if not Path("/data/media").is_mount():
           set_offroad_alert_if_changed("Offroad_StorageMissing", True)
+        else:
+          # check for bad NVMe
+          try:
+            with open("/sys/block/nvme0n1/device/model") as f:
+              model = f.read().strip()
+            if not model.startswith("Samsung SSD 980") and params.get("Offroad_BadNvme") is None:
+              set_offroad_alert_if_changed("Offroad_BadNvme", True)
+              cloudlog.event("Unsupported NVMe", model=model, error=True)
+          except Exception:
+            pass
 
     # Handle offroad/onroad transition
-    should_start = all(onroad_conditions.values())
+    if count % 6 == 0:
+      device_go_off_road = params.get_bool("device_go_off_road")
+    should_start = not device_go_off_road and all(onroad_conditions.values())
     if started_ts is None:
       should_start = should_start and all(startup_conditions.values())
 
