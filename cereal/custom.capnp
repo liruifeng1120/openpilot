@@ -48,6 +48,9 @@ struct AmapNavi @0xaedffd8f31e7b55d {
 	rightBlind @1 : Int32;
 	extBlinker @2 : Int32;
 	extState @3 : Int32;
+	cmdIndex @4 : Int32;
+	cmd @5 : Text;
+	arg @6 : Text;
 }
 
 struct CustomReserved2 @0xf35cc4560bbf6ec2 {
