@@ -544,6 +544,14 @@
         <translation>1:启用雷达跟踪, -1,2:始终禁用HKG SCC雷达</translation>
     </message>
     <message>
+        <source>Enable Hyundai ESCC(1)</source>
+        <translation>启用现代ESCC</translation>
+    </message>
+    <message>
+        <source>1:Enable ESCC, 0:Disable Escc. Reboot device after change the setting</source>
+        <translation>1:启用ESCC, 0:关闭Escc. 设置参数需要重启后才会生效</translation>
+    </message>
+    <message>
         <source>Auto Cruise control</source>
         <translation>自动巡航控制</translation>
     </message>
@@ -664,6 +672,10 @@
         <translation>是否LDWS车辆</translation>
     </message>
     <message>
+        <source>Hardware is C3x Lite</source>
+        <translation>C3xLite设备</translation>
+    </message>
+    <message>
         <source>CURVE: Lower limit speed(30)</source>
         <translation>弯道：最低限速(30)</translation>
     </message>
@@ -744,8 +756,20 @@
         <translation>0:关闭, 1:视觉, 2:视觉+路线, 3:路线</translation>
     </message>
     <message>
+        <source>Smart Speed Control(0)</source>
+        <translation>智能速度控制(0)</translation>
+    </message>
+    <message>
+        <source>0: off, 1:accel, 2:decel, 3: all</source>
+        <translation>0: 关闭, 1:加速, 2:减速, 3: 全部</translation>
+    </message>
+    <message>
         <source>Map TurnSpeed Factor(100)</source>
         <translation>地图转弯速度系数(100)</translation>
+    </message>
+    <message>
+        <source>Model TurnSpeed Factor(0)</source>
+        <translation>模型转弯速度因子(0)x0.1</translation>
     </message>
     <message>
         <source>ATC: Auto turn control(0)</source>
@@ -897,6 +921,30 @@
     <message>
         <source>Are you sure you want to reset calibration?</source>
         <translation>您确定要重置设备校准吗？</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset calibration?</source>
+        <translation>您确定要重置设备校准吗？</translation>
+    </message>
+    <message>
+        <source>AllCalibParams</source>
+        <translation>所有校准参数</translation>
+    </message>
+    <message>
+        <source>CalibrationParams</source>
+        <translation>相机校准参数</translation>
+    </message>
+    <message>
+        <source>AllLiveParams</source>
+        <translation>实时学习参数</translation>
+    </message>
+    <message>
+        <source>Select calibration parameter to reset</source>
+        <translation>请选择你要重置的校准参数</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset %1?</source>
+        <translation>你确定要重置 %1 吗？</translation>
     </message>
     <message>
         <source>Review Training Guide</source>
@@ -1514,6 +1562,14 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation >红绿灯检测模式</translation>
     </message>
     <message>
+        <source>AChangeCostStarting</source>
+        <translation >加速度变化成本权重</translation>
+    </message>
+    <message>
+        <source>TrafficStopDistanceAdjust</source>
+        <translation >红绿灯停止距离(cm)</translation>
+    </message>
+    <message>
         <source>0:None, 1:Stopping only, 2: Stop &amp; Go</source>
         <translation >0:关闭, 1:仅停车, 2:停车后起步</translation>
     </message>
@@ -1592,6 +1648,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>x0.01, 0:LiveDelay</source>
         <translation >单位0.01，0为实时延迟</translation>
+    </message>
+    <message>
+        <source>LAT:LatSmoothSec(13)</source>
+        <translation >横向：横向平滑时间(13)x0.01</translation>
     </message>
     <message>
         <source>LAT: TorqueCustom(0)</source>

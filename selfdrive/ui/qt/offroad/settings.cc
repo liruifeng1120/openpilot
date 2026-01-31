@@ -403,18 +403,52 @@ void DevicePanel::reboot() {
 
 //차선캘리
 void execAndReboot(const std::string& cmd) {
+    printf("exec cmd: %s\n", cmd.c_str());
     system(cmd.c_str());
     Params().putBool("DoReboot", true);
 }
 
 void DevicePanel::calibration() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("ReCalibration"), this)) {
-      if (!uiState()->engaged()) {
-        std::thread worker(execAndReboot, "cd /data/params/d_tmp;  rm -f CalibrationParams");
-        worker.detach();
-      }
+    QStringList calibOptions;
+    calibOptions << tr("AllCalibParams")
+                 << tr("CalibrationParams")
+                 << tr("AllLiveParams");
+
+    QString selectedParam = MultiOptionDialog::getSelection(
+      tr("Select calibration parameter to reset"),
+      calibOptions,
+      "",
+      this
+    );
+
+    if (selectedParam.isEmpty()) return;
+
+    QString confirmMsg = tr("Are you sure you want to reset %1?").arg(selectedParam);
+    if (!ConfirmationDialog::confirm(confirmMsg, tr("ReCalibration"), this)) return;
+
+    if (uiState()->engaged()) {
+      ConfirmationDialog::alert(tr("Reboot & Disengage to Calibration"), this);
+      return;
     }
+
+    std::thread worker([selectedParam]() {
+      std::string base = "/data/params/d_tmp";
+      std::string cmd;
+
+      if (selectedParam == "AllCalibParams" || selectedParam == "所有校准参数") {
+        cmd = "cd " + base + " && rm -f CalibrationParams LiveParameters LiveParametersV2 LiveTorqueParameters LiveDelay";
+      } else {
+        if(selectedParam == "CalibrationParams" || selectedParam == "相机校准参数"){
+          cmd = "cd " + base + " && rm -f CalibrationParams";
+        }else if(selectedParam == "AllLiveParams" || selectedParam == "实时学习参数"){
+          cmd = "cd " + base + " && rm -f LiveParameters LiveParametersV2 LiveTorqueParameters LiveDelay";
+        }
+      }
+
+      execAndReboot(cmd);
+    });
+    worker.detach();
   } else {
     ConfirmationDialog::alert(tr("Reboot & Disengage to Calibration"), this);
   }
@@ -822,7 +856,7 @@ CarrotPanel::CarrotPanel(QWidget* parent) : QWidget(parent) {
   startToggles->addItem(new CValueControl("HyundaiCameraSCC", tr("HYUNDAI: CAMERA SCC"), tr("1:Connect the SCC's CAN line to CAM, 2:Sync Cruise state, 3:StockLong"), 0, 3, 1));
   startToggles->addItem(new CValueControl("CanfdHDA2", tr("CANFD: HDA2 mode"), tr("1:HDA2,2:HDA2+BSM"), 0, 2, 1));
   startToggles->addItem(new CValueControl("EnableRadarTracks", tr("Enable Radar Track"), tr("1:Enable RadarTrack, -1,2:Disable use HKG SCC radar at all times"), -1, 3, 1));
-  startToggles->addItem(new CValueControl("EnableEscc", "Enable Hyundai ESCC(1)", "1:Enable ESCC, 0:Disable Escc. Reboot device after change the setting", 0, 1, 1));
+  startToggles->addItem(new CValueControl("EnableEscc", tr("Enable Hyundai ESCC(1)"), tr("1:Enable ESCC, 0:Disable Escc. Reboot device after change the setting"), 0, 1, 1));
   startToggles->addItem(new CValueControl("AutoCruiseControl", tr("Auto Cruise control"), tr("Softhold, Auto Cruise ON/OFF control"), 0, 3, 1));
   startToggles->addItem(new CValueControl("CruiseOnDist", tr("CRUISE: Auto ON distance(0cm)"), tr("When GAS/Brake is OFF, Cruise ON when the lead car gets closer."), 0, 2500, 50));
   startToggles->addItem(new CValueControl("AutoEngage", tr("Auto Engage control on start"), tr("1:SteerEnable, 2:Steer/Cruise Engage"), 0, 2, 1));
