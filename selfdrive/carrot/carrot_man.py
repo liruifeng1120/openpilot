@@ -338,7 +338,7 @@ class CarrotMan:
             #  sock.sendto(dat, address)
 
             if remote_addr is None:
-              print(f"Broadcasting: {self.broadcast_ip}:{msg}")
+              #print(f"Broadcasting: {self.broadcast_ip}:{msg}")
               if not self.navd_active:
                 #print("clear path_points: navd_active: ", self.navd_active)
                 self.navi_points = []
@@ -396,7 +396,7 @@ class CarrotMan:
     else:
       self.v_cruise_change = 0
       return
-    
+
     v_cruise_apply = max(min(CS.vCruise, v_ego_kph), 20)
     vt_last = self.params_memory.get_int("CarrotSpeed")
     if vt_last != 0:
