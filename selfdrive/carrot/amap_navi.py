@@ -259,6 +259,9 @@ class AmapNaviServ:
                                (2 if self.shared_data.right_blind else 0) + (1 if self.shared_data.lidar_rblind else 0))
     msg.amapNavi.extState = self.shared_data.ext_state
     msg.amapNavi.extBlinker = self.shared_data.ext_blinker
+    msg.amapNavi.cmdIndex = self.shared_data.cmd_index
+    msg.amapNavi.cmd = self.shared_data.remote_cmd
+    msg.amapNavi.arg = self.shared_data.remote_arg
     self.pm.send('amapNavi', msg)
 
   def left_blindspot(self):
