@@ -6,6 +6,9 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.common.params import Params
 from collections import deque
 
+#new
+from openpilot.selfdrive.carrot.config import UnifiedParams
+
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
 TurnDirection = log.Desire
@@ -102,8 +105,10 @@ class ExistCounter:
 
 
 class DesireHelper:
-  def __init__(self):
-    self.params = Params()
+  def __init__(self, sm):
+    self.sm = sm
+    #self.params = Params()
+    self.params = UnifiedParams() #new
     self.frame = 0
 
     # Lane change / turn 상태
@@ -186,11 +191,98 @@ class DesireHelper:
     self.cur_left_prob = 1.0   # laneLineProbs[1]
     self.cur_right_prob = 1.0  # laneLineProbs[2]
     self.current_lane_missing = False
+
+    #new
+    self._user_class_init()
+    self._update_user_params_periodic()
   # ─────────────────────────────────────────────
   #  Config / Model 관련
   # ─────────────────────────────────────────────
+  #new
+  def _user_class_init(self):
+    self.side_object_detected = False
+
+  def _update_user_params_periodic(self):
+    self.allowContinuousLaneChange = self.params.get_int("ContinuousLaneChange")
+    self.autoTurnInNotRoadEdge = self.params.get_int("AutoTurnInNotRoadEdge")
+    self.continuousLaneChangeCnt = self.params.get_int("ContinuousLaneChangeCnt")
+    self.continuousLaneChangeInterval = self.params.get_int("ContinuousLaneChangeInterval")
+    # self.autoDoForkCheckDist = self.params.get_int("AutoDoForkCheckDist")
+    # self.autoDoForkCheckDistH = self.params.get_int("AutoDoForkCheckDistH")
+    self.roadType = self.params.get_int("RoadType")
+    self.autoTurnLeft = self.params.get_int("AutoTurnLeft")
+    self.showDebugLog = self.params.get_int("ShowDebugLog")
+    self.autoNaviCountDownMode = self.params.get_int("AutoNaviCountDownMode")
+    self.newLaneWidthDiff = self.params.get_float("NewLaneWidthDiff") * 0.1
+    self.autoEnTurnNewLaneTimeH = self.params.get_int("AutoEnTurnNewLaneTimeH")
+    self.autoEnTurnNewLaneTime = self.params.get_int("AutoEnTurnNewLaneTime")
+    self.bsdDelayTime = self.params.get_float("BsdDelayTime") * 0.1
+    self.sideBsdDelayTime = self.params.get_int("SideBsdDelayTime") * 0.1
+    self.sideRelDistTime = self.params.get_int("SideRelDistTime") * 0.1
+    self.sidevRelDistTime = self.params.get_int("SidevRelDistTime") * 0.1
+    self.min_drel_vego_time = self.sideRelDistTime
+    self.min_vrel_vego_time = self.sidevRelDistTime
+    self.min_object_detected_count_thr = int(-1 * self.sideBsdDelayTime / DT_MDL)
+    self.lane_count_stab_cnt = int(self.params.get_float("LaneStabTime") * 0.1 / DT_MDL)
+    self.stockBlinkerCtrl = self.params.get_int("StockBlinkerCtrl")
+    self.blinkerMode = self.params.get_int("BlinkerMode")
+    self.autoLaneChangeMinSpeed = self.params.get_int("AutoLaneChangeMinSpeed")
+    self.disableBlindSpot = self.params.get_bool("DisableBlindSpot")
+  #new
+
+  # new
+  def _all_blind_spot_state(self, desire_enabled, blinker_state, radarState, vEgo):
+    if desire_enabled:
+      amapNavi = self.sm['amapNavi']
+      # 用户盲区状态(激光雷达/摄像头/实线)
+      carrot_left_blind = amapNavi.leftBlind
+      carrot_right_blind = amapNavi.rightBlind
+      car_left_blind = (carrot_left_blind & 0x04)  # 车身侧面盲区
+      car_right_blind = (carrot_right_blind & 0x04)  # 车身侧面盲区
+      is_left_car = True if (carrot_left_blind & 7) != 0 else False  # 左侧是否有车
+      is_right_car = True if (carrot_right_blind & 7) != 0 else False  # 右侧是否有车
+      carrot_blind = carrot_left_blind if blinker_state == BLINKER_LEFT else carrot_right_blind
+      car_side_blind = car_left_blind if blinker_state == BLINKER_LEFT else car_right_blind
+      is_car_blind = is_left_car if blinker_state == BLINKER_LEFT else is_right_car  # 盲区是否为车（非单纯实线阻止的变道）
+
+      #原车前雷达侧盲区
+      radar = radarState.leadLeft if blinker_state == BLINKER_LEFT else radarState.leadRight
+      side_object_dist = radar.dRel + radar.vLead * 3.0 if radar.status else 255
+      if radar.status:
+        object_detected = ((side_object_dist < vEgo * (3.0 + self.min_vrel_vego_time)) or (
+            radar.dRel < (vEgo * self.min_drel_vego_time))) and abs(radar.vLead) > 2.8
+      else:
+        object_detected = False
+
+      #盲区计数
+      if (object_detected and not self.disableBlindSpot) or carrot_blind:
+        self.object_detected_count = 1
+      else:
+        self.object_detected_count -= 1
+        min_object_detected_count = int(-60.0 / DT_MDL)
+        if self.object_detected_count < min_object_detected_count:
+          self.object_detected_count = min_object_detected_count
+    else:
+      carrot_blind = False
+      car_side_blind = False
+      is_car_blind = False
+      object_detected = False
+    return carrot_blind, car_side_blind, is_car_blind, object_detected
+
+  def object_detected_debounce(self):
+    if self.side_object_detected:
+      if self.object_detected_count <= self.min_object_detected_count_thr:
+        self.side_object_detected = False
+    elif self.object_detected_count > 0:
+      self.side_object_detected = True
+    return self.side_object_detected
+  # new
 
   def _update_params_periodic(self):
+    #new
+    if (self.frame+50) % 100 == 0:
+      self._update_user_params_periodic()
+    #new
     if self.frame % 100 == 0:
       self.laneChangeNeedTorque = self.params.get_int("LaneChangeNeedTorque")
       self.laneChangeBsd = self.params.get_int("LaneChangeBsd")
@@ -402,7 +494,7 @@ class DesireHelper:
     edge_far = edge_dist > 4.0  # 튜닝 포인트 (4~6m 정도가 무난)
     #if edge_far:
     #  score_turn += 1
-      
+
     current_lane_missing = lane_prob_side < 0.3
     self.current_lane_missing = current_lane_missing
     # 튜닝 포인트: score_turn 임계값
@@ -453,13 +545,16 @@ class DesireHelper:
     # lane_line_info (HUD용 등)
     lane_line_info = carstate.leftLaneLine if blinker_state == BLINKER_LEFT else carstate.rightLaneLine
 
+    #new 用户盲区状态(激光雷达/摄像头/实线)，原车侧前雷达状态
+    carrot_blind, car_side_blind, is_car_blind, object_detected  = self._all_blind_spot_state(desire_enabled, blinker_state, radarState, v_ego)
+
     # BSD / 주변 차량 감지
     if desire_enabled:
       lane_exist_counter = self.lane_exist_left_count.counter if blinker_state == BLINKER_LEFT else self.lane_exist_right_count.counter
       lane_available = self.available_left_lane if blinker_state == BLINKER_LEFT else self.available_right_lane
       edge_available = self.available_left_edge if blinker_state == BLINKER_LEFT else self.available_right_edge
       self.lane_appeared = self.lane_appeared or lane_exist_counter == int(0.2 / DT_MDL)
-
+      '''
       radar = radarState.leadLeft if blinker_state == BLINKER_LEFT else radarState.leadRight
       side_object_dist = radar.dRel + radar.vLead * 4.0 if radar.status else 255
       object_detected = side_object_dist < v_ego * 3.0
@@ -467,7 +562,7 @@ class DesireHelper:
         self.object_detected_count = max(1, self.object_detected_count + 1)
       else:
         self.object_detected_count = min(-1, self.object_detected_count - 1)
-
+      '''
       lane_line_info_edge_detect = (lane_line_info % 10 in [0, 5] and self.lane_line_info not in [0, 5])
       self.lane_line_info = lane_line_info % 10
     else:
@@ -499,6 +594,9 @@ class DesireHelper:
 
     edge_availabled = (not self.edge_available_last and edge_available)
     side_object_detected = self.object_detected_count > -0.3 / DT_MDL
+    #new
+    side_object_detected = self.object_detected_debounce()
+    #new
     self.lane_appeared = self.lane_appeared and distance_to_road_edge < 4.0
 
     # Auto lane change 트리거
