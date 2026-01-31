@@ -694,13 +694,13 @@ class DesireHelper:
           else:
             # 차선변경 시작 조건
             if (lane_change_available and self.lane_change_delay == 0) or lane_line_info_edge_detect:
-              if self.blindspot_detected_counter > 0 and not ignore_bsd:
+              if (self.blindspot_detected_counter > 0 or (side_object_detected and is_car_blind)) and not ignore_bsd: #new
                 if torque_applied and not block_lanechange_bsd:
                   self.lane_change_state = LaneChangeState.laneChangeStarting
               elif self.laneChangeNeedTorque > 0 or self.next_lane_change:
                 if torque_applied:
                   self.lane_change_state = LaneChangeState.laneChangeStarting
-              elif driver_desire_enabled:
+              elif driver_desire_enabled and not side_object_detected: #new
                 self.lane_change_state = LaneChangeState.laneChangeStarting
               elif torque_applied or auto_lane_change_trigger or lane_line_info_edge_detect:
                 self.lane_change_state = LaneChangeState.laneChangeStarting
