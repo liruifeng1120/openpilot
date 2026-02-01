@@ -27,6 +27,9 @@ class PowerMonitoring:
     self.next_pulsed_measurement_time = None
     self.car_voltage_mV = 12e3                  # Low-passed version of peripheralState voltage
     self.car_voltage_instant_mV = 12e3          # Last value of peripheralState voltage
+    self.panda_connected = True                 # Panda是否连接
+    self.panda_disconnect_time = None           # Panda断开时间
+    self.panda_connected_this_boot = False      # 本次启动后是否连接过Panda
     self.integration_lock = threading.Lock()
 
     car_battery_capacity_uWh = self.params.get("CarBatteryCapacity")
@@ -44,10 +47,23 @@ class PowerMonitoring:
       # If peripheralState is None, we're probably not in a car, so we don't care
       if voltage is None:
         with self.integration_lock:
+          # 记录Panda断开连接
+          if self.panda_connected:
+            self.panda_connected = False
+            self.panda_disconnect_time = now
+            cloudlog.warning("Panda disconnected")
           self.last_measurement_time = None
           self.next_pulsed_measurement_time = None
           self.power_used_uWh = 0
         return
+
+      # Panda重新连接
+      if not self.panda_connected:
+        self.panda_connected = True
+        self.panda_disconnect_time = None
+        cloudlog.info("Panda reconnected")
+        # 标记本次启动后连接过Panda
+        self.panda_connected_this_boot = True
 
       # Low-pass battery voltage
       self.car_voltage_instant_mV = voltage
@@ -126,4 +142,16 @@ class PowerMonitoring:
     should_shutdown &= offroad_time > DELAY_SHUTDOWN_TIME_S
     should_shutdown |= self.params.get_bool("ForcePowerDown")
     should_shutdown &= started_seen or (now > MIN_ON_TIME_S)
+
+    # 断开连接自动关机逻辑
+    # 只有在本次启动后连接过Panda的情况下，并且启用了断开连接自动关机功能
+    if self.params.get_bool("EnableDisconnectShutdown") and self.panda_connected_this_boot:
+      # 检查Panda是否断开连接（voltage变为None导致panda_connected=False）
+      if not self.panda_connected and self.panda_disconnect_time is not None:
+        shutdown_delay = self.params.get_int("DisconnectShutdownDelay")
+        disconnect_time = (now - self.panda_disconnect_time)
+        if disconnect_time >= shutdown_delay:
+          should_shutdown = True
+          cloudlog.warning(f"Panda disconnected {disconnect_time:.1f}s ago, shutting down after {shutdown_delay}s delay")
+
     return should_shutdown
