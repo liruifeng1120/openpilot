@@ -32,7 +32,7 @@ def get_default_params():
     ("OpenpilotEnabledToggle", "1"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
     ("IsMetric", "1"),
-    ("RecordAudio", "1"),
+    ("RecordAudio", "0"),
 
     ("SearchInput", "0"),
     ("GMapKey", "0"),
@@ -40,12 +40,12 @@ def get_default_params():
 
 
     ("LongitudinalPersonalityMax", "3"),
-    ("ShowDebugUI", "0"),
+    ("ShowDebugUI", "1"),
     ("ShowTpms", "1"),
     ("ShowDateTime", "1"),
     ("ShowPathEnd", "1"),
     ("ShowCustomBrightness", "100"),
-    ("ShowLaneInfo", "1"),
+    ("ShowLaneInfo", "2"),
     ("ShowRadarInfo", "1"),
     ("ShowDeviceState", "1"),
     ("ShowRouteInfo", "1"),
@@ -54,9 +54,9 @@ def get_default_params():
     ("ShowPathColorCruiseOff", "19"),
     ("ShowPathModeLane", "14"),
     ("ShowPathColorLane", "13"),
-    ("ShowPlotMode", "0"),
+    ("ShowPlotMode", "1"),
     ("AutoCruiseControl", "0"),
-    ("CruiseEcoControl", "2"),
+    ("CruiseEcoControl", "0"),
     ("CarrotCruiseDecel", "-1"),
     ("CarrotCruiseAtcDecel", "-1"),
     ("CommaLongAcc", "0"),
@@ -140,13 +140,13 @@ def get_default_params():
     ("TrafficStopDistanceAdjust", "400"),
     ("DynamicTFollowLC", "100"),
     ("HapticFeedbackWhenSpeedCamera", "0"),
-    ("UseLaneLineSpeed", "0"),
+    ("UseLaneLineSpeed", "10"),
     ("PathOffset", "0"),
-    ("UseLaneLineCurveSpeed", "0"),
+    ("UseLaneLineCurveSpeed", "10"),
     ("AdjustLaneOffset", "0"),
     ("LaneChangeNeedTorque", "0"),
     ("LaneChangeDelay", "0"),
-    ("LaneChangeBsd", "0"),
+    ("LaneChangeBsd", "1"),
     ("MaxAngleFrames", "89"),
     ("LateralTorqueCustom", "0"),
     ("LateralTorqueAccelFactor", "2500"),
@@ -170,7 +170,7 @@ def get_default_params():
     ("SteerActuatorDelay", "0"),
     ("LatSmoothSec", "13"),
     ("MaxTimeOffroadMin", "60"),
-    ("DisableDM", "0"),
+    ("DisableDM", "3"),
     ("EnableConnect", "0"),
     ("MuteDoor", "0"),
     ("MuteSeatbelt", "0"),
@@ -181,9 +181,13 @@ def get_default_params():
     ("SoftwareMenu", "1"),
     ("CustomSR", "0"),
     ("SteerRatioRate", "100"),
-    ("NNFF", "0"),
+    ("NNFF", "1"),
     ("NNFFLite", "0"),
     ("ShareData", "0"),
+
+    # 断开连接自动关机功能
+    ("EnableDisconnectShutdown", "0"),  # 默认关闭，需要手动启用
+    ("DisconnectShutdownDelay", "5"),  # 断开连接后延时 5 秒关机
   ]
   return default_params
 
@@ -366,6 +370,12 @@ def main() -> None:
   os.system(f"python ../../opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
   os.system(f"python ../../opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
   os.system(f"python ../../opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"python ../../opendbc/car/subaru/values.py > {Params().get_param_path()}/SupportedCars_subaru")
+  os.system(f"python ../../opendbc/car/honda/values.py > {Params().get_param_path()}/SupportedCars_honda")
+  os.system(f"python ../../opendbc/car/nissan/values.py > {Params().get_param_path()}/SupportedCars_nissan")
+  os.system(f"python ../../opendbc/car/chrysler/values.py > {Params().get_param_path()}/SupportedCars_chrysler")
+  os.system(f"python ../../opendbc/car/ford/values.py > {Params().get_param_path()}/SupportedCars_ford")
+  os.system(f"python ../../opendbc/car/volkswagen/values.py > {Params().get_param_path()}/SupportedCars_volkswagen")
 
   if os.getenv("PREPAREONLY") is not None:
     return
