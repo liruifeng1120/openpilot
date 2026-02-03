@@ -83,7 +83,10 @@ class CarState(CarStateBase):
 
     # doorOpen is true if we can find any door open, but signal locations vary, and we may only see the driver's door
     # TODO: Test the eight Nidec cars without SCM signals for driver's door state, may be able to consolidate further
-    if self.CP.flags & HondaFlags.HAS_ALL_DOOR_STATES:
+    # Bypass door/seatbelt check for Honda Odyssey 5G MMR due to missing F-CAN D connection
+    if self.CP.carFingerprint == CAR.HONDA_ODYSSEY_5G_MMR:
+      ret.doorOpen = False
+    elif self.CP.flags & HondaFlags.HAS_ALL_DOOR_STATES:
       ret.doorOpen = any([cp.vl["DOORS_STATUS"]["DOOR_OPEN_FL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_FR"],
                           cp.vl["DOORS_STATUS"]["DOOR_OPEN_RL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_RR"]])
     elif "DRIVERS_DOOR_OPEN" in cp.vl["SCM_BUTTONS"]:
@@ -91,7 +94,11 @@ class CarState(CarStateBase):
     else:
       ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
 
-    ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LAMP"] or not cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LATCHED"])
+    # Bypass door/seatbelt check for Honda Odyssey 5G MMR due to missing F-CAN D connection
+    if self.CP.carFingerprint == CAR.HONDA_ODYSSEY_5G_MMR:
+      ret.seatbeltUnlatched = False
+    else:
+      ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LAMP"] or not cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LATCHED"])
 
     steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
     ret.steerFaultPermanent = steer_status not in ("NORMAL", "NO_TORQUE_ALERT_1", "NO_TORQUE_ALERT_2", "LOW_SPEED_LOCKOUT", "TMP_FAULT")
