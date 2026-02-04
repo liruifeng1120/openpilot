@@ -76,7 +76,9 @@ class VehicleParamsLearner:
       yaw_rate, yaw_rate_std = calibrated_pose.angular_velocity.z, calibrated_pose.angular_velocity.z_std
       yaw_rate_valid = msg.angularVelocityDevice.valid
       yaw_rate_valid = yaw_rate_valid and 0 < yaw_rate_std < 10  # rad/s
-      yaw_rate_valid = yaw_rate_valid and abs(yaw_rate) < 1  # rad/s
+      # Increased threshold from 1.0 to 1.5 rad/s (~86 deg/s) to support sharper turns
+      # This prevents valid yaw rate during cornering from being marked as invalid
+      yaw_rate_valid = yaw_rate_valid and abs(yaw_rate) < 1.5  # rad/s
       if not yaw_rate_valid:
         # This is done to bound the yaw rate estimate when localizer values are invalid or calibrating
         yaw_rate, yaw_rate_std = 0.0, np.radians(10.0)
@@ -299,7 +301,7 @@ def main():
         lat = gps.latitude
         lon = gps.longitude
         params_memory.put_nonblocking("LastGPSPosition", json.dumps({"latitude": lat, "longitude": lon, "bearing": bearing}))
-        
+
 
     if sm.updated['livePose']:
       msg = learner.get_msg(sm.all_checks(), debug=DEBUG)
