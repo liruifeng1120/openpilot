@@ -939,13 +939,16 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # - CAN data is received, but some message are not received at the right frequency
   # If you're not writing a new car port, this is usually cause by faulty wiring
   EventName.canError: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("CAN总线错误"),
-    ET.PERMANENT: Alert(
-      "CAN总线错误：请检查连接",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., creation_delay=1.),
-    ET.NO_ENTRY: NoEntryAlert("CAN总线错误：请检查连接"),
+    # 2022款奥德赛有两组CAN线：动力CAN和舒适CAN
+    # 当前系统只接入了动力CAN，舒适CAN未接入，导致缺少车门和安全带信号
+    # 因此暂时将错误级别降低，避免频繁弹出错误提示
+    ET.IMMEDIATE_DISABLE: NormalPermanentAlert("CAN总线错误", ""),
+    # ET.PERMANENT: Alert(
+    #   "CAN总线部分信号缺失",
+    #   "系统将继续运行，但可能缺少某些信号",
+    #   AlertStatus.normal, AlertSize.small,
+    #   Priority.LOW, VisualAlert.none, AudibleAlert.none, 1., creation_delay=1.),
+    # ET.NO_ENTRY: NoEntryAlert("CAN总线错误：请检查连接"),
   },
 
   EventName.canBusMissing: {
