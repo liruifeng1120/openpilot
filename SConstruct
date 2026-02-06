@@ -366,6 +366,10 @@ if arch != "Darwin":
 if arch == "larch64":
   SConscript(['system/camerad/SConscript'])
 
+# Build camera modules for PC/WSL2 (x86_64 and aarch64)
+if arch != "larch64":
+  SConscript(['camera/SConscript'])
+
 # Build openpilot
 SConscript(['third_party/SConscript'])
 

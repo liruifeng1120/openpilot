@@ -965,6 +965,14 @@
         <source>根据转向自动切换地图</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Select Manufacturer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select your car</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
@@ -1292,23 +1300,23 @@
 <context>
     <name>DrawCarrot</name>
     <message>
-        <source>ECO</source>
+        <source>经 济</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>SAFE</source>
+        <source>安 全</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>NORM</source>
+        <source>标 准</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>FAST</source>
+        <source>运 动</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ERRM</source>
+        <source>错 误</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2023,6 +2031,26 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>never</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Onroad/Offroad Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Offroad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to switch mode?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONFIRM</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Go Onroad</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

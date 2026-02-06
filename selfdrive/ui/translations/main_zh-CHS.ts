@@ -245,15 +245,15 @@
     </message>
     <message>
         <source>0:None, 1:Stopping only, 2: Stop &amp; Go</source>
-        <translation>0:无, 1:仅停止, 2:停走</translation>
+        <translation type="vanished">0:无, 1:仅停止, 2:停走</translation>
     </message>
     <message>
         <source>AChangeCostStarting</source>
-        <translation>加速度变化步长</translation>
+        <translation type="vanished">加速度变化步长</translation>
     </message>
     <message>
         <source>TrafficStopDistanceAdjust</source>
-        <translation>红绿灯停止距离调整</translation>
+        <translation type="vanished">红绿灯停止距离调整</translation>
     </message>
     <message>
         <source>Laneline mode speed(0)</source>
@@ -781,35 +781,31 @@
     </message>
     <message>
         <source>ATC Auto Map Change(0)</source>
-        <translation>ATC 自动地图切换(0)</translation>
+        <translation type="vanished">ATC 自动地图切换(0)</translation>
     </message>
     <message>
         <source>Share Data</source>
-        <translation>分享数据</translation>
+        <translation type="vanished">分享数据</translation>
     </message>
     <message>
         <source>Hardware is C3x Lite</source>
-        <translation>硬件为 C3x Lite</translation>
+        <translation type="vanished">硬件为 C3x Lite</translation>
     </message>
     <message>
         <source>0:None, 1:TCP JSON Data(Reboot required)</source>
-        <translation>0:无, 1:TCP JSON 数据(需重启)</translation>
+        <translation type="vanished">0:无, 1:TCP JSON 数据(需重启)</translation>
     </message>
     <message>
         <source>Smart Speed Control(0)</source>
-        <translation>智能速度控制(0)</translation>
+        <translation type="vanished">智能速度控制(0)</translation>
     </message>
     <message>
         <source>0: off, 1:accel, 2:decel, 3: all</source>
-        <translation>0:关闭, 1:加速, 2:减速, 3:全部</translation>
+        <translation type="vanished">0:关闭, 1:加速, 2:减速, 3:全部</translation>
     </message>
     <message>
         <source>Model TurnSpeed Factor(0)</source>
-        <translation>模型转弯速度系数(0)</translation>
-    </message>
-    <message>
-        <source>Enable Software Menu</source>
-        <translation>启用软件菜单</translation>
+        <translation type="vanished">模型转弯速度系数(0)</translation>
     </message>
     <message>
         <source>Select your car</source>
@@ -817,15 +813,859 @@
     </message>
     <message>
         <source>Wait for list...</source>
-        <translation>等待列表...</translation>
+        <translation type="vanished">等待列表...</translation>
     </message>
     <message>
         <source>Select Manufacturer</source>
         <translation>选择厂商</translation>
     </message>
     <message>
-        <source>SELECT YOUR CAR</source>
-        <translation>选择你的车型</translation>
+        <source>按钮：巡航按钮模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:普通,1:用户1,2:用户2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>按钮：取消按钮模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:纵向,1:纵向+横向</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>按钮：LFA按钮模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:普通,1:减速&amp;停止&amp;前车就绪</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>按钮：巡航速度单位(基础)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>调整每次按键改变的速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>按钮：巡航速度单位(扩展)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>巡航：经济控制(4km/h)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>临时提高设定速度以改善燃油经济性。</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>巡航：自动加速(0%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>根据前车自动加速至道路限速。</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GAP1：应用时间间隔(110)x0.01s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>设置与前车的跟车间隔时间</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GAP2：应用时间间隔(120)x0.01s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GAP3：应用时间间隔(160)x0.01s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GAP4：应用时间间隔(180)x0.01s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>动态跟车间隔控制</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>根据情况动态调整跟车间隔</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>动态跟车间隔控制(变道)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>变道时的动态跟车间隔控制</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>驾驶模式：选择</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1:经济,2:安全,3:普通,4:运动</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>驾驶模式：自动</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>仅普通模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>交通灯检测模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:无, 1:仅停止, 2: 停走模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>变道成本起始值</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>变道成本的起始值，影响变道决策</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>交通停止距离调整</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>调整交通停止时的距离，正值表示增加距离，负值表示减少距离</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>车道线模式速度(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>车道线模式下使用横向控制</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>车道线模式弯道速度(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>车道线模式，仅限高速</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>调整车道偏移(0)cm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>调整车道居中偏移量</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>变道需要扭矩</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-1:禁用变道, 0: 不需要扭矩, 1:需要扭矩</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>变道延迟</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>变道延迟时间(x0.1秒)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>变道盲区检测</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-1:忽略BSD, 0:BSD检测, 1: 阻止转向扭矩</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：转向比x0.1(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自定义转向比</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：转向比变化率x0.01(100)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>转向比应用速率</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：路径偏移</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(-)向左, (+)向右</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：转向执行器延迟(30)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>x0.01, 0:使用延迟参数</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：平滑时间(13)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向平滑系数(x0.01)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：自定义扭矩(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自定义横向扭矩控制</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：扭矩加速度因子(2500)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>扭矩与加速度的关系因子</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：扭矩摩擦(100)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>转向摩擦补偿系数</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：自定义最大转向(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自定义最大转向角度/扭矩</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：转向增量上限(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>转向速度上限</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>横向：转向增量下限(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>转向速度下限</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：比例增益(100)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PID控制器比例系数</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：积分增益(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PID控制器积分系数</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：前馈增益(100)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PID控制器前馈系数</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：执行器延迟(20)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向控制执行器延迟</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：停止速度因子(50)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>停止过程中的速度因子</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：雷达反应因子(100)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>雷达数据反应速度因子</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：停止起始加速度x0.01(-40)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>开始停止时的加速度值</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：停止距离(600)cm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>停止时的目标距离</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>纵向：前车加加速度因子(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>前车加速度影响因子(x0.01)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>加速度：0km/h(160)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>指定速度下的所需加速度(x0.01m/s²)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>加速度：10km/h(160)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>加速度：40km/h(120)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>加速度：60km/h(100)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>加速度：80km/h(80)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>加速度：110km/h(70)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>加速度：140km/h(60)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>最大角度帧数(89)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>89:基本模式, 85~87:转向仪表盘报错</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>调试信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>显示调试相关信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>胎压信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>显示胎压监测信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>时间信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:无,1:时间/日期,2:仅时间,3:仅日期</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径终点</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:不显示,1:显示</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>设备状态</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>车道信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-1:无, 0:路径, 1:路径+车道线, 2: 路径+车道线+路边</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>雷达信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:无,1:显示,2:相对位置,3:停止车辆</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路线信息</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:无,1:显示</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>调试图表</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>显示调试绘图模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>亮度比例</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自定义屏幕亮度比例</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径颜色：巡航关闭</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>(+10:描边)0:红,1:橙,2:黄,3:绿,4:蓝,5:靛蓝,6:紫罗兰,7:棕,8:白,9:黑</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径模式：无车道</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:普通,1,2:矩形,3,4:^^,5,6:矩形,7,8:^^,9,10,11,12:平滑^^</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径颜色：无车道</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径模式：车道模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径颜色：车道模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径宽度比例(100%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>路径显示宽度比例</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>现代：摄像头SCC</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1:连接SCC的CAN线到CAM, 2:同步巡航状态, 3:原厂纵向</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CANFD：HDA2模式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1:HDA2,2:HDA2+BSM盲区监测</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启用雷达跟踪</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1:启用雷达跟踪, -1,2:完全禁用HKG SCC雷达</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动巡航控制</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>软保持，自动巡航开关控制</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>巡航：自动开启距离(0cm)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>当油门/刹车关闭时，前车接近时自动开启巡航</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启动时自动启用</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1:启用转向, 2:启用转向/巡航</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动油门启用速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>油门(加速)启用速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>从PCM读取巡航速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>丰田必须设置为1, 本田设置为3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>音量(100%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>调整提示音量</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启用时音量(10%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启用时的提示音量</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动关机时间(分钟)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>离线后自动关机时间</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启用连接</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>您的设备可能会被Comma封禁</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>地图样式(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>选择地图显示样式</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>记录道路摄像头(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1:前摄像头, 2:前摄像头+广角摄像头</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>使用HDP(CCNC)(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1:使用APN时, 2:始终使用</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>神经网络NNFF</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Twilsonco的NNFF(需重启)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>神经网络轻量版NNFFLite</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Twilsonco的NNFF-Lite(需重启)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动更新巡航速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动同步当前速度到巡航设定</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>禁用最小转向速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>移除转向最小速度限制</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>禁用驾驶员监控</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>关闭驾驶员监控系统</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启动时开启热点</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>设备启动时自动开启热点</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启用软件菜单</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>显示软件更新菜单</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>车道偏离预警车辆</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>启用车道偏离预警功能</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>硬件是否为C3x Lite</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>识别硬件版本</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>共享数据</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:无, 1:TCP JSON数据(需重启)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>弯道：最低速度(30)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>接近弯道时降低速度，设置最低速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>弯道：自动控制比例(100%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>弯道速度控制比例</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>弯道：激进程度(100%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>弯道减速的激进程度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>道路限速偏移(-1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-1:不使用,道路限速+偏移</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>道路限速自动调整(50%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>根据道路限速调整比例</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>测速摄像头减速结束点(6s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>设置减速完成点，值越大距离摄像头越远完成减速</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>导航速度控制模式(2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:不减速, 1: 仅测速摄像头, 2: +防减速带, 3: +移动测速</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>测速摄像头减速率x0.01m/s²(80)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>值越小，从更远距离开始减速</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>测速摄像头安全系数(105%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>速度控制的安全裕度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>减速带时间距离(1s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>减速带提前时间</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>减速带速度(35Km/h)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>通过减速带时的速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>导航倒计时模式(2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0: 关闭, 1:导航+摄像头, 2:导航+摄像头+减速带</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>转向速度控制模式(1)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0: 关闭, 1:视觉, 2:视觉+导航, 3: 仅导航</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>智能速度控制(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0: 关闭, 1:加速智能, 2:减速智能, 3: 全部</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>地图转向速度系数(100)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>基于地图数据的转向速度系数</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>模型转向速度系数(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>基于模型的转向速度系数</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动转向控制(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:无, 1: 变道, 2: 变道+速度, 3: 速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动转向：转向速度(20)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0:无, 转向速度</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动转向：转向距离时间(6)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>距离=速度*时间</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>自动转向：自动地图切换(0)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>根据转向自动切换地图</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1155,23 +1995,43 @@
     <name>DrawCarrot</name>
     <message>
         <source>ECO</source>
-        <translation>经济</translation>
+        <translation type="vanished">经济</translation>
     </message>
     <message>
         <source>SAFE</source>
-        <translation>安全</translation>
+        <translation type="vanished">安全</translation>
     </message>
     <message>
         <source>NORM</source>
-        <translation>标准</translation>
+        <translation type="vanished">标准</translation>
     </message>
     <message>
         <source>FAST</source>
-        <translation>激进</translation>
+        <translation type="vanished">激进</translation>
     </message>
     <message>
         <source>ERRM</source>
-        <translation>错误</translation>
+        <translation type="vanished">错误</translation>
+    </message>
+    <message>
+        <source>经 济</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>安 全</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>标 准</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>运 动</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>错 误</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1619,7 +2479,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>0:None, 1:Stopping only, 2: Stop &amp; Go</source>
-        <translation >0:无, 1:仅停止, 2:停走</translation>
+        <translation type="vanished">0:无, 1:仅停止, 2:停走</translation>
     </message>
     <message>
         <source>Laneline mode speed(0)</source>
@@ -2017,119 +2877,127 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Carrot</source>
-        <translation>Carrot</translation>
+        <translation type="vanished">Carrot</translation>
     </message>
     <message>
         <source>Share Data</source>
-        <translation>分享数据</translation>
+        <translation type="vanished">分享数据</translation>
     </message>
     <message>
         <source>0:None, 1:TCP JSON Data(Reboot required)</source>
-        <translation>0:无, 1:TCP JSON数据(需重启)</translation>
+        <translation type="vanished">0:无, 1:TCP JSON数据(需重启)</translation>
     </message>
     <message>
         <source>Hardware is C3x Lite</source>
-        <translation>硬件为 C3x Lite</translation>
+        <translation type="vanished">硬件为 C3x Lite</translation>
     </message>
     <message>
         <source>Hardware is C3x</source>
-        <translation>硬件为 C3x</translation>
+        <translation type="vanished">硬件为 C3x</translation>
     </message>
     <message>
         <source>Hardware is C3</source>
-        <translation>硬件为 C3</translation>
+        <translation type="vanished">硬件为 C3</translation>
     </message>
     <message>
         <source>Hardware is TICI</source>
-        <translation>硬件为 TICI</translation>
+        <translation type="vanished">硬件为 TICI</translation>
     </message>
     <message>
         <source>Hardware is EON</source>
-        <translation>硬件为 EON</translation>
+        <translation type="vanished">硬件为 EON</translation>
     </message>
     <message>
         <source>Hardware is Unknown</source>
-        <translation>硬件未知</translation>
+        <translation type="vanished">硬件未知</translation>
     </message>
     <message>
         <source>Open SSH</source>
-        <translation>开启 SSH</translation>
+        <translation type="vanished">开启 SSH</translation>
     </message>
     <message>
         <source>Record UI</source>
-        <translation>录制 UI</translation>
+        <translation type="vanished">录制 UI</translation>
     </message>
     <message>
         <source>Stop Recording UI</source>
-        <translation>停止录制 UI</translation>
+        <translation type="vanished">停止录制 UI</translation>
     </message>
     <message>
         <source>Reset UI</source>
-        <translation>重置 UI</translation>
+        <translation type="vanished">重置 UI</translation>
     </message>
     <message>
         <source>Developer Menu</source>
-        <translation>开发者菜单</translation>
+        <translation type="vanished">开发者菜单</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
-        <translation>重置校准</translation>
+        <translation type="vanished">重置校准</translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>您确定要重置校准吗？</translation>
+        <translation type="vanished">您确定要重置校准吗？</translation>
     </message>
     <message>
         <source>Review Training Guide</source>
-        <translation>查看训练指南</translation>
+        <translation type="vanished">查看训练指南</translation>
     </message>
     <message>
         <source>Regulatory</source>
-        <translation>监管信息</translation>
+        <translation type="vanished">监管信息</translation>
     </message>
     <message>
         <source>Change Language</source>
-        <translation>修改语言</translation>
+        <translation type="vanished">修改语言</translation>
     </message>
     <message>
         <source>Are you sure you want to reset all settings?</source>
-        <translation>您确定要重置所有设置吗？</translation>
+        <translation type="vanished">您确定要重置所有设置吗？</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>重置</translation>
+        <translation type="vanished">重置</translation>
     </message>
     <message>
         <source>Disengaged</source>
-        <translation>控制取消</translation>
+        <translation type="vanished">控制取消</translation>
     </message>
     <message>
         <source>Engaged</source>
-        <translation>控制激活</translation>
+        <translation type="vanished">控制激活</translation>
     </message>
     <message>
         <source>Warning</source>
-        <translation>警告</translation>
+        <translation type="vanished">警告</translation>
     </message>
     <message>
         <source>Critical</source>
-        <translation>严重</translation>
+        <translation type="vanished">严重</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation>openpilot 纵向控制 (Alpha)</translation>
+        <translation type="vanished">openpilot 纵向控制 (Alpha)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will take over the gas and stop buttons. Look for once it has been tested and verified.</source>
-        <translation>警告：此车辆的 openpilot 纵向控制处于 alpha 阶段，将接管加速和停止按钮。请等待测试和验证完成。</translation>
+        <translation type="vanished">警告：此车辆的 openpilot 纵向控制处于 alpha 阶段，将接管加速和停止按钮。请等待测试和验证完成。</translation>
     </message>
     <message>
         <source>Show Debug UI</source>
-        <translation>显示调试 UI</translation>
+        <translation type="vanished">显示调试 UI</translation>
     </message>
     <message>
         <source>Display debug UI elements.</source>
-        <translation>显示调试 UI 元素。</translation>
+        <translation type="vanished">显示调试 UI 元素。</translation>
+    </message>
+    <message>
+        <source>CarrotPilot</source>
+        <translation type="vanished">CarrotPilot</translation>
+    </message>
+    <message>
+        <source>胡萝卜</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2410,33 +3278,6 @@ This may take up to a minute.</source>
     <message>
         <source>Go Onroad</source>
         <translation>进入行驶模式</translation>
-    </message>
-</context>
-<context>
-    <name>SettingsWindow</name>
-    <message>
-        <source>CarrotPilot</source>
-        <translation>CarrotPilot</translation>
-    </message>
-    <message>
-        <source>Device</source>
-        <translation>设备</translation>
-    </message>
-    <message>
-        <source>Network</source>
-        <translation>网络</translation>
-    </message>
-    <message>
-        <source>Toggles</source>
-        <translation>设置</translation>
-    </message>
-    <message>
-        <source>Software</source>
-        <translation>软件</translation>
-    </message>
-    <message>
-        <source>Developer</source>
-        <translation>开发者</translation>
     </message>
 </context>
 <context>
