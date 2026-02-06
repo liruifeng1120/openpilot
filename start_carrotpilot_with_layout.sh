@@ -4,12 +4,80 @@
 sudo chmod -R 777 /dev/bus/usb/*
 
 # 进入 MinerU 目录
-cd ~/111
+cd ~/MinerU
 
 # 设置环境变量并激活虚拟环境
 export FINGERPRINT="HONDA_ACCORD"
 export SKIP_FW_QUERY="1"
 source .venv/bin/activate
+
+# 等待所有USB摄像头加载完成
+wait_for_cameras() {
+    echo "Waiting for USB cameras to be loaded..."
+
+    # 设置超时时间（秒）
+    local timeout=120
+    local elapsed=0
+    local check_interval=2
+
+    # 期望的摄像头数量
+    local expected_cameras=4
+
+    # 获取当前已检测到的摄像头数量
+    local last_camera_count=0
+    local stable_count=0
+    local stable_threshold=3  # 连续3次检测到相同数量摄像头才认为稳定
+
+    while [ $elapsed -lt $timeout ]; do
+        # 检测当前连接的摄像头数量（通过v4l2设备）
+        local current_camera_count=$(ls /dev/video* 2>/dev/null | wc -l)
+
+        if [ $current_camera_count -gt 0 ]; then
+            echo "Found $current_camera_count camera device(s) (expected: $expected_cameras)"
+
+            # 检查摄像头数量是否稳定
+            if [ $current_camera_count -eq $last_camera_count ]; then
+                stable_count=$((stable_count + 1))
+                echo "Camera count stable for $stable_count checks"
+
+                if [ $stable_count -ge $stable_threshold ]; then
+                    if [ $current_camera_count -eq $expected_cameras ]; then
+                        echo "✓ All $expected_cameras cameras loaded successfully"
+                        echo "Waiting additional 2 seconds for final initialization..."
+                        sleep 2
+                        return 0
+                    else
+                        echo "⚠ Warning: Only $current_camera_count cameras found (expected $expected_cameras)"
+                        echo "Proceeding with available cameras..."
+                        sleep 2
+                        return 0
+                    fi
+                fi
+            else
+                stable_count=0
+                last_camera_count=$current_camera_count
+            fi
+        else
+            echo "No cameras found yet..."
+            last_camera_count=0
+            stable_count=0
+        fi
+
+        sleep $check_interval
+        elapsed=$((elapsed + check_interval))
+        echo "Elapsed: ${elapsed}s / ${timeout}s"
+    done
+
+    # 超时处理
+    echo "⚠ Warning: Timed out waiting for cameras to stabilize"
+    echo "Current camera count: $current_camera_count (expected: $expected_cameras)"
+    echo "Proceeding anyway, some cameras may not be available..."
+
+    return 0
+}
+
+# 执行摄像头等待
+wait_for_cameras
 
 # 在后台启动系统管理器
 SCALE=1 USE_WEBCAM=1 ROAD_CAM=0 python3 system/manager/manager.py &
@@ -46,6 +114,16 @@ done
 CAMERA_WINDOW_HEIGHT=528
 CAMERA_WINDOW_WIDTH=640
 
+# 定义摄像头窗口预设位置
+CAMERA_1_X=737   # Camera 1的X坐标
+CAMERA_1_Y=1129  # Camera 1的Y坐标
+
+CAMERA_2_X=2240  # Camera 2的X坐标
+CAMERA_2_Y=1129  # Camera 2的Y坐标 (与Camera 1相同)
+
+CAMERA_0_X=1475  # Camera 0的X坐标
+CAMERA_0_Y=1129  # Camera 0的Y坐标 (几乎与Camera 1相同)
+
 # 定义窗口排列函数
 position_camera_window() {
     local cam_num=$1
@@ -64,6 +142,11 @@ position_camera_window() {
         sleep 1
     done
 }
+
+# 定位各个摄像头窗口到预设位置
+position_camera_window 1 $CAMERA_1_X $CAMERA_1_Y
+position_camera_window 2 $CAMERA_2_X $CAMERA_2_Y
+position_camera_window 0 $CAMERA_0_X $CAMERA_0_Y
 
 # 最后将UI窗口保持在最前面
 sleep 2
