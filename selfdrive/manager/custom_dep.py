@@ -23,16 +23,25 @@ DP_PYEXTRA_DIR = '/data/pyextra_community'
 
 def wait_for_internet_connection(return_on_failure=False):
   retries = 0
+  max_retries = 30 if not return_on_failure else 5
+  urls = ['https://www.google.com/', 'https://www.baidu.com/', 'https://1.1.1.1/', 'http://connectivitycheck.gstatic.com/generate_204']
   while True:
-    try:
-      _ = urlopen('https://www.google.com/', timeout=10)
-      return True
-    except Exception as e:
-      print(f'Wait for internet failed: {e}')
-      if return_on_failure and retries == 5:
-        return False
-      retries += 1
-      time.sleep(2)  # Wait for 2 seconds before retrying
+    for url in urls:
+      try:
+        _ = urlopen(url, timeout=10)
+        print(f'Internet connectivity confirmed via {url}')
+        return True
+      except Exception as e:
+        print(f'Wait for internet failed with {url}: {e}')
+        pass
+    retries += 1
+    if return_on_failure and retries >= max_retries:
+      return False
+    if not return_on_failure and retries >= max_retries:
+      print(f'Internet check timed out after {max_retries} retries, continuing anyway')
+      return True  # Continue installation even without internet
+    print(f'Retrying internet check ({retries}/{max_retries})...')
+    time.sleep(2)  # Wait for 2 seconds before retrying
 
 
 def install_dep(spinner):
