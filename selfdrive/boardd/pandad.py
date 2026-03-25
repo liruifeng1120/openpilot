@@ -33,22 +33,6 @@ def flash_panda(panda_serial: str) -> Panda:
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
   cloudlog.warning(f"Panda {panda_serial} connected, version: {panda_version}, signature {panda_signature.hex()[:16]}, expected {fw_signature.hex()[:16]}")
-  # Log hardware type for debugging
-  hw_type = panda.get_type()
-  hw_type_names = {
-    b'\x00': 'unknown',
-    b'\x01': 'whitePanda',
-    b'\x02': 'greyPanda',
-    b'\x03': 'blackPanda',
-    b'\x04': 'pedal',
-    b'\x05': 'uno',
-    b'\x06': 'dos',
-    b'\x07': 'redPanda',
-    b'\x08': 'redPandaV2',
-    b'\x09': 'tres',
-  }
-  hw_name = hw_type_names.get(hw_type, 'unknown')
-  cloudlog.info(f"Panda hardware type: {hw_name} (0x{hw_type.hex() if hw_type else '00'})")
 
   if panda.bootstub or panda_signature != fw_signature:
     cloudlog.info("Panda firmware out of date, update required")

@@ -217,8 +217,6 @@ class Panda:
     HW_TYPE_UNO: 5100,
     HW_TYPE_DOS: 6500,
     HW_TYPE_TRES: 6600,
-    HW_TYPE_RED_PANDA: 0,
-    HW_TYPE_RED_PANDA_V2: 0,
   }
 
   HARNESS_STATUS_NC = 0
