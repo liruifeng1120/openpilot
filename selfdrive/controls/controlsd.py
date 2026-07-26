@@ -56,6 +56,15 @@ class Controls:
     self.desired_curvature = 0.0
     self.yStd = 0.0
 
+    # 2026.7.26 add
+    self.custom_sr = self.params.get_float("CustomSR") / 10.0
+    self.custom_sr2 = self.params.get_float("CustomSR2") / 10.0
+    self.custom_sr_speed = self.params.get_int("CustomSRSpeed")
+    self.custom_sr_speed2 = self.params.get_int("CustomSRSpeed2")
+    self.sr = self.params.get_float("SteerRatioRate") / 100.0
+    self.frame = 0
+    # 2026.7.26 add
+
     self.side_state = {
         "left":  {"main": {"dRel": None, "lat": None}, "sub": {"dRel": None, "lat": None}},
         "right": {"main": {"dRel": None, "lat": None}, "sub": {"dRel": None, "lat": None}},
@@ -71,18 +80,42 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
 
+  # 2026.7.26 add
+  def update_control_param(self):
+    if 0 == (self.frame % 100):
+      self.custom_sr = self.params.get_float("CustomSR") / 10.0
+      self.custom_sr2 = self.params.get_float("CustomSR2") / 10.0
+      self.custom_sr_speed = self.params.get_int("CustomSRSpeed")
+      self.custom_sr_speed2 = self.params.get_int("CustomSRSpeed2")
+      self.sr = self.params.get_float("SteerRatioRate") / 100.0
+
+    self.frame += 1
+  # 2026.7.26 add
+
   def update(self):
     self.sm.update(15)
 
   def state_control(self):
     CS = self.sm['carState']
 
+    #update param
+    self.update_control_param()
+
     # Update VehicleModel
     lp = self.sm['liveParameters']
     x = max(lp.stiffnessFactor, 0.1)
-    sr = max(lp.steerRatio, 0.1) * self.params.get_float("SteerRatioRate") / 100.0
-    custom_sr = self.params.get_float("CustomSR") / 10.0
+    sr = max(lp.steerRatio, 0.1) * self.sr
+    custom_sr = self.custom_sr
+    custom_sr2 = self.custom_sr2
+    custom_sr_speed = self.custom_sr_speed
+    custom_sr_speed2 = self.custom_sr_speed2
     sr = max(custom_sr if custom_sr > 1.0 else sr, 0.1)
+    speed = CS.vEgo*3.6
+    #根据速度进行插值转向比
+    if custom_sr > 1.0 and custom_sr2 > 1.0 and custom_sr_speed != custom_sr_speed2:
+      t = max(0.0, min(1.0,(speed - custom_sr_speed) / (custom_sr_speed2 - custom_sr_speed)))
+      sr = custom_sr + (custom_sr2 - custom_sr) * t
+
     self.VM.update_params(x, sr)
 
     steer_angle_without_offset = math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg)
@@ -141,14 +174,14 @@ class Controls:
     lat_smooth_seconds = LAT_SMOOTH_SECONDS #self.params.get_float("SteerSmoothSec") * 0.01
     steer_actuator_delay = self.params.get_float("SteerActuatorDelay") * 0.01
     if steer_actuator_delay == 0.0:
-      steer_actuator_delay = self.sm['liveDelay'].lateralDelay 
+      steer_actuator_delay = self.sm['liveDelay'].lateralDelay
 
     if len(model_v2.position.yStd) > 0:
       yStd = np.interp(steer_actuator_delay + lat_smooth_seconds, ModelConstants.T_IDXS, model_v2.position.yStd)
       self.yStd = yStd * 0.02 + self.yStd * 0.98
     else:
       self.yStd = 0.0
-    
+
     if not CC.latActive:
       new_desired_curvature = self.curvature
     elif self.lanefull_mode_enabled:
@@ -194,7 +227,7 @@ class Controls:
 
       def set_hud(side_cap, name, val):
         setattr(hudControl, f"lead{side_cap}{name}", float(val if val is not None else 0.0))
-        
+
       st = self.side_state[side]
       if road_edge <= 2.0 or not leads2:
         st["main"] = {"dRel": None, "lat": None}
