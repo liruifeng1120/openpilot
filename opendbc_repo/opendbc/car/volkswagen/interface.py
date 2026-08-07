@@ -37,6 +37,32 @@ class CarInterface(CarInterfaceBase):
       # Panda ALLOW_DEBUG firmware required.
       ret.dashcamOnly = True
 
+    elif ret.flags & VolkswagenFlags.MQB_EVO:
+      # Set global MQB Evo parameters (curvature-based steering, HCA_03)
+      ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.volkswagenMqbEvo)]
+      if ret.flags & VolkswagenFlags.MQB_EVO_GEN2:
+        ret.safetyConfigs[0].safetyParam |= VolkswagenSafetyFlags.ALT_CRC_VARIANT_1.value
+
+      ret.enableBsm = 0x24C in fingerprint[0]  # MEB_Side_Assist_01
+      ret.transmissionType = TransmissionType.direct
+      ret.steerControlType = structs.CarParams.SteerControlType.curvatureDEPRECATED
+      ret.steerAtStandstill = True
+
+      if any(msg in fingerprint[1] for msg in (0x520, 0x86, 0xFD, 0x13D)):  # Airbag_02, LWI_01, ESP_21, QFK_01
+        ret.networkLocation = NetworkLocation.gateway
+      else:
+        ret.networkLocation = NetworkLocation.fwdCamera
+
+      if ret.networkLocation == NetworkLocation.gateway and not (ret.flags & VolkswagenFlags.MQB_EVO_GEN2):
+        ret.radarUnavailable = False
+
+      if 0x30B in fingerprint[0]:  # Kombi_01
+        ret.flags |= VolkswagenFlags.KOMBI_PRESENT.value
+
+      if ret.networkLocation == NetworkLocation.fwdCamera:
+        ret.flags |= VolkswagenFlags.DISABLE_RADAR.value
+        ret.safetyConfigs[0].safetyParam |= VolkswagenSafetyFlags.DISABLE_RADAR.value
+
     else:
       # Set global MQB parameters
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.volkswagen)]
@@ -63,6 +89,8 @@ class CarInterface(CarInterfaceBase):
     if ret.flags & VolkswagenFlags.PQ:
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+    elif ret.flags & VolkswagenFlags.MQB_EVO:
+      ret.steerActuatorDelay = 0.3
     else:
       ret.steerActuatorDelay = 0.1
       ret.lateralTuning.pid.kpBP = [0.]
@@ -73,8 +101,14 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
-    ret.alphaLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs
-    if alpha_long:
+    if ret.flags & VolkswagenFlags.MQB_EVO:
+      ret.longitudinalActuatorDelay = 0.5
+      ret.radarDelay = 0.8
+      ret.longitudinalTuning.kiBP = [0., 30.]
+      ret.longitudinalTuning.kiV = [0.4, 0.]
+
+    ret.alphaLongitudinalAvailable = ret.networkLocation == NetworkLocation.gateway or docs or bool(ret.flags & VolkswagenFlags.DISABLE_RADAR)
+    if alpha_long and ret.alphaLongitudinalAvailable:
       # Proof-of-concept, prep for E2E only. No radar points available. Panda ALLOW_DEBUG firmware required.
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs[0].safetyParam |= VolkswagenSafetyFlags.LONG_CONTROL.value
@@ -82,9 +116,17 @@ class CarInterface(CarInterfaceBase):
         ret.minEnableSpeed = 4.5
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
-    ret.stopAccel = -0.55
-    ret.vEgoStarting = 0.1
-    ret.vEgoStopping = 0.5
     ret.autoResumeSng = ret.minEnableSpeed == -1
+
+    if ret.flags & VolkswagenFlags.MQB_EVO:
+      ret.startingState = True
+      ret.startAccel = 0.8
+      ret.vEgoStarting = 0.5
+      ret.vEgoStopping = 0.1
+      ret.stopAccel = -0.55
+    else:
+      ret.stopAccel = -0.55
+      ret.vEgoStarting = 0.1
+      ret.vEgoStopping = 0.5
 
     return ret

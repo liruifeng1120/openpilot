@@ -255,6 +255,8 @@ struct CarState {
   leftLaneLine @74 : Int16; # -1: no lane, 0: dashed, 1: solid, +10: white, +20: yellow, ex) 21: solid yellow
   rightLaneLine @75 : Int16; # -1: no lane, 0: dashed, 1: solid, +10: white, +20: yellow, ex) 21: solid yellow
   datetime @76 :UInt64; # timestamp in milliseconds since epoch
+  steeringCurvature @77 :Float32;  # EPS steering curvature equivalent in rad/s² (vw MQB Evo/MEB curvature control)
+  radarDisableFailed @78 :Bool;  # radar could not be disabled for openpilot longitudinal (vw MQB Evo/MEB)
 
   struct Tpms {
     fl @0 :Float32;
@@ -279,6 +281,8 @@ struct CarState {
     speedOffset @3 :Float32;
     standstill @4 :Bool;
     nonAdaptive @5 :Bool;
+    speedLimit @7 :Float32;            # detected speed limit (vw MQB Evo/MEB speed limit manager)
+    speedLimitPredicative @8 :Float32; # predicative speed limit (vw MQB Evo/MEB speed limit manager)
   }
 
   enum GearShifter {
@@ -392,6 +396,8 @@ struct CarControl {
   orientationNED @13 :List(Float32);
   angularVelocity @14 :List(Float32);
   currentCurvature @17 :Float32;  # From vehicle model
+  curvatureControllerActive @18 :Bool;  # curvature controller providing the command (vw MQB Evo/MEB)
+  rollCompensation @19 :Float32;  # road roll compensation term (vw MQB Evo/MEB)
 
   cruiseControl @4 :CruiseControl;
   hudControl @5 :HUDControl;

@@ -54,6 +54,7 @@ class Controls:
     self.steer_limited_by_controls = False
     self.curvature = 0.0
     self.desired_curvature = 0.0
+    self.roll_compensation = 0.0
     self.yStd = 0.0
 
     # 2026.7.26 add
@@ -199,6 +200,7 @@ class Controls:
       new_desired_curvature = model_v2.action.desiredCurvature
 
     self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, new_desired_curvature, lp.roll)
+    self.roll_compensation = float(lp.roll)
 
     actuators.curvature = float(self.desired_curvature)
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
@@ -276,6 +278,10 @@ class Controls:
 
     CC.cruiseControl.override = CC.enabled and not CC.longActive and self.CP.openpilotLongitudinalControl
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not CC.enabled or not self.CP.pcmCruise)
+
+    # lateral curvature plumbing for vw MQB Evo/MEB (feedforward controller path)
+    CC.currentCurvature = float(self.curvature)
+    CC.rollCompensation = float(self.roll_compensation)
 
     desired_kph = min(CS.vCruiseCluster, self.sm['carrotMan'].desiredSpeed)
     setSpeed = float(desired_kph * CV.KPH_TO_MS)

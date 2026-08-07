@@ -417,14 +417,15 @@ def manager_thread() -> None:
 
 def main() -> None:
   manager_init()
-  print(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
-  os.system(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
-  os.system(f"python ../../opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
-  os.system(f"python ../../opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
-  os.system(f"python ../../opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
-  os.system(f"python ../../opendbc/car/tesla/values.py > {Params().get_param_path()}/SupportedCars_tesla")
-  os.system(f"python ../../opendbc/car/honda/values.py > {Params().get_param_path()}/SupportedCars_honda")
-  os.system(f"python ../../opendbc/car/volkswagen/values.py > {Params().get_param_path()}/SupportedCars_volkswagen")
+  opendbc_root = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "opendbc_repo", "opendbc"))
+  print(f"{sys.executable} {opendbc_root}/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"{sys.executable} {opendbc_root}/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"{sys.executable} {opendbc_root}/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
+  os.system(f"{sys.executable} {opendbc_root}/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
+  os.system(f"{sys.executable} {opendbc_root}/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"{sys.executable} {opendbc_root}/car/tesla/values.py > {Params().get_param_path()}/SupportedCars_tesla")
+  os.system(f"{sys.executable} {opendbc_root}/car/honda/values.py > {Params().get_param_path()}/SupportedCars_honda")
+  os.system(f"{sys.executable} {opendbc_root}/car/volkswagen/values.py > {Params().get_param_path()}/SupportedCars_volkswagen")
   if os.getenv("PREPAREONLY") is not None:
     return
 

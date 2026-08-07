@@ -2,7 +2,8 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
-from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
+from opendbc.car import Bus, CanBusBase, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
+from opendbc.car.lateral import CurvatureSteeringLimits
 from opendbc.can import CANDefine
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
@@ -15,6 +16,44 @@ NetworkLocation = structs.CarParams.NetworkLocation
 TransmissionType = structs.CarParams.TransmissionType
 GearShifter = structs.CarState.GearShifter
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
+
+# State for the radar-disable workflow (kept as a stub; the full UDS radar
+# disable machinery is not ported to this fork).
+RADAR_DISABLE_STATE: dict[str, bool] = {"error": False}
+
+
+class CanBus(CanBusBase):
+  def __init__(self, CP=None, fingerprint=None) -> None:
+    super().__init__(CP, fingerprint)
+
+    self._ext = self.offset
+    if CP is not None:
+      self._ext = self.offset + 2 if CP.networkLocation == NetworkLocation.gateway else self.offset
+
+  @property
+  def pt(self) -> int:
+    # ADAS / Extended CAN, gateway side of the relay
+    return self.offset
+
+  @property
+  def alt(self) -> int:
+    # NetworkLocation.fwdCamera: radar-camera object fusion CAN
+    # NetworkLocation.gateway: powertrain CAN
+    return self.offset + 1
+
+  @property
+  def main(self) -> int:
+    return self.offset + 1
+
+  @property
+  def cam(self) -> int:
+    # ADAS / Extended CAN, camera side of the relay
+    return self.offset + 2
+
+  @property
+  def ext(self) -> int:
+    # ADAS / Extended CAN, side of the relay with the ACC radar
+    return self._ext
 
 
 class CarControllerParams:
@@ -70,6 +109,63 @@ class CarControllerParams:
         "laneAssistUnavailNoSensorView": 3,  # "Lane Assist not available. No sensor view."
         "laneAssistTakeOver": 4,  # "Lane Assist: Please Take Over Steering"
         "laneAssistDeactivTrailer": 5,  # "Lane Assist: no function with trailer"
+      }
+
+    elif CP.flags & (VolkswagenFlags.MEB | VolkswagenFlags.MQB_EVO):
+      self.AEB_CONTROL_STEP        = 100   # AWV_03 message frequency 1Hz
+      self.AEB_HUD_STEP            = 20    # MEB_AWV_01 message frequency 5Hz
+      self.LDW_STEP                = 10    # LDW_02 message frequency 10Hz
+      self.ACC_HUD_STEP            = 6     # MEB_ACC_01 message frequency 16Hz
+      self.STEER_DRIVER_ALLOWANCE  = 60    # Driver torque 0.6 Nm, begin steering reduction from MAX
+      self.STEER_DRIVER_MAX        = 300   # Driver torque 3.0 Nm, stop steering reduction at MIN
+      self.STEERING_POWER_MAX      = 50    # HCA_03 maximum steering power, percentage
+      self.STEERING_POWER_MIN      = 4     # HCA_03 minimum steering power, percentage
+      self.STEERING_POWER_STEP     = 2     # HCA_03 steering power counter steps
+
+      self.CURVATURE_PID: structs.CarParams.LateralPIDTuning = structs.CarParams.LateralPIDTuning(
+        kpBP=[10., 40.],
+        kiBP=[10., 40.],
+        kf=1.,
+        kpV=[0., 1.45],
+        kiV=[0., 0.12],
+      )
+
+      self.CURVATURE_LIMITS: CurvatureSteeringLimits = CurvatureSteeringLimits(
+        0.195,  # Max curvature for steering command, m^-1
+      )
+
+      if CP.flags & VolkswagenFlags.ALT_GEAR:
+        self.shifter_values = can_define.dv["Gateway_73"]["GE_Fahrstufe"]
+      else:
+        self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
+
+      self.hca_status_values = can_define.dv["QFK_01"]["LatCon_HCA_Status"]
+
+      BASE_BUTTONS = [
+        Button(structs.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+        Button(structs.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+        Button(structs.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+        Button(structs.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+        Button(structs.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [3]),
+      ]
+
+      self.BUTTONS = BASE_BUTTONS + [
+        Button(structs.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Hauptschalter", [1]),
+      ]
+
+      self.BUTTONS_ALT = BASE_BUTTONS + [
+        Button(structs.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+      ]
+
+      self.LDW_MESSAGES = {
+        "none": 0,                        # Nothing to display
+        "laneAssistTakeOverUrgent": 4,    # "Lane Assist: Please Take Over Steering" (red)
+        "laneAssistTakeOver": 8,          # "Lane Assist: Please Take Over Steering" (white)
+      }
+      self.LDW_SOUNDS = {
+        "None": 0,                        # No sound
+        "Chime": 1,                       # Play a chime
+        "Beep": 2,                        # Play a loud beep
       }
 
     else:
@@ -135,14 +231,28 @@ class WMI(StrEnum):
 
 class VolkswagenSafetyFlags(IntFlag):
   LONG_CONTROL = 1
+  ALT_CRC_VARIANT_1 = 2
+  DISABLE_RADAR = 8
 
 
 class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
+  KOMBI_PRESENT = 4
+  STOCK_PSD_PRESENT = 32
+  STOCK_KLR_PRESENT = 64
+  ALT_GEAR = 512
+  STOCK_PSD_06_PRESENT = 1024
+  STOCK_DIAGNOSE_01_PRESENT = 2048
+  DISABLE_RADAR = 4096
+  MQB_EVO_GEN2 = 8192
 
   # Static flags
   PQ = 2
+  MEB = 16
+  MLB = 8
+  MEB_GEN2 = 128
+  MQB_EVO = 256
 
 
 @dataclass
@@ -152,6 +262,18 @@ class VolkswagenMQBPlatformConfig(PlatformConfig):
   # on camera-integrated cars, as we lose too many ECUs to reliably identify the vehicle
   chassis_codes: set[str] = field(default_factory=set)
   wmis: set[WMI] = field(default_factory=set)
+
+
+@dataclass
+class VolkswagenMQBevoPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'vw_mqbevo', Bus.radar: 'vw_mqbevo'})
+  chassis_codes: set[str] = field(default_factory=set)
+  wmis: set[WMI] = field(default_factory=set)
+
+  def init(self):
+    self.flags |= VolkswagenFlags.MQB_EVO
+    if self.flags & VolkswagenFlags.MQB_EVO_GEN2:
+      self.dbc_dict = {Bus.pt: 'vw_mqbevo_2024', Bus.radar: 'vw_mqbevo_2024'}
 
 
 @dataclass
@@ -212,7 +334,7 @@ class VWCarDocs(CarDocs):
 # FW_VERSIONS for that existing CAR.
 
 class CAR(Platforms):
-  config: VolkswagenMQBPlatformConfig | VolkswagenPQPlatformConfig
+  config: VolkswagenMQBPlatformConfig | VolkswagenPQPlatformConfig | VolkswagenMQBevoPlatformConfig
 
   VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig(
     [
@@ -375,6 +497,13 @@ class CAR(Platforms):
     VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
     chassis_codes={"8V", "FF"},
     wmis={WMI.AUDI_GERMANY_CAR, WMI.AUDI_SPORT},
+  )
+  AUDI_A3_MK4 = VolkswagenMQBevoPlatformConfig(
+    [VWCarDocs("Audi RS3 2026")],
+    VolkswagenCarSpecs(mass=1650, wheelbase=2.631),
+    chassis_codes={"GY"},
+    wmis={WMI.AUDI_EUROPE_MPV},
+    flags=VolkswagenFlags.MQB_EVO_GEN2,
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Audi Q2 2018")],
