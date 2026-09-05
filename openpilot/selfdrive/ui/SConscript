@@ -1,0 +1,175 @@
+from pathlib import Path
+import json
+Import('env', 'arch', 'common', 'qt_env', 'messaging', 'visionipc', 'ffmpeg_libs')
+
+# build the fonts
+generator = File("#openpilot/selfdrive/assets/fonts/process.py")
+source_files = Glob("#openpilot/selfdrive/assets/fonts/*.ttf") + Glob("#openpilot/selfdrive/assets/fonts/*.otf")
+output_files = [
+  (f"#{Path(f.path).with_suffix('.fnt')}", f"#{Path(f.path).with_suffix('.png')}")
+  for f in source_files
+  if "NotoColor" not in f.name
+]
+env.Command(
+  target=output_files,
+  source=[generator, source_files],
+  action=f"python3 {generator}",
+)
+
+
+if GetOption('extras') and arch == "larch64":
+  # build installers
+  raylib_env = env.Clone()
+  raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+  raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
+
+  raylib_libs = common + ["raylib"]
+  if arch == "larch64":
+    raylib_libs += ["GLESv2", "EGL", "gbm", "drm"]
+  else:
+    raylib_libs += ["GL"]
+
+  release = "release3"
+  installers = [
+    ("openpilot", release),
+    ("openpilot_test", f"{release}-staging"),
+    ("openpilot_nightly", "nightly"),
+    ("openpilot_internal", "nightly-dev"),
+  ]
+
+  cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
+                            "ld -r -b binary -o $TARGET $SOURCE")
+  inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
+                             "ld -r -b binary -o $TARGET $SOURCE")
+  inter_bold = raylib_env.Command("installer/inter_bold.o", "../assets/fonts/Inter-Bold.ttf",
+                              "ld -r -b binary -o $TARGET $SOURCE")
+  inter_light = raylib_env.Command("installer/inter_light.o", "../assets/fonts/Inter-Light.ttf",
+                              "ld -r -b binary -o $TARGET $SOURCE")
+  for name, branch in installers:
+    d = {'BRANCH': f"'\"{branch}\"'"}
+    if "internal" in name:
+      d['INTERNAL'] = "1"
+
+    obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+    f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter, inter_bold, inter_light], LIBS=raylib_libs)
+    # keep installers small
+    assert f[0].get_size() < 2500*1e3, f[0].get_size()
+
+
+# ********** legacy Qt UI (ported from cp-pc) **********
+qt_env['CPPPATH'] += ["#third_party/nanovg"]
+transformations = qt_env.Library("transformations", ["#openpilot/common/transformations/orientation.cc", "#openpilot/common/transformations/coordinates.cc"])
+
+base_libs = [common, messaging, visionipc, transformations,
+             'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+
+if arch == 'larch64':
+  base_libs.append('EGL')
+
+maps = arch in ['larch64', 'aarch64']
+
+qt_env['CPPDEFINES'] = []
+if maps:
+  base_libs += ['QMapLibre']
+  qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
+
+# screenrecorder needs OMX + libyuv, only built for the device
+device_recorder = arch in ['larch64', 'aarch64']
+if device_recorder:
+  base_libs += ['OmxCore', 'avformat', 'avcodec', 'avutil', 'yuv']
+else:
+  # no OMX / screen recording on PC, but scrcpy needs ffmpeg + libyuv
+  base_libs += ffmpeg_libs + ['yuv', 'z']
+  qt_env['CPPPATH'] += ["#third_party/libyuv/include"]
+  qt_env['LIBPATH'] += [f"#third_party/libyuv/{arch}/lib"]
+  qt_env.Append(CXXFLAGS=['-DWSL2'])
+  qt_env['CPPPATH'] += ["#third_party/libyuv/include"]
+  qt_env['LIBPATH'] += [f"#third_party/libyuv/{arch}/lib"]
+  qt_env.Append(CXXFLAGS=['-DWSL2'])
+
+# FIXME: remove this once we're on 5.15 (24.04)
+qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
+
+qt_util = qt_env.Library("qt_util", ["#openpilot/selfdrive/ui/qt/api.cc", "#openpilot/selfdrive/ui/qt/util.cc"], LIBS=base_libs)
+widgets_src = ["qt/widgets/input.cc", "qt/widgets/wifi.cc", "qt/prime_state.cc",
+               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
+               "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
+               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc"]
+
+if maps:
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc",
+                  "qt/maps/map_eta.cc", "qt/maps/map_instructions.cc"]
+
+widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
+Export('widgets')
+qt_libs = [widgets, qt_util] + base_libs
+
+qt_src = ["main.cc", "ui.cc", "qt/sidebar.cc", "qt/body.cc",
+          "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
+          "qt/offroad/software_settings.cc", "qt/offroad/developer_panel.cc", "qt/offroad/onboarding.cc",
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc", "qt/offroad/firehose.cc",
+          "qt/onroad/onroad_home.cc", "qt/onroad/annotated_camera.cc", "qt/onroad/model.cc",
+          "carrot.cc",
+          "qt/onroad/buttons.cc", "qt/onroad/alerts.cc", "qt/onroad/driver_monitoring.cc", "qt/onroad/hud.cc",
+          "qt/scrcpy/scrcpy_widget.cc"]
+
+nanovg_flags = [f for f in qt_env['CCFLAGS'] if f != '-Werror'] + ["-Wno-unused-result"]
+nanovg_obj = qt_env.Object("nanovg", "#third_party/nanovg/nanovg.c", CCFLAGS=nanovg_flags)
+qt_src += [nanovg_obj]
+
+if device_recorder:
+  qt_src += ["qt/screenrecorder/screenrecorder.cc", "qt/screenrecorder/omx_encoder.cc"]
+  qt_env['CPPPATH'] += ["qt/screenrecorder/openmax/include/", "#third_party/libyuv/include"]
+
+# build translation files
+with open(File("translations/languages_qt.json").abspath) as f:
+  languages = json.loads(f.read())
+translation_sources = [f"#openpilot/selfdrive/ui/translations/{l}.ts" for l in languages.values()]
+translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
+lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
+
+qt_env['ENV']['PYTHONPATH'] = Dir('#').abspath
+lupdate = qt_env.Command(translation_sources + ["translations/alerts_generated.h"], qt_src + widgets_src,
+                         "python3 openpilot/selfdrive/ui/update_translations_qt.py")
+lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
+qt_env.Depends(lrelease, lupdate)
+qt_env.NoClean(translation_sources)
+qt_env.Precious(translation_sources)
+qt_env.NoCache(lupdate)
+
+# create qrc file for compiled translations to include with assets
+translations_assets_src = "#openpilot/selfdrive/assets/translations_assets.qrc"
+with open(File(translations_assets_src).abspath, 'w') as f:
+  f.write('<!DOCTYPE RCC><RCC version="1.0">\n<qresource>\n')
+  f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
+  f.write('\n</qresource>\n</RCC>')
+
+# build assets
+assets = "#openpilot/selfdrive/assets/qt_assets.cc"
+assets_src = "#openpilot/selfdrive/assets/qt_assets.qrc"
+qt_env.Command(assets, [assets_src, translations_assets_src], "rcc $SOURCES -o $TARGET")
+qt_env.Depends(assets, Glob('#openpilot/selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#openpilot/selfdrive/assets/qt_assets.o"]) + [lrelease])
+asset_obj = qt_env.Object("qt_assets", assets)
+
+# build main UI
+qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
+
+if GetOption('extras'):
+  qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
+
+  # spinner and text window
+  qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
+  qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+
+  # setup and factory resetter
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
+                 LIBS=qt_libs + ['curl', 'common'])
+
+  # build updater UI
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
+
+# build watch3
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'msgq', 'visionipc'])

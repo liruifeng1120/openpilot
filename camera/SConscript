@@ -1,0 +1,49 @@
+import os
+from SCons.Script import Dir
+
+Import('env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+
+# ---------------- OpenCV 配置（系统库） ----------------
+opencv_cflags = os.popen('pkg-config --cflags opencv4').read().strip().split()
+opencv_libs = os.popen('pkg-config --libs opencv4').read().strip().split()
+
+# ---------------- ONNX Runtime 路径 ----------------
+onnx_include = Dir('#third_party/onnxruntime/include').abspath
+onnx_lib = Dir('#third_party/onnxruntime/lib').abspath
+
+# ---------------- 创建 ONNX Runtime 符号链接 ----------------
+# 确保 libonnxruntime.so 符号链接存在（指向 libonnxruntime.so.1）
+onnx_lib_so = os.path.join(onnx_lib, 'libonnxruntime.so')
+onnx_lib_so1 = os.path.join(onnx_lib, 'libonnxruntime.so.1')
+if os.path.exists(onnx_lib_so1) and not os.path.exists(onnx_lib_so):
+  print(f"Creating symbolic link: {onnx_lib_so} -> {onnx_lib_so1}")
+  os.symlink('libonnxruntime.so.1', onnx_lib_so)
+
+cam_env = env.Clone()
+# 该代码不满足新构建体系的 -Werror 要求
+cam_env['CCFLAGS'] = [f for f in cam_env['CCFLAGS'] if f != '-Werror']
+cam_env['CXXFLAGS'] += ['-std=c++17', f'-I{onnx_include}'] + opencv_cflags
+
+# ---------------- 库 ----------------
+# visionipc 引用 cloudlog_e，需放在 common 之前（--as-needed 会丢弃前面未使用的库）
+openpilot_libs = [messaging, cereal, visionipc, common, 'OpenCL']
+system_libs = ['pthread', 'm', 'dl', 'jpeg']
+all_libs = openpilot_libs + opencv_libs + ['onnxruntime'] + system_libs
+all_libpath = [
+  '#msgq_repo',
+  '#third_party',
+  '#third_party/json11',
+  '#openpilot/common',
+  onnx_lib,
+]
+
+# 保留 env 默认 LIBPATH（含 pip 包 lib 目录，用于 zmq/capnp 等）
+cam_env.Append(LIBPATH=all_libpath)
+
+# ---------------- Program: cam_blindspot ----------------
+cam_env.Program(
+  'cam_blindspot',
+  ['cam_blindspot.cpp'],
+  LIBS=all_libs,
+  RPATH=[onnx_lib],
+)
