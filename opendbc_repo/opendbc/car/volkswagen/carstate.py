@@ -7,12 +7,18 @@ from opendbc.car.volkswagen.values import DBC, CANBUS, NetworkLocation, Transmis
 
 ButtonType = structs.CarState.ButtonEvent.Type
 
+# A VW EPS is only considered permanently faulted once it keeps reporting FAULT for this long (100Hz updates).
+# Both EPS fault/reject events measured on a MQB Passat B8 lasted ~2.0-2.1s before the rack reported ready
+# again, so anything shorter than that only produces a phantom "LKAS Fault: Restart the Car".
+HCA_FAULT_PERSIST_FRAMES = 300  # 3.0s
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.frame = 0
     self.eps_init_complete = False
+    self.hca_fault_frames = 0
     self.CCP = CarControllerParams(CP)
     self.button_states = {button.event_type: False for button in self.CCP.BUTTONS}
     self.esp_hold_confirmation = False
@@ -441,8 +447,20 @@ class CarState(CarStateBase):
     # Treat FAULT as temporary for worst likely EPS recovery time, for cars without factory Lane Assist
     # DISABLED means the EPS hasn't been configured to support Lane Assist
     self.eps_init_complete = self.eps_init_complete or (hca_status in ("DISABLED", "READY", "ACTIVE") or self.frame > 600)
-    perm_fault = drive_mode and hca_status == "DISABLED" or (self.eps_init_complete and hca_status == "FAULT")
-    temp_fault = drive_mode and hca_status in ("REJECTED", "PREEMPTED") or not self.eps_init_complete
+
+    # VW EPS racks report "FAULT" for a couple of seconds (observed 0.03s up to 2.1s) and then recover to
+    # "ready" on their own, usually when the driver is steering by hand while HCA is active. Latching that
+    # as a permanent fault hard disables openpilot and shows "LKAS Fault: Restart the Car", so require the
+    # fault to persist before escalating. A transient fault is still surfaced as temporary, which soft
+    # disables lateral control immediately (same reaction time, just without the permanent alert).
+    if hca_status == "FAULT":
+      self.hca_fault_frames += 1
+    else:
+      self.hca_fault_frames = 0
+    persistent_fault = self.hca_fault_frames > HCA_FAULT_PERSIST_FRAMES
+
+    perm_fault = (drive_mode and hca_status == "DISABLED") or (self.eps_init_complete and persistent_fault)
+    temp_fault = (drive_mode and hca_status in ("REJECTED", "PREEMPTED")) or hca_status == "FAULT" or not self.eps_init_complete
     return temp_fault, perm_fault
 
   def update_hca_state_meb(self, hca_status, drive_mode=True):
